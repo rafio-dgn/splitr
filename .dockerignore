@@ -1,0 +1,45 @@
+# Keep the build context small and the image free of host-built artifacts.
+
+# Host node_modules are macOS/arm64 — the image builds its own for Linux.
+node_modules
+**/node_modules
+
+# Build output
+.next
+out
+build
+dist
+.open-next
+
+# Cloudflare
+.wrangler
+.dev.vars
+.dev.vars.*
+
+# Secrets — belt and braces alongside .gitignore
+.env
+.env.*
+!.env.example
+
+# VCS and docs: nothing the build needs
+.git
+.gitignore
+wiki
+README.md
+CLAUDE.md
+AGENTS.md
+
+# Docker's own files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Editor / OS
+.DS_Store
+.vscode
+.idea
+
+# Logs, coverage, TS cache
+*.log
+coverage
+*.tsbuildinfo

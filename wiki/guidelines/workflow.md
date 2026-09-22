@@ -100,6 +100,42 @@ done
 a browser and is interactive, so **Raffaele must run it** — an agent cannot.
 Needed from Cluster C onward; Clusters A and B are local-only.
 
+## Running in Docker
+
+Per [ADR-0007](../decisions/0007-docker-for-local-development.md). **Dev only** —
+it is not a deployment artifact, and Cloudflare Workers never run as containers.
+
+```bash
+docker compose up -d        # start; app on http://localhost:3000
+docker compose logs -f web  # follow output
+docker compose up --build   # rebuild after a dependency change
+docker compose down         # stop and remove
+```
+
+| Tool | Version |
+|---|---|
+| OrbStack | 2.2.3 |
+| Docker | 29.4.0 |
+| Docker Compose | v5.1.2 |
+
+OrbStack ships its own `docker` CLI; it is symlinked into `~/.local/bin`
+alongside node (same PATH reason — see the quirk above). **Homebrew is not
+installed and is not needed.**
+
+Things worth knowing:
+
+- **`node_modules` and `.next` are anonymous volumes**, deliberately shadowing
+  the bind mount. The host's macOS/arm64 SWC binary would otherwise be mounted
+  over the image's Linux one and fail to load.
+- **File watching polls** (`WATCHPACK_POLLING`). macOS bind mounts do not deliver
+  inotify events reliably. Verified: editing a file on the host recompiles inside
+  the container.
+- **The host toolchain still works and is still the fast path.** `npm run build`,
+  `tsc --noEmit` and `eslint` run natively. Docker is an extra way to run the
+  app, not a replacement.
+- **A dependency change needs `--build`.** `npm ci` runs at image build time, so
+  editing `package.json` alone will not install anything in the container.
+
 ## Local development
 
 - `wrangler dev` per worker; frontends use `npm run dev`.

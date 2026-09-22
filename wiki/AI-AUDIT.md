@@ -286,3 +286,47 @@ does, months later, without the original chat transcript.
   - `wrangler login` still outstanding; blocks Cluster C only.
   - Still owed: auth library, deploy adapter, split model, vision model, DO
     ownership, test strategy.
+
+## 2026-09-22T12:45Z — Docker local development
+- **Agent:** Claude Opus 5 (1M context)
+- **Prompt intent:** "we should run everything in docker … install docker desktop
+  or Orbstack if you think it works … set up docker compose and run it locally."
+- **Inputs read:** Docker Desktop licensing docs, OrbStack pricing, Colima repo
+  (all read live, not recalled — the terms decide a spend question).
+- **Actions:** Wrote `Dockerfile.dev`, `docker-compose.yml`, `.dockerignore`;
+  installed OrbStack 2.2.3 to `/Applications`; symlinked its docker CLI into
+  `~/.local/bin`; built and ran the stack; wrote ADR-0007 and the workflow docs.
+- **Alternatives considered:**
+  - *Colima + docker CLI* — MIT, free commercially, no licence question. Strong
+    runner-up, rejected because it needs Homebrew, which needs a sudo password.
+  - *Docker Desktop* — free only under 250 employees **and** $10M revenue; would
+    have required a NewPage licensing answer first.
+  - *Alpine base* — rejected for Debian slim; Next.js pulls platform-specific SWC
+    and lightningcss binaries and glibc is the well-trodden path.
+  - *Routing every command through the container* — rejected. The host toolchain
+    stays the fast path for `tsc`/`eslint`/`build`.
+- **Assumptions:**
+  - **Licensing:** OrbStack's free tier is "personal, non-commercial use", and
+    this is a `@newpage.io` machine. Raffaele characterised it as a personal
+    training project, which is his call; recorded in ADR-0007 rather than decided
+    silently.
+  - Docker is for dev only. I told him **before** building that it gives no
+    production parity — Workers are V8 isolates, not containers, and from Cluster
+    C `wrangler dev` (workerd) is closer to production than any Node container.
+    He asked to proceed.
+- **Verification:**
+  - `docker compose up` → **HTTP 200**, `<title>Splitr — snap the bill</title>`,
+    container reports **healthy**.
+  - **Hot reload tested properly**, not assumed: edited `page.tsx` on the host,
+    confirmed the change appeared through the container, reverted, confirmed the
+    original text returned and `git status src/` is clean.
+  - Two curl loops of mine returned a spurious `000` by spinning without delay
+    before the server was listening. Re-ran with `curl --retry-connrefused`
+    rather than reporting the bad reading.
+  - OrbStack first-run setup needs GUI + admin; Raffaele completed it.
+- **Open questions:**
+  - **How Workers fit in Docker (Cluster C)** — deliberately deferred to its own
+    ADR. `wrangler login` is an interactive browser flow, so a container needs
+    `CLOUDFLARE_API_TOKEN` instead.
+  - `REQ-A.5` answers, and the `REQ-M.3` code review, are still Raffaele's.
+  - Auth library for Cluster B still undecided.

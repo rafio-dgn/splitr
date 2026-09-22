@@ -174,3 +174,16 @@ written in the same turn as the change. Format is defined in `CLAUDE.md` §5.
   contradictory "no pushes" clause from the prohibition list.
 - **Why:** The written rule was stricter than the instruction it encoded.
 - **Decision:** none
+
+## 2026-09-22 — Local development in Docker, via OrbStack
+- **Type:** added
+- **Scope:** `Dockerfile.dev`, `docker-compose.yml`, `.dockerignore`,
+  `wiki/guidelines/workflow.md`, `README.md`, `/Applications/OrbStack.app`,
+  `~/.local/bin/{docker,docker-compose}`
+- **What:** Installed OrbStack 2.2.3 (Docker 29.4.0, Compose v5.1.2) and added a
+  dev container running the Next.js dev server at `localhost:3000`. Homebrew was
+  planned but proved unnecessary — OrbStack ships its own docker CLI — and
+  impossible anyway, since it needs a sudo password an agent cannot supply.
+- **Why:** Raffaele's requirement. **Not a course requirement** — nothing in the
+  21 slides mentions containers.
+- **Decision:** [ADR-0007](./decisions/0007-docker-for-local-development.md)

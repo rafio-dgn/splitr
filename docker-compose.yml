@@ -1,0 +1,52 @@
+# Local development stack for Splitr.
+#
+# Today: the Next.js app only (Clusters A–B are local, no Cloudflare).
+# Later: Cluster C adds Workers. Those will NOT simply become more services here
+# — `wrangler dev` runs workerd, the real Workers runtime, which is closer to
+# production than any Node container. See
+# wiki/decisions/0007-docker-for-local-development.md.
+#
+#   docker compose up          start
+#   docker compose up --build  rebuild after a dependency change
+#   docker compose down        stop and remove
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: splitr-web
+    ports:
+      - "3000:3000"
+    volumes:
+      # Bind the working tree so edits hot-reload.
+      - .:/app
+      # Anonymous volumes shadow the bind mount for these paths, so the
+      # container keeps its own Linux-built binaries. Without this, the host's
+      # macOS/arm64 node_modules would mask the image's and the SWC binary
+      # would fail to load.
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    # Without stdin/tty the dev server's output is buffered and Ctrl-C is rough.
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    healthcheck:
+      # node rather than curl — no need to install anything extra.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Next's first compile is slow; don't report unhealthy while it warms up.
+      start_period: 60s

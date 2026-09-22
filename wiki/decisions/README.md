@@ -37,3 +37,4 @@ obvious in hindsight.
 | [0004](./0004-project-is-splitr.md) | The project is Splitr | Accepted |
 | [0005](./0005-optional-scope.md) | Cluster F is in scope; Queues is not | Accepted |
 | [0006](./0006-repo-layout.md) | Next.js at the repo root; Workers in `workers/` | Accepted |
+| [0007](./0007-docker-for-local-development.md) | Docker for local development, via OrbStack | Accepted |

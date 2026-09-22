@@ -1,0 +1,44 @@
+# Development image for the Splitr Next.js app.
+#
+# This is a DEV container only. It is not how Splitr is deployed — Cloudflare
+# Workers run on V8 isolates at the edge, and `wrangler deploy` ships code, not
+# an image. See wiki/decisions/0007-docker-for-local-development.md.
+#
+# Node 24 matches the host toolchain (REQ-0.1 requires >= 20; 20 is EOL).
+# Debian slim rather than Alpine: Next.js pulls platform-specific SWC and
+# lightningcss binaries, and the glibc builds are the well-trodden path.
+
+FROM node:24-slim
+
+# Tini gives us correct signal handling, so Ctrl-C actually stops the dev server
+# instead of leaving a zombie holding port 3000.
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends tini ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy manifests first so `npm ci` is cached and only re-runs when deps change.
+COPY package.json package-lock.json ./
+
+# `npm ci` installs exactly the lockfile — reproducible, unlike `npm install`.
+RUN npm ci
+
+# Source arrives via a bind mount at runtime (see compose), so nothing else is
+# copied here. Keeping the image source-free means editing a file never
+# invalidates the dependency layer.
+
+ENV NODE_ENV=development \
+	NEXT_TELEMETRY_DISABLED=1 \
+	# Bind mounts on macOS do not deliver inotify events reliably; polling is the
+	# pragmatic fix. Costs a little CPU, saves a lot of "why isn't it reloading".
+	WATCHPACK_POLLING=true \
+	CHOKIDAR_USEPOLLING=true
+
+EXPOSE 3000
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# -H 0.0.0.0 is required: Next binds to localhost by default, which inside a
+# container means the container's own loopback and is unreachable from the host.
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0", "-p", "3000"]
