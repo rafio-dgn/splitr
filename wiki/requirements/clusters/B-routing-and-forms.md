@@ -141,7 +141,10 @@ verify in devtools that there are **no client-side data calls**.
       the expense-detail "No line items" empty (no expense can exist before
       `REQ-D.1`).
 
-**Source:** capture §5 · **Status:** ✅ **Done** — 2026-09-22
+**Source:** capture §5 · **Status:** ⚠️ **In progress** — downgraded from Done by the tech lead on QA finding F-3.
+Four of thirteen empty states are coded but have **never rendered** — unreachable
+until `REQ-D.1` replaces the group fixture with real tables. "Compiled" is not
+"has". Reachable again at `REQ-D.1`.
 
 **Notes:** The empty state comes from the concepts list ("give every async page a
 loading, error and empty state"), not the build list — worth doing anyway.
@@ -164,9 +167,20 @@ black box — just `getSession()` and route gating.
       Verified: sign-up → sign-in → session → gated route → sign-out → session
       revoked, all through the library's own endpoints
 
-**Source:** capture §5 · **Status:** ✅ **Done** — Better Auth, chosen and
-recorded in [ADR-0009](../../decisions/0009-better-auth-on-local-sqlite-via-drizzle.md),
-which also settles what it persists against before D1 exists.
+**Source:** capture §5 · **Status:** ✅ **Done** — restored 2026-09-22 after QA
+finding F-1 was fixed and re-verified. F-1 had two independent defects: the
+trusted origin was pinned to one port (`BETTER_AUTH_URL=…:3000` while the app ran
+on 3100 → `403 INVALID_ORIGIN`), and **sign-out failed silently** — the user
+landed on `/login` still signed in. Both are fixed: the port is gone from
+configuration entirely ([ADR-0013](../../decisions/0013-base-url-is-the-request-host-not-a-port-in-env.md)),
+and `sign-out-button.tsx` now checks `signOut()`'s `{ data, error }` result and
+tells the user when it fails instead of redirecting. Re-verified in **real
+Chrome** (curl cannot catch this — it sends no `Origin` header) on **both 3000
+and 3100**, in dev and in a production build: register → sign in → sign out →
+`/groups` redirects to `/login`, plus the sign-out failure path. Transcript:
+[`REQ-B-cluster-verification.md` § "F-1 — fix verified"](../../evidence/REQ-B-cluster-verification.md).
+The library choice and what it persists against before D1 exists are
+recorded in [ADR-0009](../../decisions/0009-better-auth-on-local-sqlite-via-drizzle.md).
 
 **Notes:** The course explicitly steers *away* from hand-rolled auth here, and
 adds: *"The reference build EdgeLedger ships Workers-native auth (Web Crypto

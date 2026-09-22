@@ -80,8 +80,15 @@ docker compose up -d     # http://localhost:3000
 Or natively, with Node 24+:
 
 ```bash
-npm install && npm run dev
+cp .env.example .env     # then set BETTER_AUTH_SECRET
+npm install && npm run dev -- -p 3100
 ```
+
+Any port works, including 3100 alongside the container on 3000 — nothing in the
+configuration names one. Do **not** set `BETTER_AUTH_URL` locally; a loopback
+value is ignored (with a warning) precisely so it cannot pin authentication to a
+single port again. See
+[ADR-0013](./wiki/decisions/0013-base-url-is-the-request-host-not-a-port-in-env.md).
 
 Docker here is a reproducible **dev environment**, not a deployment artifact —
 Cloudflare Workers run on V8 isolates at the edge, not in containers.

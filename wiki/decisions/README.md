@@ -42,3 +42,5 @@ obvious in hindsight.
 | [0009](./0009-better-auth-on-local-sqlite-via-drizzle.md) | Better Auth, on local SQLite through Drizzle, rebound to D1 at Cluster D | Accepted |
 | [0010](./0010-validation-entry-points.md) | One validation path, two entry points — the Route Handler is the curl target | Accepted |
 | [0011](./0011-one-membership-check-per-request.md) | One membership check per request, in the group layout, memoised with React `cache()` | Accepted |
+| [0012](./0012-test-the-invariants-and-the-money-nothing-else.md) | Test the invariants of the contested write and the money arithmetic — nothing else | Accepted |
+| [0013](./0013-base-url-is-the-request-host-not-a-port-in-env.md) | Better Auth's local base URL is the request's host, not a port in `.env` | Accepted |

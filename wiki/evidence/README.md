@@ -12,3 +12,11 @@ the real pasted output, and the date.
 - [`REQ-B.3-no-client-side-data-calls.md`](./REQ-B.3-no-client-side-data-calls.md) —
   the main page's network log, the same page with JavaScript off, and `curl`
   returning every word it displays.
+- [`REQ-B-cluster-verification.md`](./REQ-B-cluster-verification.md) — qa-test's
+  independent adversarial re-run of every `REQ-B.1`…`REQ-B.5` criterion
+  (2026-09-22). 21 of 23 hold; two do not. **Read this before demoing Cluster
+  B** — the `REQ-B.3` network log above was captured on `next dev`, and a
+  production build behaves differently. Since 2026-09-22 it also carries
+  **"F-1 — fix verified"**: the origin/port defect and the silent sign-out are
+  fixed and re-proved in a real browser on both ports (F-2, F-3 and O-1…O-4 are
+  still open).

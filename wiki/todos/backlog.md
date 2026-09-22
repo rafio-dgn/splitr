@@ -60,8 +60,15 @@
 - [x] ~~Put the brief at the top of the repo README (`REQ-0.5`)~~ → done
 - [ ] Fill the `techstack/` gaps from official docs, as each cluster needs them:
       Vectorize, R2 presigned URLs, RAG, AI Gateway, zod
-- [ ] Decide the test strategy and record it as an ADR
-      (`../guidelines/testing.md` is a proposal, not an inherited standard)
+- [x] ~~Decide the test strategy and record it as an ADR~~ →
+      [ADR-0012](../decisions/0012-test-the-invariants-and-the-money-nothing-else.md);
+      [`../guidelines/testing.md`](../guidelines/testing.md) rewritten to match.
+      Nothing installed: the money tests run on `node --test`, and
+      `@cloudflare/vitest-pool-workers` arrives with the Durable Object at `REQ-E.1`.
+- [ ] **Write the money tests** named in ADR-0012 — `equalShares`,
+      `parseAddExpense` boundaries, `deriveBalances` netting to zero,
+      `formatGbp`/`describePosition`. Zero new dependencies. Not a `REQ-*`; our
+      own scope, and small.
 - [ ] Write `context/domain-model.md` as Cluster D settles the schema
 - [ ] Write `context/architecture.md` as Cluster E settles the topology
 
@@ -145,3 +152,62 @@ built (`CLAUDE.md` §6, product-designer rules).
 - [ ] `proposed` **Render the invite link on the members error state.** §5.8 asks
       for it; the invite code is not a route param yet, so there is no honest way
       to show it when the group read has failed. Revisit when invites are rows.
+
+## Cluster B QA findings — 2026-09-22, awaiting the tech lead
+
+Raised by the `qa-test` agent's adversarial re-verification. Full commands and
+output: [`../evidence/REQ-B-cluster-verification.md`](../evidence/REQ-B-cluster-verification.md).
+**Deliberately not fixed** — a QA pass that silently repairs things destroys the
+signal. These are defects against criteria already marked `Done`, so they are
+requirement work, not new scope; they sit here only so they are not lost.
+
+- [x] ~~`blocker-for-demo` **F-1 — `BETTER_AUTH_URL` is pinned to
+      `http://localhost:3000`.**~~ **Fixed 2026-09-22 (backend).** The port is
+      gone from configuration: `src/lib/auth.ts` resolves the base URL from the
+      request host against a loopback allowlist, so 3000, 3100 and any other port
+      work with nothing to keep in step, and a loopback `BETTER_AUTH_URL` is
+      ignored with a warning so the mistake cannot recur
+      ([ADR-0013](../decisions/0013-base-url-is-the-request-host-not-a-port-in-env.md)).
+      `sign-out-button.tsx` now checks `signOut()`'s result and tells the user
+      when it fails instead of redirecting. Re-verified in real Chrome on both
+      ports, dev and production build. `REQ-B.5` → `Done`.
+- [!] `blocker-for-demo` **F-2 — `REQ-B.3`'s "0 fetch, 0 xhr" holds on
+      `next dev` only.** A production build makes **9** `fetch` requests on load
+      (`<Link>` prefetch, which dev disables). The page's own data is still
+      entirely server-rendered, but the Network tab a panel would look at is not
+      empty. **Recommend either demoing on `next dev` and saying why, or
+      re-wording the criterion and recording both logs.**
+- [ ] `docs` **F-3 — `REQ-B.4` says "three" unreachable empty states; the
+      changelog table it cites lists four** (it omits §5.3 "No groups yet").
+      Fix the count, then decide separately whether "coded but unreachable" may
+      sit under `Done`. **Recommend `REQ-B.4` → `In progress` until the fixtures
+      of `REQ-D.1` make the four reachable.**
+- [ ] `proposed` **O-1 — a missing group returns HTTP 200, not 404.** The
+      `not-found.tsx` content is correct, but the status is flushed with the
+      streaming shell before `notFound()` runs. Human-visible behaviour is right;
+      a crawler or `curl -f` sees success.
+- [ ] `proposed` **O-2 — the session gate drops the return path.**
+      `screens-cluster-b.md` §1 specifies `redirect("/login?next=<path>")`; the
+      implementation redirects to `/login` flat.
+- [ ] `proposed` **O-3 — `listGroupExpenses` is read twice per render** (once in
+      `page.tsx` for the balance, once in `ExpenseFeed`), and neither call is
+      `cache()`d. Two D1 queries per page view from `REQ-D.1` onward. Same root
+      cause as the balance-query item above.
+
+## New, found while fixing F-1 — 2026-09-22
+
+- [!] `blocker-for-local-dev` **The OrbStack container cannot serve the app.**
+      Its `node_modules` volume was built before `better-auth` and
+      `better-sqlite3` were added, so every page that imports the auth client is
+      `500 Module not found: Can't resolve 'better-auth/react'`. Rebuilding is
+      what should fix it, but `docker compose up --build` fails too:
+      `Dockerfile.dev` (node:24-slim) has no Python or C toolchain, and
+      `better-sqlite3` needs `node-gyp rebuild` (`gyp ERR! find Python`). Adding
+      `python3 make g++` to the `apt-get install` line is the likely one-line
+      fix, but it touches
+      [ADR-0007](../decisions/0007-docker-for-local-development.md) and was
+      **out of scope** for the F-1 dispatch, so it was left alone. Pre-existing
+      and unrelated to F-1 — the container was already answering 500 before that
+      work started. Port 3000 was verified with native `next dev -p 3000` /
+      `next start -p 3000` instead. **Decide:** fix the dev image, or drop Docker
+      now that Cluster C brings `wrangler dev`?

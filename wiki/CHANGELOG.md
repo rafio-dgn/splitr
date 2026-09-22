@@ -333,3 +333,93 @@ shape that triggers them. They are listed rather than ticked.
 - **Nothing is persisted.** The create-group and add-expense forms report
   "Validated … nothing was stored", naming `REQ-D.1`, rather than implying a
   write. Same honesty the backend agent's `HTTP 202 / "persisted": false` chose.
+
+## 2026-09-22 — Adversarial re-verification of Cluster B, and the test strategy settled
+- **Type:** docs
+- **Scope:** `wiki/evidence/REQ-B-cluster-verification.md` (new),
+  `wiki/evidence/README.md`,
+  `wiki/decisions/0012-test-the-invariants-and-the-money-nothing-else.md` (new),
+  `wiki/decisions/README.md`, `wiki/guidelines/testing.md` (rewritten),
+  `wiki/todos/backlog.md`. **No source file was changed** — two temporary throws
+  were injected to exercise the error boundaries and both files were restored,
+  `shasum -c` verified.
+- **What:** Re-ran every acceptance criterion of `REQ-B.1`…`REQ-B.5` from
+  scratch, trusting neither the requirement file, the changelog, nor the existing
+  evidence — the recorded commands were re-executed and their output compared.
+  **21 of 23 criteria hold; two do not.** (F-1) `BETTER_AUTH_URL` is pinned to
+  port 3000, so on the documented port 3100 every Better Auth mutation returns
+  `403 INVALID_ORIGIN` — and `sign-out-button.tsx` ignores the result, so a
+  failed sign-out still navigates to `/login` with the session live. (F-2)
+  `REQ-B.3`'s "0 fetch, 0 xhr" was captured on `next dev`, which disables
+  `<Link>` prefetch; a production build makes 9 `fetch` requests on load. Plus
+  one wording defect (`REQ-B.4` says three unreachable empty states, its own
+  changelog table lists four) and three lower-severity observations. All eleven
+  `REQ-B.2` curl payloads reproduced byte-identical, the 15-route build output
+  matched, the session gate held on all eight `(app)` routes, `/join` worked with
+  and without a session, both error boundaries were proved by injection, and no
+  crypto exists anywhere in `src/`. Separately, rewrote `guidelines/testing.md`,
+  which had been a draft assuming the reference build's stack (`vitest`
+  "configured", `@testing-library/react` "installed" — none of it true here).
+- **Why:** `REQ-B.1`–`REQ-B.5` were all marked `Done`; a false `Done` surfaces
+  live at `REQ-X.8`. The test strategy is the long-standing backlog item, and the
+  course has **no** `REQ-*` for testing.
+- **Decision:** [ADR-0012](./decisions/0012-test-the-invariants-and-the-money-nothing-else.md)
+  — test only the invariants of the contested write and the money arithmetic;
+  skip component markup, Drizzle and Cloudflare's services. Amends the steer on
+  one point: start the money tests **now**, because `node --test` runs against
+  our real modules with **nothing installed** (verified), so the reason to defer
+  does not hold. Requirement statuses were **not** changed — downgrades are
+  recommended in the backlog for the tech lead to decide.
+
+## 2026-09-22 — Fix QA finding F-1: authentication worked on one port only, and sign-out failed silently
+
+- **Type:** fixed
+- **Scope:** `src/lib/auth.ts`, `src/components/sign-out-button.tsx`, `.env`,
+  `.env.example`, `wiki/evidence/REQ-B-cluster-verification.md`,
+  `wiki/decisions/0013-*`, `wiki/requirements/clusters/B-routing-and-forms.md`,
+  `wiki/todos/backlog.md`
+- **What:** Two independent defects, fixed independently. (1) **Origin
+  mismatch** — Better Auth derives its trusted origin from `BETTER_AUTH_URL`,
+  which was pinned to `:3000`, so every browser auth call on `:3100` was refused
+  with `403 INVALID_ORIGIN`. The port is now gone from configuration entirely:
+  `auth.ts` uses Better Auth 1.7.5's dynamic `baseURL` (`allowedHosts:
+  ["localhost:*", "127.0.0.1:*"]`, `protocol: "http"`, `fallback`), which
+  resolves the base URL per request and derives the trusted origins from the same
+  list, so 3000, 3100 and any other loopback port all work with nothing to keep
+  in step. `BETTER_AUTH_URL` is removed from `.env`/`.env.example`, and a
+  *loopback* value is now ignored with a warning so the original mistake cannot
+  be re-introduced. (2) **Silent sign-out** — `signOut()` resolves to
+  `{ data, error }` and does not throw, so the button reported success for every
+  failure and left the user on `/login` with a live session.
+  `sign-out-button.tsx` now checks the result (and `.catch()`es a rejection) the
+  way `login-form.tsx`, `register-form.tsx` and `join-form.tsx` do, shows
+  "We couldn't sign you out — you're still signed in. Try again." in a
+  `role="alert"`, and does **not** redirect on failure.
+- **Why:** QA finding F-1 (`wiki/evidence/REQ-B-cluster-verification.md`), which
+  falsified `REQ-B.5`'s third criterion. `REQ-B.5` returns to `Done`; the
+  evidence file gains a "F-1 — fix verified" section with the browser transcript.
+- **Decision:** [ADR-0013](./decisions/0013-base-url-is-the-request-host-not-a-port-in-env.md)
+
+## 2026-09-22 — Dev container fixed for native modules
+- **Type:** fixed
+- **Scope:** `Dockerfile.dev`
+- **What:** Added `python3`, `make`, `g++` to the dev image. `better-sqlite3` is a
+  native module, so `npm ci` runs `node-gyp rebuild`, which died with
+  `gyp ERR! find Python`. The container had been unable to build since Better
+  Auth landed, and its `node_modules` volume predated those dependencies.
+  Rebuilt with `--renew-anon-volumes`.
+- **Why:** Found by the F-1 fix agent while verifying on port 3000; it correctly
+  left it alone as out of scope and logged it as a blocker.
+- **Decision:** none — implements [ADR-0007](./decisions/0007-docker-for-local-development.md).
+  Marked in the Dockerfile for removal at `REQ-D.1`, when D1 replaces
+  `better-sqlite3` and the toolchain is no longer needed.
+
+## 2026-09-22 — Tech-lead verification of the F-1 fix
+- **Type:** docs
+- **Scope:** `wiki/AI-AUDIT.md`
+- **What:** Independently re-verified the F-1 fix rather than accepting the
+  agent's report, including the CSRF boundary it narrowed. Confirmed working on
+  **both** ports and inside the container.
+- **Why:** The fix narrowed a security check; a wrong narrowing would be worse
+  than the original bug.
+- **Decision:** none

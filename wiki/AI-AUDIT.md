@@ -601,3 +601,178 @@ does, months later, without the original chat transcript.
   verified against a stubbed clipboard — "Copy link" → "Copied." → back after
   2s. Worth one manual click before the demo. (4) A missing expense needed copy
   the spec does not contain; the product designer should confirm or replace it.
+
+## 2026-09-22T18:10Z — Adversarial verification of Cluster B; test strategy decided
+- **Agent:** qa-test (Claude Opus 5, 1M context) via Claude Code
+- **Prompt intent:** "Three agents have marked Cluster B complete. Try to prove
+  them wrong, not confirm them." Trust neither the requirement file, the
+  changelog, the evidence files, nor any agent report — re-run the commands and
+  check the output still matches. Then settle the long-open test strategy.
+- **Inputs read:** `wiki/requirements/clusters/B-routing-and-forms.md`,
+  `wiki/evidence/REQ-B.2-*`, `wiki/evidence/REQ-B.3-*`, `wiki/CHANGELOG.md`,
+  `wiki/context/screens-cluster-b.md` §1, `wiki/guidelines/testing.md`,
+  `wiki/todos/backlog.md`, `wiki/decisions/README.md`, all of `src/`,
+  `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md`.
+  **Not read:** `../typescript-cloudflare-project/`, `wiki/reference-edgeledger/`
+  — sealed until `REQ-X.6`.
+- **Actions:** Ran `next dev -p 3100` and `next build && next start -p 3100`.
+  Re-ran all 11 `REQ-B.2` curl payloads. Probed all 15 routes with and without a
+  session. Drove real Chrome over the DevTools Protocol with a zero-dependency
+  Node 24 script (no `puppeteer` is installed) to record every network request on
+  12 pages in both build modes, and to exercise register/sign-out in a browser.
+  Injected two temporary throws to prove the error boundaries, then restored both
+  files and verified with `shasum -c`. Wrote
+  `wiki/evidence/REQ-B-cluster-verification.md`, ADR-0012, and a rewritten
+  `wiki/guidelines/testing.md`; updated three indexes and the backlog.
+  **Fixed nothing** — the dispatch was explicit that a QA agent which silently
+  repairs destroys the signal.
+- **Alternatives considered:** *For the test strategy* — (a) no automated tests
+  at all, relying on `wiki/evidence/`: rejected because "two concurrent
+  settlements, exactly one wins" cannot be re-checked by clicking, and it is the
+  claim the project rests on; (b) a conventional unit/component/integration
+  pyramid: rejected — `@testing-library/react` cannot render Server Components
+  without a harness we would build, the markup is still moving, and it would have
+  caught neither defect found today; (c) defer everything to Cluster E, as
+  steered: **rejected on timing**, because the money arithmetic exists now,
+  Cluster D is about to make it durable, and the stated reason to wait (framework
+  install cost) turned out to be zero. *For verification method* — installing
+  `puppeteer` was rejected in favour of a throwaway CDP script, to avoid adding a
+  dependency to a tree whose dependency list is itself under review.
+- **Assumptions:** That re-running on `next dev` is equivalent to the original
+  `next start` run for the `REQ-B.2` payloads (both call the same
+  `addExpense()`); stated in the evidence file. That the seven prefetch responses
+  whose bodies Chrome evicted are the same kind as the two captured — assumed,
+  and labelled as assumed.
+- **Verification:** `tsc --noEmit` clean. `npm run build` clean, 15 routes.
+  All 11 curl payloads byte-identical to the recorded evidence, plus the valid
+  202 with shares `1417+1417+1416 = 4250`. Gate: 8/8 `(app)` routes `307 →
+  /login` with no cookie; `/join/7fK2pQvm` `200` without one and correct with
+  one. `0 fetch/xhr` on 12 pages under `next dev`; **9 on the group page under
+  `next start`** — the `REQ-B.3` failure. Browser register on :3100 →
+  `403 INVALID_ORIGIN`; same tree with `BETTER_AUTH_URL=http://localhost:3100`
+  → `200` — the `REQ-B.5` failure and its root cause. Browser sign-out →
+  403, redirect to `/login`, then `/groups` still signed in. Both error
+  boundaries rendered their exact copy under injection. `grep` for crypto across
+  `src/` → two comments and one plugin line, nothing real. `node --test` against
+  `src/lib/money.ts`, `src/lib/schemas/expense.ts` and
+  `src/lib/expenses/balances.ts` → 5 tests, 5 pass, **zero packages installed**.
+- **Open questions:** (1) Does `REQ-B.5` go back to `In progress` over F-1? (2)
+  Does `REQ-B.3` go back over F-2, or is the criterion re-worded to "no
+  client-side fetch of *this page's own data*" with both logs recorded? (3) Is
+  "coded but unreachable until `REQ-D.1`" acceptable under `Done` for
+  `REQ-B.4` — my view is no, because the criterion says *every* async page *has*
+  an empty state and four of thirteen have never rendered; `In progress` costs
+  nothing and a panel asking "show me" is the whole risk. (4) Which port is the
+  demo run on, and does `.env.example` need to say so? All four are the tech
+  lead's calls; I changed no statuses.
+
+## 2026-09-22T18:35Z — Fix QA finding F-1 (broken auth origin, silent sign-out)
+
+- **Agent:** backend (Claude Opus 5, Claude Code) · **Prompt intent:** "Fix F-1:
+  authentication is broken on the documented port and sign-out fails silently.
+  Do not just change 3000 to 3100 — make it work on both and hard to get wrong
+  again. Verify in a real browser on both ports, not with curl." · **Inputs
+  read:** `wiki/evidence/REQ-B-cluster-verification.md` (F-1),
+  `wiki/requirements/clusters/B-routing-and-forms.md`, `src/lib/auth.ts`,
+  `src/lib/auth-client.ts`, `src/lib/session.ts`, `src/components/sign-out-button.tsx`,
+  the three forms that already handle `{ data, error }`, `docker-compose.yml`,
+  `Dockerfile.dev`, and — for the API, rather than from memory —
+  `node_modules/better-auth/dist/api/middlewares/origin-check.mjs`,
+  `.../dist/context/helpers.mjs` (`getTrustedOrigins`), `.../dist/auth/trusted-origins.mjs`,
+  `.../dist/utils/url.mjs` (`resolveDynamicBaseURL`, `getHostFromSource`),
+  `.../dist/api/to-auth-endpoints.mjs`, `.../dist/utils/wildcard.mjs`, and
+  `node_modules/@better-auth/core/dist/types/init-options.d.mts` (`baseURL`,
+  `trustedOrigins`, `DynamicBaseURLConfig`). · **Actions:** rewrote the `baseURL`
+  configuration in `src/lib/auth.ts` (dynamic `allowedHosts` + loopback guard),
+  rewrote `src/components/sign-out-button.tsx` to check `signOut()`'s result,
+  removed `BETTER_AUTH_URL` from `.env` and `.env.example`, wrote
+  [ADR-0013](./decisions/0013-base-url-is-the-request-host-not-a-port-in-env.md),
+  appended a "F-1 — fix verified" section to the QA evidence file, set `REQ-B.5`
+  back to `Done`, updated the backlog. Wrote a throwaway CDP browser driver
+  outside the repo (no dependency added).
+- **Alternatives considered:** (a) `BETTER_AUTH_URL=http://localhost:3100` —
+  rejected, it only rotates which port is broken and leaves a value that is
+  silently wrong elsewhere; (b) keep `BETTER_AUTH_URL`, add
+  `trustedOrigins: [3000, 3100]` (the tech lead's steer) — rejected after reading
+  the source: it works, but `baseURL` still names one port and is wrong on the
+  other, two lists must be kept in step, a third port needs a code edit, and the
+  `.env` line that caused F-1 survives; (c) `advanced.disableCSRFCheck` /
+  `skipOriginCheck` — rejected outright, that deletes the protection rather than
+  configuring it; (d) dynamic `baseURL` with `allowedHosts` (**chosen**, ADR-0013)
+  — one setting, no port written down anywhere, and `BETTER_AUTH_URL` is ignored
+  entirely on that path. For sign-out: (e) `signOut({ throw: true })`-style
+  handling — rejected, the three existing forms all branch on `result.error` and
+  consistency was explicitly asked for; (f) redirect anyway but toast the error —
+  rejected, the user would still be told they had signed out when they had not.
+- **Assumptions:** that a non-loopback host is a *deployment* and should name its
+  origin via `BETTER_AUTH_URL` — so LAN-IP and tunnel access are refused by
+  design (measured and recorded, not silently accepted). That `fallback:
+  "http://localhost"` is preferable to letting an unknown `Host` 500 a gated
+  page — measured both ways before choosing.
+- **Verification:** real Chrome over the DevTools Protocol, zero dependencies,
+  16 assertions per run: `next dev -p 3100` 16/16, `next dev -p 3000` 16/16,
+  `next start -p 3100` 16/16, `next start -p 3000` 16/16, and — the regression
+  probe — `next dev -p 3100` with `BETTER_AUTH_URL=http://localhost:3000` pasted
+  back into `.env` 16/16 plus the "Ignoring BETTER_AUTH_URL" warning. Each run
+  drives register → `/groups` with a live `get-session`; sign out → `/login`
+  **and** `/groups` now redirecting to `/login` with `get-session` `null` (QA's
+  step 6, inverted); sign in; then sign-out with `/api/auth/sign-out` blocked via
+  `Network.setBlockedURLs` → stays on `/groups`, shows "We couldn't sign you out
+  — you're still signed in." in a `role="alert"`, still signed in; then a retry
+  that succeeds. Negative control by curl: `origin: https://evil.example` → `403
+  INVALID_ORIGIN`, `origin: http://sub.localhost:3100` → `403`, `origin:
+  http://localhost:3100` → `{"success":true}` — the check was narrowed, not
+  removed. Pattern matching checked directly against the installed
+  `matchesOriginPattern`/`matchesHostPattern` before writing the config.
+  `npx tsc --noEmit`, `npm run lint`, `npm run build` all clean (15 routes).
+- **Open questions:** (1) **The OrbStack container cannot currently serve the app
+  at all** — its `node_modules` volume predates `better-auth` (`500 Module not
+  found: Can't resolve 'better-auth/react'`) and `docker compose up --build`
+  fails because `Dockerfile.dev` has no Python/C toolchain for
+  `better-sqlite3`'s `node-gyp rebuild`. Pre-existing, unrelated to F-1, not
+  fixed here; port 3000 was therefore verified with native `next dev`/`next
+  start -p 3000`. Logged in the backlog — does the tech lead want it fixed, or is
+  Docker being dropped before Cluster C's `wrangler dev` anyway? (2) Should the
+  demo say which port it is on, now that it no longer matters? (3) F-2, F-3 and
+  O-1…O-4 remain open and untouched.
+
+## 2026-09-22T14:30Z — Tech-lead verification of F-1; dev container repaired
+- **Agent:** Claude Opus 5 (1M context), acting as tech lead
+- **Prompt intent:** Verify the F-1 fix before accepting it, and resolve the
+  Docker blocker the fix agent surfaced.
+- **Inputs read:** `.env`, `.env.example`, `src/lib/auth.ts`,
+  `src/components/sign-out-button.tsx`, `Dockerfile.dev`.
+- **Actions:** Independently probed the CSRF boundary; added `python3 make g++`
+  to `Dockerfile.dev`; rebuilt the image and recreated the container with fresh
+  anonymous volumes; verified auth end-to-end on both ports.
+- **Alternatives considered:**
+  - *Accept the fix agent's own security transcript* — rejected. It narrowed a
+    CSRF check, and that is exactly the class of change that must not be taken on
+    trust.
+  - *Dispatch devops for the Dockerfile* — rejected as ceremony. A one-line
+    change; `.claude/agents/tech-lead.md` says not to dispatch more than needed.
+  - *Drop Docker before Cluster C* — the fix agent offered this. Rejected: Docker
+    is Raffaele's explicit requirement, and the breakage was a missing build
+    dependency, not a design problem.
+- **Assumptions:** none material.
+- **Verification — and one correction to my own method:**
+  - My first CSRF probe used `POST /api/auth/sign-out` with **no session** and
+    saw `HTTP 200` for `https://evil.example`, which appeared to contradict the
+    agent. **My probe was wrong**: sign-out with no session is a no-op that
+    short-circuits before the origin check. Re-tested on `sign-up/email` and with
+    a real session cookie on `sign-out` — both correctly `403 INVALID_ORIGIN`,
+    and the victim's session survived the cross-origin attempt. The agent's claim
+    was accurate; I nearly filed a false finding against it.
+  - Sign-up succeeds on `:3100` (native) and `:3000` (container) with the **same
+    code and no port in configuration** — the dynamic `baseURL` fix does what it
+    claims.
+  - `BETTER_AUTH_URL` confirmed absent from `.env`; `sign-out-button.tsx`
+    confirmed to branch on the result.
+  - Container: `docker compose build` succeeds, `HTTP 200`, correct title.
+- **Open questions:**
+  - **F-2 (prefetch in production) is unresolved** and is a demo-safety issue —
+    my call to make, not an agent's.
+  - O-1 (404 returns HTTP 200), O-2 (lost return path), O-3 (the section error
+    boundary that cannot catch its own failure) remain in the backlog.
+  - `REQ-B.4` stays `In progress` until `REQ-D.1` makes the four empty states
+    reachable.

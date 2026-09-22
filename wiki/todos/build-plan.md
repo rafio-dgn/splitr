@@ -50,7 +50,7 @@ has run once.
 | # | Task | Req | Done |
 |---|---|---|---|
 | B.1 | Route tree: public routes + `(app)` group. **Include the public `/join/[invite]` page now** — Turnstile needs it at F.2 | `REQ-B.1` | ✅ 2026-09-22 — 15 routes; `/join/[inviteCode]` built, Turnstile's slot reserved |
-| B.2 | Add auth from a library, black box only (`getSession()` + route gating). **ADR needed** for which | `REQ-B.5` | ✅ 2026-09-22 — Better Auth, [ADR-0009](../decisions/0009-better-auth-on-local-sqlite-via-drizzle.md) |
+| B.2 | Add auth from a library, black box only (`getSession()` + route gating). **ADR needed** for which | `REQ-B.5` | ✅ 2026-09-22 — Better Auth, [ADR-0009](../decisions/0009-better-auth-on-local-sqlite-via-drizzle.md); QA finding F-1 (origin pinned to one port, silent sign-out) fixed and re-verified in a browser on both ports, [ADR-0013](../decisions/0013-base-url-is-the-request-host-not-a-port-in-env.md) |
 | B.3 | Shared zod schema for the "add expense" form; client + server both validate | `REQ-B.2` | ✅ 2026-09-22 — both halves exercised |
 | B.4 | **Prove it:** curl an invalid payload straight at the server; capture output | `REQ-B.2` | ✅ [evidence](../evidence/REQ-B.2-server-side-validation.md) |
 | B.5 | Group dashboard as a Server Component; verify no client-side data calls in devtools | `REQ-B.3` | ✅ [evidence](../evidence/REQ-B.3-no-client-side-data-calls.md) — 0 fetch/xhr |
