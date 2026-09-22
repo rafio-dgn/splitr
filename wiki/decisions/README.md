@@ -38,3 +38,4 @@ obvious in hindsight.
 | [0005](./0005-optional-scope.md) | Cluster F is in scope; Queues is not | Accepted |
 | [0006](./0006-repo-layout.md) | Next.js at the repo root; Workers in `workers/` | Accepted |
 | [0007](./0007-docker-for-local-development.md) | Docker for local development, via OrbStack | Accepted |
+| [0008](./0008-agent-team-and-skills.md) | A dispatching agent team, with skills encoding our failure modes | Accepted |

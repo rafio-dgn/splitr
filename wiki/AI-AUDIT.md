@@ -330,3 +330,49 @@ does, months later, without the original chat transcript.
     `CLOUDFLARE_API_TOKEN` instead.
   - `REQ-A.5` answers, and the `REQ-M.3` code review, are still Raffaele's.
   - Auth library for Cluster B still undecided.
+
+## 2026-09-22T13:10Z — Cluster A answers reviewed; agent team built
+- **Agent:** Claude Opus 5 (1M context)
+- **Prompt intent:** Raffaele answered the `REQ-A.5` questions and challenged
+  several of my explanations; then asked for a code-agent developer system with a
+  dispatching team lead plus skills to avoid mistakes.
+- **Inputs read:** Claude Code docs for subagent and skill frontmatter schemas
+  (fetched live — the supported fields have changed); the project's own
+  requirements and decisions.
+- **Actions:**
+  - Wrote two throwaway proofs to settle disputed claims empirically rather than
+    by assertion, then discarded them (scratchpad only).
+  - Wrote 6 agents, 6 skills, `wiki/guidelines/agent-team.md`, ADR-0008,
+    `wiki/evidence/README.md`.
+- **Alternatives considered:**
+  - *No agent team* — rejected; requested, and role separation genuinely keeps
+    each context focused.
+  - *Roles as prompt convention only* — rejected; enforces nothing.
+  - *Generic best-practice skills ("write clean code", "SOLID")* — **rejected as
+    noise.** A skill earns its place only by preventing a mistake this project
+    has made or is measurably set up to make. All six map to a named failure.
+  - *Mixed models per agent (haiku/sonnet for cheaper roles)* — rejected for now;
+    Splitr's hard parts are judgement, not volume. Noted as revisitable.
+- **Assumptions:**
+  - **"superpowers"** interpreted as *preload standing knowledge into agents via
+    skills*, which is what the `skills:` frontmatter does. If a specific
+    third-party "superpowers" plugin was meant, that is a separate decision —
+    flagged in ADR-0008 rather than guessed at.
+  - The main session stays the default tech lead; the `tech-lead` agent is for
+    clean-context planning. Nested dispatch available, not mandatory.
+- **Verification:**
+  - **Two of Raffaele's claims tested, not argued.** (1) `const u: User =
+    JSON.parse(s)` compiles clean under `--strict` — `JSON.parse` returns `any`,
+    which is assignable to anything. (2) `try/catch` does not fire on a
+    wrong-shaped response; `user.email` is `undefined` and nothing throws. Both
+    run and output captured.
+  - Frontmatter schemas checked against current Claude Code docs, not recalled.
+  - All 12 files validated as parseable YAML frontmatter.
+  - **I conceded Q1** — Raffaele's answer is better than my original framing,
+    which overstated the cost of Server Components.
+- **Open questions:**
+  - Three of Raffaele's Q3 answers are wrong in ways that matter at the demo
+    (`getServerSideProps` is Pages Router; derived state should not be stored;
+    `useTransition` does not fix stale closures). Raised in chat.
+  - Whether a specific "superpowers" plugin was meant.
+  - Better Auth confirmed as the Cluster B auth choice; not yet installed.

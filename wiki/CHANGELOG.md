@@ -187,3 +187,28 @@ written in the same turn as the change. Format is defined in `CLAUDE.md` §5.
 - **Why:** Raffaele's requirement. **Not a course requirement** — nothing in the
   21 slides mentions containers.
 - **Decision:** [ADR-0007](./decisions/0007-docker-for-local-development.md)
+
+## 2026-09-22 — Agent team and project skills
+- **Type:** added
+- **Scope:** `.claude/agents/*` (6), `.claude/skills/*/SKILL.md` (6),
+  `wiki/guidelines/agent-team.md`, `wiki/evidence/`, `CLAUDE.md`
+- **What:** Added a tech-lead agent that dispatches product-designer, frontend,
+  backend, devops and qa-test specialists, plus six skills encoding this
+  project's specific failure modes: `req-check`, `wiki-discipline`,
+  `verify-api`, `edgeledger-guard`, `audit-log`, `demo-evidence`.
+- **Why:** Raffaele's requirement. **Not a course requirement** — `REQ-0.1` asks
+  for *an* agentic tool, nothing about roles.
+- **Decision:** [ADR-0008](./decisions/0008-agent-team-and-skills.md)
+
+## 2026-09-22 — Corrections to Cluster A answer notes
+- **Type:** fixed
+- **Scope:** `wiki/todos/cluster-a-questions.md`
+- **What:** Reworked the `REQ-A.5` notes after Raffaele's review. His Q1 answer
+  (push `"use client"` to the leaf that owns state, keep parents on the server)
+  is better than the original framing, which implied Server Components cost you
+  interactivity. Added proofs for two claims tested empirically: `JSON.parse`
+  returns `any` so `const u: User = JSON.parse(s)` compiles clean under `strict`,
+  and `try/catch` does **not** catch a wrong-shaped response because nothing
+  throws.
+- **Why:** `REQ-M.4` — the answers have to be right, and two were not.
+- **Decision:** none

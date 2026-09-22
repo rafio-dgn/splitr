@@ -40,6 +40,7 @@ Start with `wiki/README.md`, then load only the pages your task touches.
 | Our domain model, architecture, vocabulary | `wiki/context/` |
 | How to write and secure the code | `wiki/guidelines/` |
 | How to work with the human on this | `wiki/guidelines/ai-collaboration.md` |
+| The agent team and how to dispatch | `wiki/guidelines/agent-team.md` |
 | What is queued, in flight, or blocked | `wiki/todos/` |
 | Why a past choice was made | `wiki/decisions/` |
 
