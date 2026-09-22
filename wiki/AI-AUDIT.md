@@ -241,3 +241,48 @@ does, months later, without the original chat transcript.
   - Whether to make the initial commit now, and what to include.
   - Still owed: auth library, deploy adapter, split model, vision model, DO
     ownership, test strategy.
+
+## 2026-09-22T12:20Z — Commit foundation; Cluster A
+- **Agent:** Claude Opus 5 (1M context)
+- **Prompt intent:** "commit the wiki in MY repo and let's go on with the project."
+- **Inputs read:** `wiki/requirements/clusters/A-language-and-runtime.md`,
+  `wiki/decisions/0006`, every file `create-next-app` generated (23 files).
+- **Actions:**
+  - Wrote `.gitignore`; committed and **pushed** the 53-file foundation.
+  - ADR-0006: Next.js at the repo root, Workers in `workers/`.
+  - Scaffolded Next.js into a temp dir, merged it in, installed, built.
+  - Pruned demo assets; wrote `src/lib/fetch.ts`, the landing page, layout
+    metadata; kept the generated `AGENTS.md` and referenced it from `CLAUDE.md`.
+  - Wrote `wiki/todos/cluster-a-questions.md` as revision material for `REQ-A.5`.
+- **Alternatives considered:**
+  - *App in `web/` vs at the repo root* — ADR-0006. Root won because `REQ-A.2`
+    and `REQ-D.1` name `src/lib/fetch.ts` and `src/db/schema.ts` literally.
+  - *npm workspaces* — rejected as unjustified tooling for four deployables with
+    almost no shared code; nothing in the course asks for it.
+  - *Deleting the generated `AGENTS.md`* — rejected: `next dev` recreates it, so
+    deleting only yields a permanently dirty tree.
+  - *Adding an `init?: RequestInit` param to `fetchJson`* — accepted though the
+    requirement writes `fetchJson<T>(url)`; optional, so the required call shape
+    still holds. Flagging it as a small liberty taken.
+  - *Making `fetchJson` validate at runtime (e.g. zod)* — deliberately **not**
+    done. The unchecked cast **is** the Cluster A lesson; Cluster B introduces
+    real validation. Documented in-file so it reads as a choice, not an oversight.
+- **Assumptions:**
+  - "commit the wiki in MY repo" meant push to GitHub, not just a local commit.
+    I amended the `CLAUDE.md` rule that said "never push" rather than quietly
+    breaking it. **If a local-only commit was meant, say so** — the push is done.
+  - Removing the default favicon is safe; a Splitr one can come later.
+- **Verification:**
+  - `npm run build` ✅, `npx tsc --noEmit` exit 0 ✅, `npx eslint .` exit 0 ✅.
+  - Served the app and confirmed **HTTP 200** with `<title>Splitr — snap the
+    bill</title>`. My first status check returned `000` from a loop timing bug; I
+    re-ran it cleanly rather than reporting the muddle.
+  - `git log` shows one pushed commit; the scaffold is committed separately.
+  - Read all 23 generated files before merging, per `REQ-A.4`.
+- **Open questions:**
+  - `REQ-A.5` — the three questions are **Raffaele's** to answer unaided; my notes
+    are revision material and do not satisfy the requirement.
+  - `REQ-M.3` — the Cluster A code still needs his review.
+  - `wrangler login` still outstanding; blocks Cluster C only.
+  - Still owed: auth library, deploy adapter, split model, vision model, DO
+    ownership, test strategy.

@@ -26,6 +26,15 @@
       [ADR-0004](../decisions/0004-project-is-splitr.md),
       [`../context/project-brief.md`](../context/project-brief.md)
 
+## For Raffaele — Cluster A
+
+- [ ] Answer `REQ-A.5`'s three questions unaided —
+      [notes](./cluster-a-questions.md)
+- [ ] Review the Cluster A code (`REQ-M.3`/`REQ-A.4`): `src/lib/fetch.ts`,
+      `src/app/page.tsx`, `src/app/layout.tsx`. Four questions per file in
+      [`../guidelines/ai-collaboration.md`](../guidelines/ai-collaboration.md)
+- [ ] Start the `REQ-X.2` notes — *what surprised you* — while Cluster A is fresh
+
 ## Open questions — need a human answer
 
 - [x] ~~Are the `[OPTIONAL]` items in scope?~~ → **Cluster F in, Queues out.**

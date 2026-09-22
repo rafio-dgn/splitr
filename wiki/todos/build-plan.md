@@ -24,19 +24,24 @@ Cluster F. Queues (`REQ-E.8`) is out.
 
 ---
 
-## Cluster A — Language and runtime · *local only*
+## Cluster A — Language and runtime · *local only* · ✅ done
 
-| # | Task | Req |
-|---|---|---|
-| A.1 | `npx create-next-app@latest splitr --typescript --app --tailwind --src-dir` | `REQ-A.1` |
-| A.2 | Review and prune every scaffolded file — nothing unexplained survives | `REQ-A.4` |
-| A.3 | `src/lib/fetch.ts` → `fetchJson<T>(url): Promise<T>` | `REQ-A.2` |
-| A.4 | Marketing landing page for Splitr | `REQ-A.3` |
-| A.5 | Answer the three cluster questions | `REQ-A.5` |
+| # | Task | Req | State |
+|---|---|---|---|
+| A.1 | `create-next-app --typescript --app --tailwind --src-dir` | `REQ-A.1` | ✅ Next 16.3.5 / React 19.2.8 |
+| A.2 | Review and prune every scaffolded file | `REQ-A.4` | ✅ 5 demo SVGs, favicon, demo page removed |
+| A.3 | `src/lib/fetch.ts` → `fetchJson<T>(url): Promise<T>` | `REQ-A.2` | ✅ |
+| A.4 | Marketing landing page for Splitr | `REQ-A.3` | ✅ serves HTTP 200 |
+| A.5 | Answer the three cluster questions | `REQ-A.5` | ⏳ **Raffaele** — [notes](./cluster-a-questions.md) |
 
-**Exit:** a typed Next.js app running locally with a real landing page.
-**Watch:** A.3 is the generics lesson — be ready to defend why `T` is an
-assertion about the response, not a validation of it.
+**Exit:** ✅ typed Next.js app running locally with a real landing page.
+`npm run build`, `tsc --noEmit` and `eslint` all clean.
+
+**Gotcha hit:** `create-next-app` refuses a non-empty directory, so the scaffold
+went to a temp dir and was merged in — which also protected the README carrying
+`REQ-0.5`. And `LayoutProps<"/">` in `layout.tsx` is a **generated** global that
+only exists after a build, so `tsc` fails on a fresh clone until `npm run build`
+has run once.
 
 ---
 

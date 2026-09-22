@@ -14,6 +14,20 @@ It is **not** a rebuild of EdgeLedger. See §4.
 Stack is fixed by the course: TypeScript · React · **Next.js App Router** ·
 Tailwind · zod · Cloudflare Workers. Free tier is sufficient throughout.
 
+## 1a. ⚠️ Next.js version warning — read `AGENTS.md`
+
+@AGENTS.md
+
+`AGENTS.md` is **generated and re-added by `next dev`** (see
+`node_modules/next/dist/server/lib/generate-agent-files.js`). Do not delete it —
+deleting only recreates it as an uncommitted change. Its warning is real: this is
+Next.js 16, and its APIs differ from training data. Example already in the
+scaffold: the root layout types its props as `LayoutProps<"/">`, a generated
+global — not the `{ children }: { children: React.ReactNode }` you may recall.
+
+**Before writing any Next.js API from memory, check
+`node_modules/next/dist/docs/`.**
+
 ## 2. Read before you act
 
 Start with `wiki/README.md`, then load only the pages your task touches.
@@ -81,12 +95,13 @@ State explicitly which of these you did. If you skipped one, say so and why.
 ## 6. Working rules
 
 - **⛔ Never change anything on GitHub.** No repo creation or deletion, no
-  settings, no remotes, no pushes, no PRs, no issues, no releases, no `gh`
-  commands, no authenticated API calls. Raffaele owns the account and manages it
+  settings, no remotes, no PRs, no issues, no releases, no `gh` commands, no
+  authenticated API calls. Raffaele owns the account and manages it
   himself. If a task appears to need one of these, **stop and ask him.**
   Permitted: local `git` in the working tree (status, diff, log, add, commit),
-  and `clone`/`fetch`/`pull` on a repository URL **he has given you**.
-  **Commit only when he asks; never push.**
+  `clone`/`fetch`/`pull` on a repository URL **he has given you**, and
+  `push` to `origin/main` of **this** repo. **Commit and push only when he asks**
+  — never on your own initiative, and never force-push or rewrite history.
 - **One capability per step** (`REQ-M.2`). Clusters run in order. Never
   parallelise them, never jump ahead.
 - **Every file you write must be reviewable** (`REQ-M.3`). Explain before

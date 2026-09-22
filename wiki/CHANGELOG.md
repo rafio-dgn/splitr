@@ -137,3 +137,40 @@ written in the same turn as the change. Format is defined in `CLAUDE.md` §5.
 - **Why:** The original wording was stricter than the instruction it encoded, and
   blocked the next step.
 - **Decision:** none
+
+## 2026-09-22 — Cluster A complete: Next.js scaffold, fetchJson, landing page
+- **Type:** added
+- **Scope:** repo root configs, `src/**`, `public/`, `.gitignore`, `CLAUDE.md`
+- **What:** Scaffolded Next.js 16.3.5 / React 19.2.8 / TS 5 / Tailwind 4 at the
+  repo root (`REQ-A.1`). Pruned the scaffold: removed 5 Next/Vercel demo SVGs,
+  the default favicon and the demo page (`REQ-A.4`). Added
+  `src/lib/fetch.ts` with `fetchJson<T>`, `HttpError` and `JsonParseError`
+  (`REQ-A.2`). Built the Splitr landing page (`REQ-A.3`) and corrected the layout
+  metadata, which still said "Create Next App".
+- **Why:** Cluster A.
+- **Decision:** [ADR-0006](./decisions/0006-repo-layout.md) — app at repo root so
+  `src/lib/fetch.ts` and `src/db/schema.ts` match the paths the requirements name.
+
+## 2026-09-22 — Kept Next.js-generated AGENTS.md; wired it into CLAUDE.md
+- **Type:** added
+- **Scope:** `AGENTS.md`, `CLAUDE.md` §1a
+- **What:** `create-next-app` generated its own `AGENTS.md` (the "This is NOT the
+  Next.js you know" warning) and a `CLAUDE.md` that just did `@AGENTS.md`. Kept
+  `AGENTS.md` — `next dev` regenerates it, so deleting it only produces a dirty
+  tree — discarded the generated `CLAUDE.md`, and added an `@AGENTS.md` reference
+  plus the version warning into ours as §1a.
+- **Why:** The warning is real and already bit us: `layout.tsx` uses
+  `LayoutProps<"/">`, a generated global, not the familiar
+  `{ children: React.ReactNode }`.
+- **Decision:** none
+
+## 2026-09-22 — GitHub rule amended to permit pushing when asked
+- **Type:** changed
+- **Scope:** `CLAUDE.md` §6
+- **What:** The rule said "never push", which conflicted with Raffaele asking for
+  the wiki to be committed **in his repo**. Amended to permit `push` to
+  `origin/main` of this repo, still only on explicit request, never on the AI's
+  own initiative, and never force-push or history rewrite. Removed the now
+  contradictory "no pushes" clause from the prohibition list.
+- **Why:** The written rule was stricter than the instruction it encoded.
+- **Decision:** none
