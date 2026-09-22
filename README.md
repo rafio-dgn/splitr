@@ -1,0 +1,103 @@
+# Splitr — snap the bill
+
+Photograph a receipt. A vision model itemises it. The group's shared balance
+updates. When someone settles up, **exactly one settlement lands — never two.**
+
+## Who it's for
+
+Anyone splitting shared expenses with the same people repeatedly: housemates, a
+group trip, a regular dinner crowd. The people who currently keep a running tally
+in a chat thread and argue about it later.
+
+## The contested write
+
+> **Two people settling the same debt at the same moment must not both succeed —
+> the second must be refused, not merged.**
+
+Alice owes the group £40. She hands Bob cash. Alice taps *"I settled £40"* on her
+phone; Bob, holding the notes, taps *"Alice settled £40"* on his. Two writes, one
+real-world event. If both land, the books are wrong by £40 and nobody can tell
+which entry is spurious.
+
+This is a genuine contested write, not a last-write-wins edit:
+
+- Both writes are **valid in isolation** — neither is stale or malformed.
+- Merging is **wrong**, not merely lossy. There is no sensible union of two
+  settlements of the same debt.
+- The loser must be **told** it lost, because a human is standing there expecting
+  the balance to move once.
+
+A Durable Object keyed on the group (`idFromName(groupId)`) arbitrates: it
+re-reads the authoritative balance, validates that the settlement does not exceed
+what is actually owed, writes to D1, and returns the new balance. The second
+writer arrives after the first has committed, finds the debt already cleared, and
+is refused.
+
+## Cloudflare building blocks
+
+| Block | Use |
+|---|---|
+| **D1** | Users, groups, members, expenses, line items, settlements — the relational core |
+| **Durable Objects** | Balance arbiter, one instance per group. This *is* the contested write |
+| **R2** | Receipt photographs, uploaded direct from the client via presigned URL |
+| **Workers AI** | Vision model itemises the photo; a text model categorises line items |
+| **KV** | Hot per-group balance snapshot — rebuildable from D1 |
+| **Cron** | Nightly settle-up reminders and uncategorised-item backfill |
+| **Turnstile** | The public invite/join-group form |
+| **Vectorize** | Semantic search over past expenses — *"that Thai place"*, *"the thing for the kitchen"* |
+
+Vectorize is a deliberate **stretch feature**: a bill-splitter has no inherent
+need for semantic search, so it has to earn its place. It does, because receipt
+merchant strings are cryptic — `SQ *TOAST LDN` is a coffee shop, and no keyword
+search will tell you that.
+
+## Architecture
+
+*Diagram to follow — see `REQ-X.5`. The topology is settled during Cluster E.*
+
+## Status
+
+🚧 **Pre-build.** Requirements captured and planned; no application code yet.
+
+Built for the [Project JEDI](https://jedi.newpage.io) TypeScript + Cloudflare
+learning path, across six clusters in order:
+
+| Cluster | Topic | State |
+|---|---|---|
+| A | TypeScript & React fundamentals | Not started |
+| B | App Router, Server Components, Server Actions, zod | Not started |
+| C | Workers, Wrangler, first edge LLM call | Not started |
+| D | D1, KV, R2, Vectorize | Not started |
+| E | Durable Objects, Cron, service bindings, RAG | Not started |
+| F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
+
+## Repo layout
+
+```
+splitr/
+├── CLAUDE.md     instructions for AI agents working in this repo
+├── wiki/         the knowledge base — requirements, tech stack, decisions, plan
+└── src/          the application (from Cluster A onward)
+```
+
+`wiki/` is the project's memory: every requirement with its acceptance criteria,
+every architectural decision with its rejected alternatives, a changelog, and an
+audit log of AI-assisted work. Start at [`wiki/README.md`](./wiki/README.md).
+
+The [build plan](./wiki/todos/build-plan.md) is the task-by-task route through
+the six clusters.
+
+## Stack
+
+TypeScript · React · Next.js (App Router) · Tailwind · zod · Drizzle ORM ·
+Cloudflare Workers, D1, KV, R2, Durable Objects, Workers AI, Vectorize, Cron,
+Turnstile. Runs entirely on the Cloudflare free tier.
+
+## Reference build
+
+The course ships a finished reference build, EdgeLedger, cloned as a **sibling**
+of this repo. It is deliberately **not** consulted during development — the
+course forbids copying from it until the finishing step, and the final
+deliverable is a written comparison between the two, which only exists if they
+were arrived at independently. See
+[ADR-0003](./wiki/decisions/0003-edgeledger-is-comparison-not-template.md).

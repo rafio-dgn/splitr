@@ -1,0 +1,111 @@
+# Cluster C — Cloudflare Workers (Wrangler)
+
+**Part 2 — The edge platform.** The app leaves localhost.
+
+Source: capture §6.
+
+---
+
+### REQ-C.1 — Deploy the Cluster B app to Cloudflare
+
+**Statement:** Deploy the Cluster B app to Cloudflare.
+
+**Acceptance criteria:**
+- [ ] The Next.js app is deployed and reachable at a public URL
+- [ ] It is the same app from Cluster B, not a rebuild
+
+**Source:** capture §6 · **Status:** Not started
+
+**Notes:** The course does not name the adapter. EdgeLedger uses
+`@opennextjs/cloudflare`; the stack list (§12) mentions Pages. Pick one and
+record it as an ADR — this is a genuine decision, not a lookup.
+
+---
+
+### REQ-C.2 — Hello-world Worker, full lifecycle
+
+**Statement:** Spin up a hello-world Worker in its own directory
+(`npm create cloudflare@latest`), then take it through the whole lifecycle.
+
+**Acceptance criteria:**
+- [ ] Created in its own directory via `npm create cloudflare@latest`
+- [ ] `wrangler.jsonc` configured
+- [ ] A secret set with `wrangler secret put`
+- [ ] Hit with `curl`, response captured
+- [ ] Watched with `wrangler tail`
+- [ ] **Torn down cleanly** afterwards
+
+**Source:** capture §6 · **Status:** Not started
+
+**Notes:** The teardown is part of the requirement. This Worker is a throwaway
+exercise, separate from the app.
+
+---
+
+### REQ-C.3 — First LLM call on the edge
+
+**Statement:** Give the Worker a brain: add an `ai` binding and have it answer
+with `@cf/meta/llama-3.1-8b-instruct` — no API key, no SDK.
+
+**Acceptance criteria:**
+- [ ] An `ai` binding is declared in `wrangler.jsonc`
+- [ ] The Worker responds using `@cf/meta/llama-3.1-8b-instruct`
+- [ ] No third-party API key involved
+- [ ] No SDK — the binding directly
+
+**Source:** capture §6 · **Status:** Not started
+
+**Notes:** Exact model id. Cluster E (`REQ-E.4`) builds on this with RAG; Cluster
+D (`REQ-D.4`) adds the embedding model `@cf/baai/bge-base-en-v1.5`.
+
+---
+
+### REQ-C.4 — Three modules that won't run on Workers
+
+**Statement:** Find **three modules** from past projects that won't run on Workers
+(e.g. `bcrypt`, anything importing `fs`, long-lived TCP) and write a one-paragraph
+*why* plus an edge-friendly replacement for each.
+
+**Acceptance criteria:**
+- [ ] Three real modules identified, from actual past projects
+- [ ] One paragraph each explaining *why* it fails on V8 isolates
+- [ ] An edge-friendly replacement named for each
+
+**Source:** capture §6 · **Status:** Not started
+
+**Notes:** A written deliverable, not code. It belongs in the repo — put it in
+the README or a `docs/` note so it survives to the demo. The examples given
+(`bcrypt`, `fs`, long-lived TCP) are hints, not the required three.
+
+---
+
+### REQ-C.5 — Answer the cluster questions
+
+**Statement:** Be able to answer, unaided:
+1. When would you use a Worker instead of a Node.js server?
+2. Why doesn't `bcrypt` run on Workers, and what replaces it?
+3. What is `ctx.waitUntil` for, and what breaks if you forget it?
+4. Secrets vs vars in `wrangler.jsonc`: which goes where, and why?
+5. Where does "cold start ≈ 0" actually break down?
+
+**Acceptance criteria:**
+- [ ] All five answered without notes
+
+**Source:** capture §6 · **Status:** Not started
+
+**Notes:** Q3 and Q4 are the ones that catch people. `ctx.waitUntil` matters for
+`REQ-E.6`'s scheduled handler — work not wrapped in it is killed when the handler
+returns.
+
+---
+
+## Concepts to master
+
+| Concept | What it gets you |
+|---|---|
+| Why V8 isolates ≠ Node | Predict which libraries break on the edge before wiring them in. |
+| Wrangler: dev, deploy, tail | Run and ship Workers from the terminal; debug production the same way. |
+| Fetch handler & `ctx.waitUntil` | Know where a Worker starts and how work continues after the response. |
+| CPU-time billing | Reason about latency budgets, and why long jobs belong in Queues. |
+
+**Optional refresher:** Full intro to Cloudflare application components (30 min).
