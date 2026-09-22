@@ -376,3 +376,228 @@ does, months later, without the original chat transcript.
     `useTransition` does not fix stale closures). Raised in chat.
   - Whether a specific "superpowers" plugin was meant.
   - Better Auth confirmed as the Cluster B auth choice; not yet installed.
+
+## 2026-09-22T00:00Z — Cluster B screen design
+- **Agent:** product-designer (Claude Opus 5, 1M context) via Claude Code
+- **Prompt intent:** Design, not build, the user-facing behaviour for Cluster B —
+  screen inventory, core flows, loading/error/empty coverage, real copy, and a
+  recommendation for the one `REQ-B.2` form.
+- **Inputs read:** `.claude/agents/product-designer.md`,
+  `.claude/skills/req-check/SKILL.md`, `wiki/context/project-brief.md`,
+  `wiki/requirements/clusters/B-routing-and-forms.md`,
+  `wiki/requirements/clusters/01-project-selection.md` §2.5,
+  `wiki/requirements/cross-cutting-rules.md`, `REQ-D.3`/`REQ-D.4`, `REQ-E.1`,
+  `REQ-F.1`/`REQ-F.2`, `wiki/todos/build-plan.md`, `wiki/todos/backlog.md`,
+  `wiki/context/glossary.md`, `src/app/page.tsx`.
+  **Not read:** `../typescript-cloudflare-project/`,
+  `wiki/reference-edgeledger/` — sealed until `REQ-X.6` (ADR-0003).
+- **Actions:** Wrote `wiki/context/screens-cluster-b.md`; appended six proposed
+  (non-requirement) items to `wiki/todos/backlog.md`; refreshed the stale
+  `wiki/context/README.md` index; added a CHANGELOG entry.
+- **Alternatives considered:** The `REQ-B.2` form could have been *create a
+  group* (rejected — one field, proves nothing) or the public *join* form
+  (rejected — it grows a Turnstile token at `REQ-F.2`, which would muddy the
+  curl evidence). **Add an expense** was chosen; it also matches build-plan
+  step B.3.
+- **Assumptions:** Better Auth as the `REQ-B.5` library, per the brief — flagged
+  in the page because the backlog's open question lists Auth.js / Lucia / Clerk
+  and not Better Auth. Single currency GBP for Cluster B, with the `currency`
+  field present in the data shape so multi-currency stays a migration.
+  Equal-share splits, flagged as reversible because the `D.1` decision changes
+  weights, not the field.
+- **Verification:** No code written, so nothing to type-check. Coverage checked
+  by walking every route in §1 against the §5.0 table — thirteen async surfaces,
+  each with a named loading, error and empty state (three of them documented as
+  degenerate empties with the reasoning written out).
+- **Open questions:** (1) `REQ-B.5` auth library — ADR outstanding, and Better
+  Auth is not on the current candidate list. (2) How the `REQ-B.2` invalid
+  payload reaches the server for the curl proof — Server Actions need a
+  generated `Next-Action` id, so a stable route handler may be needed; a backend
+  decision that the evidence depends on. (3) The nightly settle-up reminder
+  (`REQ-E.6`) is required but has no delivery channel designed.
+
+## 2026-09-22T17:25Z — Cluster B authentication and the shared validation layer
+- **Agent:** Claude Opus 5 (1M context) via Claude Code, `backend` agent
+- **Prompt intent:** Add auth from a library as a black box (`REQ-B.5`), build
+  the shared zod schema for the one Cluster B form (`REQ-B.2`), start
+  `src/db/schema.ts`, and settle — as an ADR, before writing code — what Better
+  Auth persists against while Cluster B has no D1. The tech lead's steer was
+  "local SQLite via Drizzle now, same schema throughout, swap the adapter at
+  Cluster C/D", with an explicit instruction to challenge it if wrong.
+- **Inputs read:** `wiki/context/project-brief.md`,
+  `wiki/requirements/clusters/B-routing-and-forms.md`,
+  `wiki/requirements/clusters/D-storing-data.md`,
+  `wiki/requirements/cross-cutting-rules.md`,
+  `wiki/decisions/0006-repo-layout.md`, `wiki/context/screens-cluster-b.md`,
+  `wiki/todos/build-plan.md`, `CLAUDE.md`, `AGENTS.md`. Verified against
+  installed packages: `node_modules/better-auth/**`,
+  `node_modules/@better-auth/{core,drizzle-adapter,kysely-adapter}/**`,
+  `node_modules/drizzle-orm/**`, `node_modules/zod`. Next.js APIs verified in
+  `node_modules/next/dist/docs/01-app/**` (route handlers, mutating data,
+  server-actions, backend-for-frontend, layouts-and-pages). External: fetched
+  better-auth.com installation / drizzle-adapter / next integration pages, and
+  lucia-auth.com. **Not read:** `../typescript-cloudflare-project/` and
+  `wiki/reference-edgeledger/` — sealed (ADR-0003).
+- **Actions:** Installed `better-auth@1.7.5`, `drizzle-orm@0.45.3`,
+  `zod@4.6.5`, `better-sqlite3@13.0.3`, `server-only@0.0.1`, and
+  `drizzle-kit@0.31.11` + `@types/better-sqlite3` as dev deps. Generated
+  `src/db/schema.ts` with `npx auth@1.7.5 generate` and documented it. Wrote the
+  auth instance, client, session helpers, catch-all handler, login/register
+  pages, sign-out button, the `(app)` gate, the shared schema, the
+  `addExpense()` service, the Server Action, the Route Handler and the client
+  form. Created the local database with `drizzle-kit push` (**no** migration
+  files — see below). Wrote ADR-0009, ADR-0010 and the `REQ-B.2` evidence file.
+- **Alternatives considered:**
+  - *Auth library.* Auth.js (no first-party D1; JWT-first pushes decisions back
+    toward hand-rolling), **Lucia — verified deprecated March 2025, now a
+    copy-this-file tutorial, i.e. the opposite of `REQ-B.5`**, Clerk (hosted; it
+    would own the user table, which breaks foreign keys from Splitr's Cluster D
+    tables). Better Auth chosen: first-party Drizzle adapter *and* a first-party
+    D1 dialect, both confirmed in `node_modules`, not recalled.
+  - *Cluster B persistence.* Better Auth's own Kysely + better-sqlite3 (fastest,
+    but the schema would then live in the library's migrator and have to be
+    re-expressed in Drizzle at Cluster D against a live database); local D1 via
+    Wrangler (that is Cloudflare, in a local-only cluster). Local SQLite through
+    Drizzle chosen — one schema definition for the project's life.
+  - *Curl target.* Curling the Server Action directly (rejected: the action id
+    is encrypted and rotated at least every 14 days, so recorded evidence
+    expires); a Route Handler with its own validation (rejected: two
+    implementations means the curl proves nothing about the form); dropping
+    Server Actions entirely (rejected: they are a named Cluster B concept).
+    Chose one service function behind two thin entry points.
+- **Challenge to the steer:** upheld, with one correction. `REQ-D.1` requires
+  the **first migration** to be generated by `drizzle-kit generate` in Cluster D.
+  Generating migrations now would spend that. Cluster B therefore uses
+  `drizzle-kit push`, which writes no migration files, and `drizzle/` stays
+  empty until Cluster D.
+- **Assumptions:** (1) The form is **add an expense** at
+  `/groups/[groupId]/expenses/new`, per the product-designer's spec, with its
+  exact error strings reproduced. (2) Group membership is a **fixture**
+  (`src/lib/groups/membership.ts`), not a table — `group`/`group_member` belong
+  to `REQ-D.1` and `REQ-M.2` forbids jumping ahead. The fixture's signature is
+  the shape the Cluster D query will have. (3) Nothing is persisted by the
+  expense path yet, which the API reports honestly (`HTTP 202`,
+  `"persisted": false`) rather than implying a write. (4) `src/app/(app)/groups/page.tsx`
+  and the form's markup are stubs for the frontend agent to replace; they exist
+  because the auth redirect target has to resolve.
+- **Verification:** `npx tsc --noEmit` → clean (exit 0). `npm run build` →
+  succeeded, 8 routes. `npm run lint` → clean. Ran the app with `next start` on
+  port 3100 (3000 was held by the OrbStack dev container) and exercised it with
+  curl: sign-up returned a session cookie and wrote one `user`, one `session`
+  and one `account` row with a hashed password; sign-in 200; sign-in with a wrong
+  password 401 `INVALID_EMAIL_OR_PASSWORD`; `/groups` without a cookie 307 →
+  `/login`; with a cookie 200; sign-out 200 and the session then read as `null`
+  and `/groups` redirected again. `REQ-B.2`: 10 invalid payloads each returned
+  `HTTP 400` with the exact per-field messages from the design spec, including
+  `paidById` rejected for non-membership — the check the client cannot perform;
+  a valid payload returned `HTTP 202` with `"amount": 4250` (from the string
+  `"42.50"`) and shares `1417 + 1417 + 1416 = 4250`; a non-member group returned
+  404, not 403; a non-JSON body returned 400, not 500. Eleven `[AUDIT]` lines
+  were emitted and all eleven parsed as JSON. Full transcript:
+  `wiki/evidence/REQ-B.2-server-side-validation.md`.
+- **Open questions:** (1) The client half of `REQ-B.2` — per-field errors in a
+  real browser — is written but **not** verified in a browser; `REQ-B.2` is left
+  **In progress** for that reason. (2) The `(app)` layout and `/groups` stub may
+  collide with the frontend agent's route-tree work (`REQ-B.1`); they are
+  deliberately minimal. (3) Better Auth requires an `Origin` header on
+  state-changing endpoints (sign-out returned 403 `MISSING_OR_NULL_ORIGIN`
+  without one) — harmless from a browser, worth knowing before anyone scripts
+  against the auth API. (4) Better Auth's own tables use millisecond timestamps,
+  against Splitr's unix-seconds convention; documented in `src/db/schema.ts` and
+  deliberately not "fixed", because those columns are the library's.
+
+## 2026-09-22T19:10Z — Cluster B route tree and UI
+- **Agent:** frontend (Claude Opus 5, 1M context) via Claude Code
+- **Prompt intent:** "Build the Cluster B route tree and UI" — the routes of the
+  product designer's spec, the main page as a Server Component with no
+  client-side data calls, loading/error/empty everywhere, and close `REQ-B.2`'s
+  last criterion by actually loading the form in a browser.
+- **Inputs read:** `.claude/agents/frontend.md`; the `verify-api`, `req-check`
+  and `wiki-discipline` skills; `CLAUDE.md`; `AGENTS.md`;
+  `wiki/context/screens-cluster-b.md` (whole); `wiki/requirements/clusters/B-routing-and-forms.md`;
+  `wiki/requirements/cross-cutting-rules.md`; the backend agent's
+  `src/lib/{session,schemas/expense,expenses/add-expense,groups/membership}.ts`
+  and its three stubs; `wiki/evidence/REQ-B.2-server-side-validation.md`;
+  `wiki/CHANGELOG.md`, `wiki/AI-AUDIT.md`, `wiki/todos/backlog.md`,
+  `wiki/decisions/README.md`. Next.js APIs checked in
+  `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/{error,loading,not-found}.md`
+  and in the generated `.next/types/routes.d.ts`, not recalled.
+- **Actions:** 15 routes across `src/app/`; six client leaves
+  (`add-expense-form`, `create-group-form`, `join-form`, `login-form`,
+  `register-form`, `copy-link-button`) plus `SectionErrorBoundary` and six
+  `error.tsx` files; shared presentational vocabulary in `src/components/ui.tsx`;
+  `src/lib/money.ts`; read-side fixtures `expense-feed.ts` and pure
+  `balances.ts`; `schemas/group.ts` + `groups/create-group.ts` for the §7.2 form;
+  `groups/current-group.ts` (the `cache()`d resolver). ADR-0011.
+  `wiki/evidence/REQ-B.3-no-client-side-data-calls.md`, and the client half
+  appended to the `REQ-B.2` evidence. Statuses for `REQ-B.1`–`B.4` updated.
+- **Alternatives considered:**
+  1. **Passing the group from the layout to the page.** Impossible in the App
+     Router — layout and page are siblings. Weighed React context (needs a client
+     provider above the page, inverting `REQ-B.3`) and re-querying per page (five
+     call sites to forget). Chose a `cache()`d resolver: ADR-0011.
+  2. **Fixture data for the dashboard** — a demo expense or two, so the balance
+     block and the feed had something to show. Rejected: the backend agent made
+     `persisted: false` the honest Cluster B contract, and inventing rows would
+     have made "No expenses yet" and "Everyone's square" — two states `REQ-B.4`
+     explicitly wants — unreachable instead. The empty app *is* the truth today.
+  3. **A search box on `/search`.** Rejected under §4.5, "do not promise what
+     does not exist"; likewise a disabled "Snap a receipt" button on the
+     add-expense screen.
+  4. **Blocking an invalid submit client-side.** Considered letting every submit
+     reach the server so the client is unambiguously not a control. Kept the
+     block because §7.4 asks for focus-to-first-error on a failed submit, and
+     wrote in the code why it is a courtesy and not a control. The curl evidence
+     is unaffected — it bypasses the form entirely.
+  5. **Leaving the two auth pages as whole-page `"use client"`.** Rejected:
+     `.claude/agents/frontend.md` is explicit that `"use client"` goes on the
+     leaf, never the page. The Better Auth calls were moved unchanged.
+- **Assumptions:** (1) The `(app)` gate is untouchable — extended, never
+  replaced. (2) The invite code `7fK2pQvm` from the spec's copy is a fixture
+  constant, as membership is. (3) A signed-in visitor to a valid invite is
+  always already a member, because the fixture says so, so §4.4's "signed in but
+  not a member" branch is not written — it arrives with `REQ-D.1`. (4) Copy for
+  a missing *expense* was written because none was specified; flagged for the
+  designer.
+- **Verification:** `npx tsc --noEmit` → exit 0. `npm run lint` → exit 0.
+  `npm run build` → succeeded, 15 routes. Then the app was **run and driven**,
+  `next dev -p 3100` (3000 is held by the OrbStack container), with headless
+  Chrome over the DevTools Protocol plus `curl`:
+  - **`REQ-B.3`:** `/groups/grp_demo` made 23 requests on load — document, fonts,
+    stylesheet, JS chunks — and **0 `fetch`, 0 `xhr`**, measured for 3s past
+    `networkidle0`. The same page renders in full with JavaScript disabled, and
+    plain `curl` returns every word it displays.
+    `wiki/evidence/REQ-B.3-no-client-side-data-calls.md`.
+  - **`REQ-B.2` client half:** eleven field states, each message coming from the
+    shared schema — `-5.00`, `12.005`, `0`, `abc`, empty description, empty
+    split, `2099-01-01`, `2019-06-01`. `aria-invalid="true"` and
+    `aria-describedby="amount-error"` pointing at the message. Untouched form →
+    no errors. Invalid submit → **0 requests** and focus on `description`. Valid
+    submit → one `POST`, and `"42.50"` came back as `£42.50` from the integer
+    `4250`. A `paidById` outside the group → the server's message in the same
+    field.
+  - **`REQ-B.4`:** the fixture read was temporarily slowed to 2.5s — the first
+    two seconds of `/groups/grp_demo` carried the group header and actions, 30
+    skeleton elements and "Working out where everyone stands…". A throw injected
+    into the group's read produced "We couldn't work out the balance"; the same
+    throw one level lower, inside the feed, produced "We couldn't load the
+    expenses / The balance above is still accurate" with the balance still on
+    screen. Both instrumentations were reverted and `grep` confirms neither
+    marker remains in `src/`.
+  - **Routing:** `/join/7fK2pQvm` and `/join/bogus` both `200` with no cookie;
+    `/groups` and `/groups/grp_demo` `307 → /login` without one;
+    `/groups/nope` → "We can't find that group"; `/groups/grp_demo/expenses/nope`
+    → "We can't find that expense"; sign-up → `/groups` → group → members →
+    settle → search all rendered.
+- **Open questions:** (1) The dashboard's balance and its expense feed come from
+  the same read, so §5.6's "the balance above is still accurate" fallback is
+  reachable from a render failure but not from a data failure; `REQ-D.1` should
+  give the balance its own aggregate query. (2) Four empty states are coded but
+  unreachable until the fixtures become tables — listed in the changelog. (3)
+  The "Copied." confirmation could not be exercised against a real clipboard:
+  this environment answers `navigator.clipboard.writeText` with
+  `NotAllowedError`. The component's **failure** path was exercised (it stays
+  silent and the link remains selectable, as designed) and its state machine was
+  verified against a stubbed clipboard — "Copy link" → "Copied." → back after
+  2s. Worth one manual click before the demo. (4) A missing expense needed copy
+  the spec does not contain; the product designer should confirm or replace it.

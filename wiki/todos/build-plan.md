@@ -47,18 +47,18 @@ has run once.
 
 ## Cluster B — Routing and forms · *local only*
 
-| # | Task | Req |
-|---|---|---|
-| B.1 | Route tree: public routes + `(app)` group. **Include the public `/join/[invite]` page now** — Turnstile needs it at F.2 | `REQ-B.1` |
-| B.2 | Add auth from a library, black box only (`getSession()` + route gating). **ADR needed** for which | `REQ-B.5` |
-| B.3 | Shared zod schema for the "add expense" form; client + server both validate | `REQ-B.2` |
-| B.4 | **Prove it:** curl an invalid payload straight at the server; capture output | `REQ-B.2` |
-| B.5 | Group dashboard as a Server Component; verify no client-side data calls in devtools | `REQ-B.3` |
-| B.6 | `loading.tsx`, error boundary, empty states | `REQ-B.4` |
-| B.7 | Answer the three cluster questions | `REQ-B.6` |
+| # | Task | Req | Done |
+|---|---|---|---|
+| B.1 | Route tree: public routes + `(app)` group. **Include the public `/join/[invite]` page now** — Turnstile needs it at F.2 | `REQ-B.1` | ✅ 2026-09-22 — 15 routes; `/join/[inviteCode]` built, Turnstile's slot reserved |
+| B.2 | Add auth from a library, black box only (`getSession()` + route gating). **ADR needed** for which | `REQ-B.5` | ✅ 2026-09-22 — Better Auth, [ADR-0009](../decisions/0009-better-auth-on-local-sqlite-via-drizzle.md) |
+| B.3 | Shared zod schema for the "add expense" form; client + server both validate | `REQ-B.2` | ✅ 2026-09-22 — both halves exercised |
+| B.4 | **Prove it:** curl an invalid payload straight at the server; capture output | `REQ-B.2` | ✅ [evidence](../evidence/REQ-B.2-server-side-validation.md) |
+| B.5 | Group dashboard as a Server Component; verify no client-side data calls in devtools | `REQ-B.3` | ✅ [evidence](../evidence/REQ-B.3-no-client-side-data-calls.md) — 0 fetch/xhr |
+| B.6 | `loading.tsx`, error boundary, empty states | `REQ-B.4` | ✅ 2026-09-22 — 6 loading, 6 error + 1 section boundary, 13 surfaces |
+| B.7 | Answer the three cluster questions | `REQ-B.6` | ⬜ outstanding — the only Cluster B task left |
 
 **Exit:** ✅ **Part 1 complete** — typed, working app, running locally, no
-Cloudflare.
+Cloudflare. Reached 2026-09-22 apart from B.7, which is a spoken answer, not code.
 **Watch:** B.1 — designing the public join page now, rather than retrofitting at
 Cluster F, is the single highest-value bit of foresight in this plan.
 

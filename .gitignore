@@ -53,3 +53,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev database (ADR-0009) — disposable, recreated with `npm run db:push`
+.data/

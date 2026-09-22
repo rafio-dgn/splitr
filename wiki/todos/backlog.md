@@ -41,9 +41,10 @@
       [ADR-0005](../decisions/0005-optional-scope.md). Free tier throughout.
 - [ ] `question` `REQ-C.1` — Next.js deploy adapter: `@opennextjs/cloudflare` or
       Cloudflare Pages? §12 names Pages; nothing mandates either. Needs an ADR.
-- [ ] `question` `REQ-B.5` — which auth library? Auth **is** needed (Splitr has
-      groups, so it needs identity). Auth.js / Lucia / Clerk — black box only.
-      Decide at build-plan step B.2; needs an ADR.
+- [x] `question` `REQ-B.5` — which auth library? **Settled: Better Auth 1.7.5**,
+      see [ADR-0009](../decisions/0009-better-auth-on-local-sqlite-via-drizzle.md).
+      (The old candidate list here — Auth.js / Lucia / Clerk — was the course's;
+      Lucia has since been deprecated outright and Better Auth was not on it.)
 - [ ] `question` Which Cloudflare account to `wrangler login` with? Free tier is
       sufficient — Queues is dropped, so no Paid plan is needed at all.
 - [ ] `question` Vision model for receipt OCR — `@cf/meta/llama-3.2-11b-vision-instruct`,
@@ -83,8 +84,11 @@ Easy to lose because they aren't code:
 Several requirements are proven by a demonstration, not by code. Keep the
 commands and their output — they are demo material (`REQ-X.8`):
 
-- [ ] `REQ-B.2` — curl an invalid payload past the client; server rejects it
-- [ ] `REQ-B.3` — devtools showing no client-side data calls on the main page
+- [x] `REQ-B.2` — curl an invalid payload past the client; server rejects it —
+      [`../evidence/REQ-B.2-server-side-validation.md`](../evidence/REQ-B.2-server-side-validation.md)
+      (the browser-side half was added to the same file on 2026-09-22)
+- [x] `REQ-B.3` — devtools showing no client-side data calls on the main page —
+      [`../evidence/REQ-B.3-no-client-side-data-calls.md`](../evidence/REQ-B.3-no-client-side-data-calls.md)
 - [ ] `REQ-D.6` — what D1 transaction limit you hit, and how you avoided it
 - [ ] `REQ-E.2` — replayed idempotency key: one write, identical response
 - [ ] `REQ-E.6` — scheduled handler run twice, identical result
@@ -99,3 +103,45 @@ commands and their output — they are demo material (`REQ-X.8`):
 - [ ] `stretch` Per-item split assignment (who had the pad thai) rather than
       equal shares — richer use of the OCR output. Decide at D.1.
 - [ ] `stretch` Multi-currency.
+
+## Proposed from the Cluster B screen design — not requirements
+
+Raised while writing [`../context/screens-cluster-b.md`](../context/screens-cluster-b.md).
+Every one of these is something a real bill-splitter would want and **no course
+requirement asks for**, so none of them is in the spec. Logged here rather than
+built (`CLAUDE.md` §6, product-designer rules).
+
+- [ ] `proposed` **Account settings** — change your own name, email or password.
+      No screen exists for this; Better Auth may or may not give one for free.
+- [ ] `proposed` **Edit or delete an expense.** Currently an expense is
+      write-once. The first typo'd amount will demand this.
+- [ ] `proposed` **Leave a group / remove a member / delete a group.**
+      Membership is currently add-only, which makes the "someone selected isn't
+      in this group any more" error in the add-expense form unreachable.
+- [ ] `proposed` **Invite expiry, revocation, and a regenerate-link control.**
+      The invite link is currently permanent. The invalid-invite copy is written
+      vaguely on purpose so adding expiry later needs no copy change.
+- [ ] `proposed` **Email the invite.** Splitr produces a copyable link only; the
+      user sends it themselves. Deliberate for now — it avoids email
+      infrastructure nothing asks for.
+- [ ] `proposed` **Notifications** of any kind, in-app or push. Note the nightly
+      settle-up reminder (`REQ-E.6`) is required and has no delivery channel
+      designed — worth resolving when Cluster E is reached.
+
+## Raised while building the Cluster B routes — not requirements
+
+- [ ] `proposed` **Copy for a "we can't find that expense" 404.**
+      `screens-cluster-b.md` writes §5.7 for a missing *group* but nothing for a
+      missing expense. `expenses/[expenseId]/not-found.tsx` currently follows
+      §5.7's shape; the product designer should confirm or replace it.
+- [ ] `proposed` **§4.6 A's pairwise breakdown** — "Marta owes you £12.00 · Sam
+      owes you £12.00". That is debt simplification, i.e. settlement arithmetic,
+      so it belongs with `REQ-E.1`. The headline sentence and §4.6 B's per-member
+      positions are built; the pairwise line is not.
+- [ ] `proposed` **Give the balance its own query at `REQ-D.1`.** Today the
+      dashboard's balance and its expense feed come from one read, so §5.6's
+      "the balance above is still accurate" fallback cannot be reached from a
+      data failure — only from a render failure inside the feed.
+- [ ] `proposed` **Render the invite link on the members error state.** §5.8 asks
+      for it; the invite code is not a route param yet, so there is no honest way
+      to show it when the group read has failed. Revisit when invites are rows.

@@ -2,17 +2,19 @@
 
 Why the system hangs together the way it does.
 
-> **Mostly empty by design.** The project idea is not chosen yet (`REQ-P.1`), so
-> there is no domain model and no architecture to document. Both get written
-> *as we decide them*, not copied from anywhere.
+> **Filled as decisions are made.** The project idea is settled (`REQ-P.1` →
+> Splitr) and Cluster B's screens are designed. The domain model and
+> architecture are still open — they get written *as we decide them*, not
+> copied from anywhere.
 
 | Page | Covers | State |
 |---|---|---|
 | [`reference-project.md`](./reference-project.md) | What EdgeLedger is, and the rule against reading it | Written |
 | [`glossary.md`](./glossary.md) | Terms used without explanation elsewhere | Written |
-| `project-brief.md` | What we're building, who for, the contested write | ⛔ Blocked on `REQ-P.1` |
-| `domain-model.md` | Our entities, invariants, business rules | ⛔ Blocked on `REQ-P.1` |
-| `architecture.md` | Our topology, trust boundaries, request paths | ⛔ Blocked on `REQ-P.1` |
+| [`project-brief.md`](./project-brief.md) | What we're building, who for, the contested write | Written ([ADR-0004](../decisions/0004-project-is-splitr.md)) |
+| [`screens-cluster-b.md`](./screens-cluster-b.md) | Cluster B screens, flows, copy and state coverage (`REQ-B.1`, `REQ-B.4`) | Written |
+| `domain-model.md` | Our entities, invariants, business rules | Pending — written as Cluster D settles the schema |
+| `architecture.md` | Our topology, trust boundaries, request paths | Pending — written as Cluster E settles the topology |
 
 ## Why the previous domain-model and architecture pages are gone
 

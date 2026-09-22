@@ -39,3 +39,6 @@ obvious in hindsight.
 | [0006](./0006-repo-layout.md) | Next.js at the repo root; Workers in `workers/` | Accepted |
 | [0007](./0007-docker-for-local-development.md) | Docker for local development, via OrbStack | Accepted |
 | [0008](./0008-agent-team-and-skills.md) | A dispatching agent team, with skills encoding our failure modes | Accepted |
+| [0009](./0009-better-auth-on-local-sqlite-via-drizzle.md) | Better Auth, on local SQLite through Drizzle, rebound to D1 at Cluster D | Accepted |
+| [0010](./0010-validation-entry-points.md) | One validation path, two entry points — the Route Handler is the curl target | Accepted |
+| [0011](./0011-one-membership-check-per-request.md) | One membership check per request, in the group layout, memoised with React `cache()` | Accepted |
