@@ -10,11 +10,11 @@ import "server-only";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { auth } from "./auth";
+import { getAuth, type Auth } from "./auth";
 
 /** What Better Auth returns: the session plus its user, or `null`. */
 export type AppSession = NonNullable<
-	Awaited<ReturnType<typeof auth.api.getSession>>
+	Awaited<ReturnType<Auth["api"]["getSession"]>>
 >;
 
 /**
@@ -25,6 +25,9 @@ export type AppSession = NonNullable<
  * (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/headers.md`).
  */
 export async function getSession(): Promise<AppSession | null> {
+	// `getAuth()` rather than a module-scope `auth`: the instance is built around
+	// a D1 binding, which only exists once a request is in flight (ADR-0015).
+	const auth = await getAuth();
 	const session = await auth.api.getSession({ headers: await headers() });
 	return session ?? null;
 }

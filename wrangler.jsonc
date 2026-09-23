@@ -1,0 +1,71 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+
+	// Splitr, deployed as a Worker via the OpenNext adapter (ADR-0014).
+	//
+	// `main` is not a file we wrote: `opennextjs-cloudflare build` consumes the
+	// output of a real `next build` and emits `.open-next/worker.js`. Both paths
+	// below are build artefacts and are gitignored.
+	"name": "splitr",
+	"main": ".open-next/worker.js",
+
+	// Today's date. Pinning it is the point: Workers ships behaviour changes
+	// behind this date, so a fixed value means a deploy six months from now
+	// behaves like this one. Raise it deliberately, never incidentally.
+	"compatibility_date": "2026-09-23",
+
+	// nodejs_compat              — OpenNext requires the Node.js runtime, not the
+	//                              Edge runtime (ADR-0014). Without this the
+	//                              Worker fails to start.
+	// global_fetch_strictly_public — makes `fetch()` to our own hostname go out
+	//                              and come back like any public request rather
+	//                              than short-circuiting internally, so a route
+	//                              that fetches its own origin behaves the same
+	//                              locally and deployed.
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+	// Static assets produced by `next build`, served without invoking the Worker.
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+
+	"observability": {
+		// Required for `wrangler tail` to show anything useful, which REQ-F.4
+		// depends on and REQ-C.2 rehearses on the throwaway Worker.
+		"enabled": true
+	},
+
+	// The auth store, and later Splitr's whole relational core (REQ-D.1).
+	// Bound as DB, not as "splitr": the binding is what the code says, and the
+	// code should not have to know the database is called after the product.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "splitr",
+			"database_id": "bcbbea37-10b1-44d9-a8e6-4ad0103334a8"
+		}
+	],
+
+	// Splitr's one public origin. Explicit rather than Wrangler's default,
+	// which it warns about on every deploy.
+	"workers_dev": true,
+
+	// Off. A preview URL is a *different origin*, and Better Auth refuses every
+	// browser request whose Origin does not match BETTER_AUTH_URL — so preview
+	// deployments would serve pages whose sign-in cannot work. Nothing needs
+	// them yet; turning them on is a decision for when something does.
+	"preview_urls": false,
+
+	"vars": {
+		// The deployed origin, and Better Auth's trusted origin. A URL is not a
+		// secret, so it lives here, in review, not in `wrangler secret put`.
+		// Without it the deployed app answers every browser sign-in with
+		// 403 INVALID_ORIGIN — measured on the first deploy, 2026-09-23: F-1
+		// again, on a new host (src/lib/auth.ts, ADR-0013).
+		"BETTER_AUTH_URL": "https://splitr.raffaele-digennaro.workers.dev"
+	}
+
+	// BETTER_AUTH_SECRET is a secret: set with `wrangler secret put`, never
+	// here (CLAUDE.md §6).
+}

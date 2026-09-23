@@ -45,3 +45,4 @@ obvious in hindsight.
 | [0012](./0012-test-the-invariants-and-the-money-nothing-else.md) | Test the invariants of the contested write and the money arithmetic — nothing else | Accepted |
 | [0013](./0013-base-url-is-the-request-host-not-a-port-in-env.md) | Better Auth's local base URL is the request's host, not a port in `.env` | Accepted |
 | [0014](./0014-opennext-as-the-deploy-adapter.md) | `@opennextjs/cloudflare` as the deploy adapter, not Pages and not vinext | Accepted |
+| [0015](./0015-one-database-driver-d1-everywhere.md) | One database driver: D1 everywhere, from Cluster C | Accepted |

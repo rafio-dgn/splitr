@@ -12,14 +12,15 @@ FROM node:24-slim
 
 # tini      — correct signal handling, so Ctrl-C actually stops the dev server
 #             instead of leaving a zombie holding port 3000.
-# python3,   — better-sqlite3 is a NATIVE module: npm ci runs node-gyp rebuild,
-# make, g++   which needs a C/C++ toolchain. Without these the build dies with
-#             `gyp ERR! find Python`. This is local-dev only; better-sqlite3
-#             disappears at REQ-D.1 when D1 replaces it, and this block should
-#             be removed with it.
+#
+# The python3/make/g++ toolchain that used to be here is gone: it existed only
+# to compile better-sqlite3, which ADR-0015 removed. Local dev now reaches D1
+# through workerd, started by `initOpenNextCloudflareForDev()` in next.config.ts;
+# workerd ships as a prebuilt glibc binary, which is one more reason this image
+# is Debian slim and not Alpine.
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
-		tini ca-certificates python3 make g++ \
+		tini ca-certificates \
 	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

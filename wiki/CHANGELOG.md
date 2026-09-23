@@ -445,3 +445,22 @@ shape that triggers them. They are listed rather than ticked.
   `1.0.0-beta.11` and replaces the Next.js compiler.
 - **Why:** `REQ-C.1` leaves the adapter open and asks for an ADR.
 - **Decision:** [ADR-0014](./decisions/0014-opennext-as-the-deploy-adapter.md)
+
+## 2026-09-23 — Splitr deployed to Cloudflare Workers; D1 replaces better-sqlite3
+- **Type:** changed
+- **Scope:** `wrangler.jsonc`, `open-next.config.ts`, `next.config.ts`,
+  `src/db/index.ts`, `src/lib/auth.ts`, `src/lib/session.ts`,
+  `src/app/api/auth/[...all]/route.ts`, `drizzle.config.ts`, `package.json`,
+  `eslint.config.mjs`, `Dockerfile.dev`, `.env.example`
+- **What:** Created D1 `splitr` (WEUR) with the four Better Auth tables from
+  `drizzle-kit export` DDL, keeping the first generated migration unspent.
+  `db` and `auth` are now per-request async accessors (`getDb()`, `getAuth()`)
+  memoised per binding. `better-sqlite3` was removed, along with the dev
+  image's C toolchain. The bindings types are generated without runtime types,
+  which collided with the DOM lib. Added `BETTER_AUTH_URL` as a `var`, made
+  `workers_dev: true` and `preview_urls: false` explicit, and set
+  `BETTER_AUTH_SECRET` with `wrangler secret put`. Deployed to
+  https://splitr.raffaele-digennaro.workers.dev.
+- **Why:** `REQ-C.1`. `better-sqlite3` can't load on a V8 isolate.
+- **Decision:** [ADR-0015](./decisions/0015-one-database-driver-d1-everywhere.md);
+  timing amends [ADR-0009](./decisions/0009-better-auth-on-local-sqlite-via-drizzle.md)

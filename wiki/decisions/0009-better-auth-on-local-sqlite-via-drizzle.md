@@ -1,6 +1,6 @@
 # ADR-0009: Better Auth, persisted on local SQLite through Drizzle, rebound to D1 at Cluster D
 
-- **Status:** Accepted
+- **Status:** Accepted. Timing amended by [ADR-0015](./0015-one-database-driver-d1-everywhere.md): the D1 swap happened at Cluster C, not D
 - **Date:** 2026-09-22
 - **Deciders:** AI (backend), pending human review
 - **Requirement:** `REQ-B.5`, `REQ-B.2`, `REQ-D.1`, `REQ-M.2`

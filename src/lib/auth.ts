@@ -19,7 +19,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 
-import { db } from "@/db";
+import { getDb, type Db } from "@/db";
 import * as schema from "@/db/schema";
 
 /**
@@ -65,62 +65,114 @@ const deployedBaseURL =
 		? configuredBaseURL
 		: undefined;
 
-if (configuredBaseURL !== undefined && deployedBaseURL === undefined) {
+// An *empty* value is not a misconfiguration: it is how `.env` switches off the
+// deployed origin that `wrangler.jsonc` sets in `vars`, which local workerd
+// (`npm run preview`) would otherwise inherit and refuse its own localhost with.
+// Only a non-empty loopback value is the F-1 mistake worth shouting about.
+if (
+	configuredBaseURL !== undefined &&
+	configuredBaseURL !== "" &&
+	deployedBaseURL === undefined
+) {
 	console.warn(
 		`[splitr] Ignoring BETTER_AUTH_URL=${configuredBaseURL}: a loopback base URL pins Better Auth's trusted origin to one port and breaks every other one (QA finding F-1). Local development needs no BETTER_AUTH_URL — see src/lib/auth.ts.`,
 	);
 }
 
-export const auth = betterAuth({
-	/**
-	 * Better Auth derives its **trusted origin** from `baseURL`, and refuses any
-	 * browser request whose `Origin` header does not match it
-	 * (`403 INVALID_ORIGIN`). A hard-coded `BETTER_AUTH_URL=http://localhost:3000`
-	 * therefore broke every browser-originated auth call on :3100 — QA finding
-	 * F-1. Verified in `node_modules/better-auth/dist/api/middlewares/origin-check.mjs`
-	 * (`validateOrigin`) and `.../dist/context/helpers.mjs` (`getTrustedOrigins`).
-	 *
-	 * Two ports are legitimately in play and neither is going away: the OrbStack
-	 * container publishes **3000** (ADR-0007) and native `next dev` uses **3100**.
-	 * Pinning either one only moves the breakage, so locally nothing is pinned:
-	 * the dynamic `baseURL` form (a 1.7.5 feature — `DynamicBaseURLConfig` in
-	 * `node_modules/@better-auth/core/dist/types/init-options.d.mts`) resolves the
-	 * base URL from the request's `Host` header, and `getTrustedOrigins` derives
-	 * the trusted origins from `allowedHosts`. Any loopback port works, including
-	 * ports nobody has thought of yet, and there is no value to keep in step.
-	 *
-	 * This is an allowlist, not "trust the Host header": the host must match a
-	 * pattern below, `x-forwarded-host` is ignored (we never set
-	 * `advanced.trustedProxyHeaders`), and the wildcard covers only the port —
-	 * `http://sub.localhost:3100` and `https://localhost:3100` are both rejected,
-	 * checked against the installed matcher.
-	 */
-	baseURL: deployedBaseURL ?? {
-		allowedHosts: ["localhost:*", "127.0.0.1:*"],
-		protocol: "http",
-		// Only for a host that is neither: a LAN IP, a tunnel, a forged `Host`
-		// header. Without it Better Auth throws and a gated page 500s (measured);
-		// with it the page renders and the browser's untrusted origin is refused
-		// by the origin check, which is the honest outcome. Serving Splitr on a
-		// non-loopback host is a deployment — set `BETTER_AUTH_URL`.
-		fallback: "http://localhost",
-	},
-	database: drizzleAdapter(db, {
-		// Stays "sqlite" when this becomes D1 — D1 *is* SQLite. ADR-0009.
-		provider: "sqlite",
-		schema,
-		// D1 has no interactive transactions. Leaving this off (the default)
-		// means Cluster D inherits nothing to undo.
-		transaction: false,
-	}),
-	emailAndPassword: {
-		enabled: true,
-		// Library-enforced. We do not implement any part of this.
-		minPasswordLength: 12,
-	},
-	// `nextCookies()` must be the last plugin: it flushes Set-Cookie headers
-	// produced inside Server Actions, which Next.js otherwise drops.
-	plugins: [nextCookies()],
-});
+/**
+ * Builds the Better Auth instance for one database handle.
+ *
+ * This used to be a module-scope `export const auth = betterAuth({...})`. It
+ * cannot be, now that the database is D1: a D1 binding only exists once a
+ * request is being handled, so there is nothing to pass the adapter at
+ * module-evaluation time (ADR-0015). The configuration below is otherwise
+ * unchanged — the black box is still a black box (`REQ-B.5`).
+ */
+function createAuth(db: Db) {
+	return betterAuth({
+		/**
+		 * Better Auth derives its **trusted origin** from `baseURL`, and refuses any
+		 * browser request whose `Origin` header does not match it
+		 * (`403 INVALID_ORIGIN`). A hard-coded `BETTER_AUTH_URL=http://localhost:3000`
+		 * therefore broke every browser-originated auth call on :3100 — QA finding
+		 * F-1. Verified in `node_modules/better-auth/dist/api/middlewares/origin-check.mjs`
+		 * (`validateOrigin`) and `.../dist/context/helpers.mjs` (`getTrustedOrigins`).
+		 *
+		 * Two ports are legitimately in play and neither is going away: the OrbStack
+		 * container publishes **3000** (ADR-0007) and native `next dev` uses **3100**.
+		 * Pinning either one only moves the breakage, so locally nothing is pinned:
+		 * the dynamic `baseURL` form (a 1.7.5 feature — `DynamicBaseURLConfig` in
+		 * `node_modules/@better-auth/core/dist/types/init-options.d.mts`) resolves the
+		 * base URL from the request's `Host` header, and `getTrustedOrigins` derives
+		 * the trusted origins from `allowedHosts`. Any loopback port works, including
+		 * ports nobody has thought of yet, and there is no value to keep in step.
+		 *
+		 * This is an allowlist, not "trust the Host header": the host must match a
+		 * pattern below, `x-forwarded-host` is ignored (we never set
+		 * `advanced.trustedProxyHeaders`), and the wildcard covers only the port —
+		 * `http://sub.localhost:3100` and `https://localhost:3100` are both rejected,
+		 * checked against the installed matcher.
+		 */
+		baseURL: deployedBaseURL ?? {
+			allowedHosts: ["localhost:*", "127.0.0.1:*"],
+			protocol: "http",
+			// Only for a host that is neither: a LAN IP, a tunnel, a forged `Host`
+			// header. Without it Better Auth throws and a gated page 500s (measured);
+			// with it the page renders and the browser's untrusted origin is refused
+			// by the origin check, which is the honest outcome. Serving Splitr on a
+			// non-loopback host is a deployment — set `BETTER_AUTH_URL`.
+			fallback: "http://localhost",
+		},
+		database: drizzleAdapter(db, {
+			// Stays "sqlite" when this becomes D1 — D1 *is* SQLite. ADR-0009.
+			provider: "sqlite",
+			schema,
+			// D1 has no interactive transactions. Leaving this off (the default)
+			// means Cluster D inherits nothing to undo.
+			transaction: false,
+		}),
+		emailAndPassword: {
+			enabled: true,
+			// Library-enforced. We do not implement any part of this.
+			minPasswordLength: 12,
+		},
+		// `nextCookies()` must be the last plugin: it flushes Set-Cookie headers
+		// produced inside Server Actions, which Next.js otherwise drops.
+		plugins: [nextCookies()],
+	});
+}
 
-export type Session = typeof auth.$Infer.Session;
+/** The configured Better Auth instance. */
+export type Auth = ReturnType<typeof createAuth>;
+
+/**
+ * One instance per database handle.
+ *
+ * Better Auth builds its whole route table when constructed, so doing that on
+ * every request would be waste, not safety. `getDb()` already returns one handle
+ * per binding per isolate, which makes the handle the natural key: same handle,
+ * same instance.
+ */
+const instances = new WeakMap<Db, Auth>();
+
+/**
+ * Better Auth, for the current request.
+ *
+ * Every consumer awaits this rather than importing a ready-made `auth`. There
+ * are two, and there should not be a third: `src/lib/session.ts` and the
+ * catch-all route handler that mounts Better Auth's own endpoints.
+ */
+export async function getAuth(): Promise<Auth> {
+	const db = await getDb();
+
+	const existing = instances.get(db);
+	if (existing !== undefined) {
+		return existing;
+	}
+
+	const auth = createAuth(db);
+	instances.set(db, auth);
+	return auth;
+}
+
+export type Session = Auth["$Infer"]["Session"];
