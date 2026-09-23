@@ -46,3 +46,4 @@ obvious in hindsight.
 | [0013](./0013-base-url-is-the-request-host-not-a-port-in-env.md) | Better Auth's local base URL is the request's host, not a port in `.env` | Accepted |
 | [0014](./0014-opennext-as-the-deploy-adapter.md) | `@opennextjs/cloudflare` as the deploy adapter, not Pages and not vinext | Accepted |
 | [0015](./0015-one-database-driver-d1-everywhere.md) | One database driver: D1 everywhere, from Cluster C | Accepted |
+| [0016](./0016-ai-integration-strategy.md) | What the AI does in Splitr, and where it is allowed to reach | Accepted |

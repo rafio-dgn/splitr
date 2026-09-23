@@ -71,7 +71,7 @@ Cluster F, is the single highest-value bit of foresight in this plan.
 | C.1 | Choose the deploy adapter: OpenNext vs Pages. **ADR** | `REQ-C.1` | ✅ 2026-09-23. OpenNext, [ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md). A third option, vinext, was also weighed |
 | C.2 | Deploy the Cluster B app to Cloudflare | `REQ-C.1` | ✅ 2026-09-23. [Live](https://splitr.raffaele-digennaro.workers.dev); D1 brought forward for the auth tables, [ADR-0015](../decisions/0015-one-database-driver-d1-everywhere.md); [evidence](../evidence/REQ-C.1-deployed.md) |
 | C.3 | Throwaway hello-world Worker: `npm create cloudflare@latest`, configure `wrangler.jsonc`, `wrangler secret put`, curl it, `wrangler tail` it | `REQ-C.2` | ⬜ |
-| C.4 | Add an `ai` binding; answer with `@cf/meta/llama-3.1-8b-instruct` | `REQ-C.3` | ⬜ |
+| C.4 | Add an `ai` binding; answer with `@cf/meta/llama-3.1-8b-instruct`. **Per [ADR-0016](../decisions/0016-ai-integration-strategy.md) §12:** a no-RAG line-item categoriser over the closed taxonomy, measuring latency, output format and failure modes. It's also the eval's no-RAG baseline | `REQ-C.3` | ⬜ |
 | C.5 | **Tear the throwaway Worker down cleanly** | `REQ-C.2` | ⬜ |
 | C.6 | Write up three modules that won't run on Workers + replacements → commit to the repo | `REQ-C.4` | ⬜ |
 | C.7 | Answer the five cluster questions | `REQ-C.5` | ⬜ |
@@ -86,14 +86,14 @@ deliverable that is easy to forget.
 
 | # | Task | Req |
 |---|---|---|
-| D.1 | Design the D1 schema in `src/db/schema.ts` with Drizzle: users, groups, members, expenses, expense_items, settlements. **ADR** for the split model (equal shares vs per-item) | `REQ-D.1` |
+| D.1 | Design the D1 schema in `src/db/schema.ts` with Drizzle: users, groups, members, expenses, expense_items, settlements. **ADR** for the split model (equal shares vs per-item). Item `category` is constrained to the 12 keys, default `uncategorised` ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §4). **The auth tables already exist in D1**, so the first migration must not recreate them (ADR-0015) | `REQ-D.1` |
 | D.2 | `drizzle-kit generate`, apply the migration | `REQ-D.1` |
 | D.3 | Wire expenses + settlements through D1; group balance computed from them | `REQ-D.1` |
 | D.4 | KV: hot per-group balance snapshot, rebuildable from D1 | `REQ-D.2` |
 | D.5 | R2 **presigned URL** flow: Worker issues the URL, client uploads the photo direct, only the key is stored | `REQ-D.3` |
-| D.6 | Vision model itemises the receipt → `expense_items`. **ADR** for model choice | `REQ-D.3`, ADR-0004 |
-| D.7 | Vectorize: embed expenses/items with `@cf/baai/bge-base-en-v1.5`, upsert | `REQ-D.4` |
-| D.8 | `/search` route — semantic search over past expenses. **Show it beats keyword** | `REQ-D.4` |
+| D.6 | Vision model itemises the receipt into a **draft the user confirms**, never straight into the ledger. **Spike every available vision model on the same ~10 real English receipts**, then write the ADR for the choice ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §2, §10). Manual entry stays the fallback | `REQ-D.3`, ADR-0004 |
+| D.7 | Vectorize: **one vector per line item** with `@cf/baai/bge-base-en-v1.5`, `groupId` in the metadata, upsert. Plus the **seed corpus** of about 50 labelled example items for the RAG cold start ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §7, §8) | `REQ-D.4` |
+| D.8 | `/search` route: semantic search over past expenses, **scoped to the viewer's group**, with item hits grouped back to their expense. **Show it beats keyword** with about 10 labelled queries, semantic vs keyword ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §9) | `REQ-D.4` |
 | D.9 | Let a schema change arise naturally; migrate; update call sites | `REQ-D.5` |
 | D.10 | Answer the three cluster questions | `REQ-D.6` |
 
@@ -114,8 +114,8 @@ you hit.
 | E.4 | DO alarm evicts expired idempotency entries | `REQ-E.2` |
 | E.5 | `[AUDIT]` line on every mutation: actor, action, target, timestamp, outcome | `REQ-E.3`, `REQ-M.5` |
 | E.6 | Call the DO from the Server Action via **service binding**; DO worker `workers_dev: false` | `REQ-E.5` |
-| E.7 | AI Worker doing RAG: retrieve similar expenses from Vectorize → generate with Llama. `workers_dev: false`, shared-secret check, **fallback so failure never blocks the write** | `REQ-E.4`, `REQ-M.7` |
-| E.8 | `scheduled()` handler — nightly settle-up reminders + uncategorised-item backfill, UPSERT-on-conflict | `REQ-E.6` |
+| E.7 | AI Worker doing RAG **line-item categorisation**: retrieve the group's similar items (seed corpus as fallback) → Llama picks from the closed list → zod-validated. Started with `ctx.waitUntil` *after* the write. `workers_dev: false`, shared-secret check, **fallback so failure never blocks the write**. **Then move every model call behind it** (embeddings, OCR) and remove the app Worker's `ai` binding. Run the ~30-item eval, with and without RAG ([ADR-0016](../decisions/0016-ai-integration-strategy.md)) | `REQ-E.4`, `REQ-M.7` |
+| E.8 | `scheduled()` handler: nightly settle-up reminders, and a backfill of items still `uncategorised` (**never** `other`), UPSERT-on-conflict | `REQ-E.6` |
 | E.9 | **Run the cron twice; prove identical result.** Add a manual trigger | `REQ-E.6` |
 | E.10 | Answer the three cluster questions — Q1 in one sentence | `REQ-E.7` |
 
@@ -195,6 +195,6 @@ Demo material. Capture at the moment it works, not afterwards:
 | Auth library | B.2 | `REQ-B.5` |
 | Deploy adapter — OpenNext vs Pages | C.1 | `REQ-C.1` |
 | Split model — equal shares vs per-item | D.1 | `REQ-D.1` |
-| Vision model for receipt OCR | D.6 | ADR-0004 |
+| Vision model for receipt OCR, chosen by spike ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §10) | D.6 | ADR-0004 |
 | DO owns the balance, or only arbitrates | E.1 | `REQ-E.1` |
 | Test strategy | before A.1 | `../guidelines/testing.md` |

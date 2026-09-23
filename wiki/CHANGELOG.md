@@ -479,3 +479,21 @@ shape that triggers them. They are listed rather than ticked.
   Updated the README's status table and run instructions.
 - **Why:** `CLAUDE.md` §5.
 - **Decision:** none
+
+## 2026-09-23 — AI integration strategy, decided with Raffaele
+- **Type:** docs
+- **Scope:** `wiki/decisions/0016-ai-integration-strategy.md`, `wiki/decisions/README.md`,
+  `wiki/todos/build-plan.md`
+- **What:** Recorded twelve decisions from three rounds of structured questions.
+  RAG categorises line items. Money always needs a human, and OCR output is a
+  confirmed draft. Everything is in English. The taxonomy is a closed list of
+  11 categories plus a system-only `uncategorised`. Categorisation runs after
+  the write via `waitUntil`, with the cron as backfill. Every model call moves
+  behind the AI Worker at E. There's one vector per line item. Retrieval checks
+  the group first, then a seed corpus, and never crosses groups. A labelled eval
+  set is the evidence. The vision model is chosen by a spike at D.6. The data is
+  a synthetic seed plus a few real receipts. C.4 spikes the real prompt. The
+  build plan's C.4, D.1, D.6, D.7, D.8, E.7 and E.8 rows now carry these
+  decisions.
+- **Why:** Raffaele asked that no AI decision be taken without him. `REQ-M.4`.
+- **Decision:** [ADR-0016](./decisions/0016-ai-integration-strategy.md)
