@@ -26,7 +26,8 @@ the real pasted output, and the date.
   failure captured on the first deploy, before `BETTER_AUTH_URL` was set.
 - [`REQ-C.2-throwaway-worker.md`](./REQ-C.2-throwaway-worker.md): the throwaway
   `splitr-hello` Worker. Created with C3, configured, a secret put (500 before,
-  200 after), curled, and tailed. **The teardown is still owed** at C.5.
+  200 after), curled, tailed, and **torn down**, with its state recorded before
+  and after.
 - [`REQ-C.3-first-edge-llm-call.md`](./REQ-C.3-first-edge-llm-call.md): the
   first Llama call through an `ai` binding, and the categorisation spike. 14/15
   on clean descriptions, **2/10 on receipt shorthand**, 15/15 stable, and one

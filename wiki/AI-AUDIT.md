@@ -958,3 +958,34 @@ does, months later, without the original chat transcript.
   - Whether to tell the course owners about the dead model.
   - Committing C.3 and C.4, which aren't committed yet.
   - The C.5 teardown is next.
+
+## 2026-09-23T11:40Z — Commits for the AI work, push, and the C.5 teardown
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "Create the respective commits and let's continue."
+- **Actions:**
+  - Made four commits, one per concern: `d15c017` config, `43aed5f` ADR-0016,
+    `2dcc6df` ADR-0017, `f18efcd` Worker plus evidence.
+  - Four files carried changes for several commits (CHANGELOG, ADR index,
+    ADR-0016's status line, build plan, C-workers). Their intermediate
+    versions were rebuilt and staged per commit. The build-plan intermediate
+    was checked against HEAD: exactly the 8 rows ADR-0016 changed.
+  - Pushed `ffd60b3..f18efcd`.
+  - Teardown: recorded the before state; ran `wrangler delete --dry-run`, then
+    `wrangler delete`; checked the URL, deployments, secrets and Splitr
+    afterwards; deleted `workers/hello/` and the scratch files.
+- **Alternatives considered:**
+  - `wrangler delete --force` was rejected. It overrides dependent-Worker
+    checks, and needing it would have meant something depended on a
+    throwaway.
+  - Keeping an empty `workers/` directory was rejected; git doesn't track
+    empty directories, and Cluster E recreates it.
+- **Assumptions:** "continue" meant C.5, the next build-plan step. It
+  destroys only a throwaway Worker the plan always said to delete.
+- **Verification:**
+  - URL: 404 `1042`. `deployments list`: `10007`. `secret list`: not found.
+  - Splitr: 200.
+  - Root `tsc` and `eslint`: clean.
+- **Open questions:**
+  - C.6 needs Raffaele to name three modules from his own past projects; an
+    agent can't supply those.
+  - This teardown isn't committed yet.

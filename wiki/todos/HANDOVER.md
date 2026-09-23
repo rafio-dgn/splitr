@@ -12,7 +12,7 @@ mid-way through the second, after `REQ-C.1`. Read this, then
 | Live | **https://splitr.raffaele-digennaro.workers.dev** (Worker `splitr`, D1 `splitr`, WEUR) |
 | Cluster A | ✅ Done |
 | Cluster B | 🟡 4/6 — see below |
-| Cluster C | 🟡 `REQ-C.1` ✅ · `REQ-C.3` ✅ (on `-fp8`: the course's model is deprecated, ADR-0017) · `REQ-C.2` 5/6: `splitr-hello` is **live and must be torn down** at C.5, which is next |
+| Cluster C | 🟡 `REQ-C.1` ✅ · `REQ-C.2` ✅ (torn down) · `REQ-C.3` ✅ (on `-fp8`: the course's model is deprecated, ADR-0017) · next is C.6, the three-modules write-up (`REQ-C.4`) |
 
 Splitr runs on Workers via OpenNext ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
 **Accounts persist in D1**, locally and deployed. `better-sqlite3` is gone
@@ -95,12 +95,16 @@ of that mattered — a QA agent that silently repairs things destroys the signal
 
 ## Next real work
 
-The rest of Cluster C. The throwaway Worker (`workers/hello/`, deployed as
-`splitr-hello`) exists (C.3 ✅) and has its Llama call (C.4 ✅). Next,
-**tear it down**: delete the deployed Worker *and* the directory (C.5). Then
-write up
-three modules that won't run on Workers (C.6, `REQ-C.4`, a written deliverable
-that's easy to forget).
+The rest of Cluster C is written, not coded:
+
+- **C.6, `REQ-C.4`:** three modules *from Raffaele's own past projects* that
+  won't run on Workers, each with one paragraph on why and an edge-friendly
+  replacement. It must be **his** projects, so ask him which ones; an agent
+  can't know them.
+- **C.7, `REQ-C.5`:** five spoken questions. The evidence files now hold
+  concrete material for Q2 (`timingSafeEqual` as a Workers-only Web Crypto
+  API), Q4 (the `GREETING` var vs the `HELLO_KEY` secret) and Q5 (served from
+  `MAD`, data in `WEUR`).
 
 ## New since 2026-09-23 — read before touching the deploy
 

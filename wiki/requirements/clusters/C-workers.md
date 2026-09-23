@@ -38,9 +38,10 @@ record it as an ADR — this is a genuine decision, not a lookup.
 - [x] A secret set with `wrangler secret put` (`HELLO_KEY`, 500 before and 200 after)
 - [x] Hit with `curl`, response captured
 - [x] Watched with `wrangler tail`
-- [ ] **Torn down cleanly** afterwards. Owed at build plan C.5, after C.4
+- [x] **Torn down cleanly** afterwards. The Worker, its secret and the
+      directory were all deleted, and each was checked afterwards
 
-**Source:** capture §6 · **Status:** 🟡 **In progress**, 5/6 on 2026-09-23.
+**Source:** capture §6 · **Status:** ✅ **Done**, 2026-09-23.
 Evidence: [`REQ-C.2-throwaway-worker.md`](../../evidence/REQ-C.2-throwaway-worker.md).
 
 **Notes:** The teardown is part of the requirement. This Worker is a throwaway

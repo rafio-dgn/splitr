@@ -540,3 +540,16 @@ shape that triggers them. They are listed rather than ticked.
   - one prompt injection contained, one passed as a valid label.
 - **Why:** `REQ-C.3`, and the spike from ADR-0016 §12.
 - **Decision:** [ADR-0016](./decisions/0016-ai-integration-strategy.md), [ADR-0017](./decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md)
+
+## 2026-09-23 — Throwaway Worker torn down (REQ-C.2 done)
+- **Type:** removed
+- **Scope:** `workers/hello/` (deleted), `wiki/evidence/REQ-C.2-throwaway-worker.md`,
+  `wiki/evidence/README.md`, `wiki/requirements/clusters/C-workers.md`,
+  `wiki/todos/build-plan.md`, `wiki/todos/HANDOVER.md`
+- **What:** Ran `wrangler delete` (a dry run first, and without `--force`, since
+  nothing depends on it). Verified afterwards: the URL returns 404 `1042`, the
+  API returns `10007`, and the secret is gone. Splitr still returns 200.
+  Deleted `workers/hello/` and the local scratch secret. `REQ-C.2` is marked
+  Done. The code remains in history at `f18efcd`.
+- **Why:** `REQ-C.2`: "torn down cleanly" is part of the requirement.
+- **Decision:** none. Follows [ADR-0006](./decisions/0006-repo-layout.md).

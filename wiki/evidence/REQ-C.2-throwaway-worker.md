@@ -1,7 +1,7 @@
 # `REQ-C.2`: the throwaway hello-world Worker, through its lifecycle
 
 **Date:** 2026-09-23 · **Worker:** `splitr-hello` · **URL:** https://splitr-hello.raffaele-digennaro.workers.dev
-**Directory:** `workers/hello/` ([ADR-0006](../decisions/0006-repo-layout.md)) · **Status:** 5 of 6 criteria met. **The teardown is still owed** (build plan C.5)
+**Directory:** `workers/hello/` ([ADR-0006](../decisions/0006-repo-layout.md)) · **Status:** ✅ **all 6 criteria met.** Torn down on 2026-09-23 (build plan C.5)
 
 ---
 
@@ -91,9 +91,39 @@ I searched the tail output for the secret's value: 0 matches.
 
 ## 6. Torn down cleanly
 
-**Not yet.** This is build plan step C.5, after the `ai` binding (C.4) has been
-added to this same Worker. This file gets the teardown commands and their output
-at that point.
+Done on 2026-09-23, after C.4 had used the same Worker for the first LLM call
+([`REQ-C.3-first-edge-llm-call.md`](./REQ-C.3-first-edge-llm-call.md)).
+"Cleanly" is shown by recording the state before and after, not just the delete
+command.
+
+**Before:** the URL answered 200, `wrangler secret list` showed `HELLO_KEY`, and
+`wrangler deployments list` showed several versions.
+
+**The teardown:**
+
+```bash
+cd workers/hello
+npx wrangler delete --dry-run      # --dry-run: exiting now.
+npx wrangler delete                # Successfully deleted splitr-hello
+```
+
+`--force` was deliberately not used. It overrides the check for *other Workers
+that depend on this one*, and nothing depends on it, so needing `--force` would
+itself have been a finding.
+
+**After, checked on each surface where the Worker could linger:**
+
+| Surface | Result |
+|---|---|
+| Public URL | `error code: 1042`, **HTTP 404** |
+| `wrangler deployments list` | `This Worker does not exist on your account. [code: 10007]` |
+| `wrangler secret list` | `Worker "splitr-hello" not found.` The secret was deleted with the Worker |
+| Splitr itself | https://splitr.raffaele-digennaro.workers.dev still **200**, untouched |
+| `workers/hello/` | Deleted, including its gitignored `.dev.vars`, `.wrangler/` state and `node_modules`, per [ADR-0006](../decisions/0006-repo-layout.md). The code stays in git history (commit `f18efcd`) |
+| Local scratch | The file holding `HELLO_KEY`'s value and the ADR-0017 probe Worker were deleted |
+
+The root `tsconfig.json` and ESLint config still exclude `workers/`, because
+Cluster E's Durable Object and AI Workers will live there.
 
 ## Observations for Raffaele's `REQ-X.2` notes
 
