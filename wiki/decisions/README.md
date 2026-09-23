@@ -44,3 +44,4 @@ obvious in hindsight.
 | [0011](./0011-one-membership-check-per-request.md) | One membership check per request, in the group layout, memoised with React `cache()` | Accepted |
 | [0012](./0012-test-the-invariants-and-the-money-nothing-else.md) | Test the invariants of the contested write and the money arithmetic — nothing else | Accepted |
 | [0013](./0013-base-url-is-the-request-host-not-a-port-in-env.md) | Better Auth's local base URL is the request's host, not a port in `.env` | Accepted |
+| [0014](./0014-opennext-as-the-deploy-adapter.md) | `@opennextjs/cloudflare` as the deploy adapter, not Pages and not vinext | Accepted |

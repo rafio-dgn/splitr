@@ -434,3 +434,14 @@ shape that triggers them. They are listed rather than ticked.
   when it is 4/6 done, and made the no-persistence state explicit.
 - **Why:** Session close. A stale status table is read as truth.
 - **Decision:** none
+
+## 2026-09-23 — Deploy adapter chosen: OpenNext
+- **Type:** docs
+- **Scope:** `wiki/decisions/0014-opennext-as-the-deploy-adapter.md`, `wiki/decisions/README.md`
+- **What:** Chose `@opennextjs/cloudflare` over Cloudflare Pages and over
+  vinext. vinext is now Cloudflare's stated default for Next.js, but the build
+  plan's "OpenNext vs Pages" framing didn't know about it. Pages can't host
+  Cluster E's Durable Object, service bindings or cron. vinext is
+  `1.0.0-beta.11` and replaces the Next.js compiler.
+- **Why:** `REQ-C.1` leaves the adapter open and asks for an ADR.
+- **Decision:** [ADR-0014](./decisions/0014-opennext-as-the-deploy-adapter.md)
