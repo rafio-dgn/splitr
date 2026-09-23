@@ -70,8 +70,8 @@ Cluster F, is the single highest-value bit of foresight in this plan.
 |---|---|---|---|
 | C.1 | Choose the deploy adapter: OpenNext vs Pages. **ADR** | `REQ-C.1` | ✅ 2026-09-23. OpenNext, [ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md). A third option, vinext, was also weighed |
 | C.2 | Deploy the Cluster B app to Cloudflare | `REQ-C.1` | ✅ 2026-09-23. [Live](https://splitr.raffaele-digennaro.workers.dev); D1 brought forward for the auth tables, [ADR-0015](../decisions/0015-one-database-driver-d1-everywhere.md); [evidence](../evidence/REQ-C.1-deployed.md) |
-| C.3 | Throwaway hello-world Worker: `npm create cloudflare@latest`, configure `wrangler.jsonc`, `wrangler secret put`, curl it, `wrangler tail` it | `REQ-C.2` | ⬜ |
-| C.4 | Add an `ai` binding; answer with `@cf/meta/llama-3.1-8b-instruct`. **Per [ADR-0016](../decisions/0016-ai-integration-strategy.md) §12:** a no-RAG line-item categoriser over the closed taxonomy, measuring latency, output format and failure modes. It's also the eval's no-RAG baseline | `REQ-C.3` | ⬜ |
+| C.3 | Throwaway hello-world Worker: `npm create cloudflare@latest`, configure `wrangler.jsonc`, `wrangler secret put`, curl it, `wrangler tail` it | `REQ-C.2` | ✅ 2026-09-23. `splitr-hello`, [evidence](../evidence/REQ-C.2-throwaway-worker.md) |
+| C.4 | Add an `ai` binding; answer with `@cf/meta/llama-3.1-8b-instruct`. **Per [ADR-0016](../decisions/0016-ai-integration-strategy.md) §12:** a no-RAG line-item categoriser over the closed taxonomy, measuring latency, output format and failure modes. It's also the eval's no-RAG baseline | `REQ-C.3` | ✅ 2026-09-23. `-fp8` stands in for the deprecated model ([ADR-0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md)). 14/15 on descriptions, **2/10 on receipt shorthand**, [evidence](../evidence/REQ-C.3-first-edge-llm-call.md) |
 | C.5 | **Tear the throwaway Worker down cleanly** | `REQ-C.2` | ⬜ |
 | C.6 | Write up three modules that won't run on Workers + replacements → commit to the repo | `REQ-C.4` | ⬜ |
 | C.7 | Answer the five cluster questions | `REQ-C.5` | ⬜ |

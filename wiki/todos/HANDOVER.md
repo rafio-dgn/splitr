@@ -12,7 +12,7 @@ mid-way through the second, after `REQ-C.1`. Read this, then
 | Live | **https://splitr.raffaele-digennaro.workers.dev** (Worker `splitr`, D1 `splitr`, WEUR) |
 | Cluster A | ✅ Done |
 | Cluster B | 🟡 4/6 — see below |
-| Cluster C | 🟡 `REQ-C.1` ✅ deployed. Next is C.3, the throwaway Worker |
+| Cluster C | 🟡 `REQ-C.1` ✅ · `REQ-C.3` ✅ (on `-fp8`: the course's model is deprecated, ADR-0017) · `REQ-C.2` 5/6: `splitr-hello` is **live and must be torn down** at C.5, which is next |
 
 Splitr runs on Workers via OpenNext ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
 **Accounts persist in D1**, locally and deployed. `better-sqlite3` is gone
@@ -95,9 +95,10 @@ of that mattered — a QA agent that silently repairs things destroys the signal
 
 ## Next real work
 
-The rest of Cluster C: stand up the throwaway Worker in its own directory (C.3,
-`REQ-C.2`), give it an `ai` binding answering with
-`@cf/meta/llama-3.1-8b-instruct` (C.4), **tear it down** (C.5), and write up
+The rest of Cluster C. The throwaway Worker (`workers/hello/`, deployed as
+`splitr-hello`) exists (C.3 ✅) and has its Llama call (C.4 ✅). Next,
+**tear it down**: delete the deployed Worker *and* the directory (C.5). Then
+write up
 three modules that won't run on Workers (C.6, `REQ-C.4`, a written deliverable
 that's easy to forget).
 
@@ -116,3 +117,7 @@ that's easy to forget).
 - **A decision for Raffaele:** `wiki/techstack/` contains EdgeLedger-derived
   specifics, a possible leak in the seal. It's in `backlog.md` under
   *Raised in Cluster C*.
+- **AI is decided with Raffaele, not by an agent.** ADR-0016 records twelve
+  answers from three rounds of questions, ADR-0017 records the model
+  substitution, and the C.4 spike raised a new question: should OCR expand
+  receipt abbreviations? Ask him; don't settle it in code.

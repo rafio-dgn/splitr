@@ -867,3 +867,94 @@ does, months later, without the original chat transcript.
   - The `wiki/techstack/` seal question.
   - Nothing is committed. Commit and push are waiting for Raffaele's go-ahead.
   - F-2 can now be re-measured on the real production URL.
+
+## 2026-09-23T10:25Z — C.3: throwaway Worker, secret, curl, tail (`REQ-C.2`)
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session, with no subagents
+- **Prompt intent:** "Create the commit with their responsibilities and
+  description, push the changes and continue to next step." The commits and
+  push were done first. This entry covers the next step, C.3.
+- **Inputs read:** ADR-0006 (it names `workers/hello/`), `C-workers.md`,
+  `create-cloudflare --help` for the flags and `--type` values, and every
+  generated file. I also grepped the generated runtime types for
+  `timingSafeEqual`.
+- **Actions:**
+  - Ran three commits and a push (`18b7c24..ffd60b3`). Two files with changes
+    for several commits (the ADR index and the CHANGELOG) were staged per
+    commit with `git hash-object` and `update-index`, so each commit carries
+    only its own entries.
+  - Scaffolded with C3. The first run hung on the new `--agents` prompt; I
+    deleted it and re-ran with `--no-agents`.
+  - Pruned files, wrote `wrangler.jsonc` and `src/index.ts`, and excluded
+    `workers/` from the root `tsc` and ESLint.
+  - Tested locally with `wrangler dev`, then deployed.
+  - Put the secret from a scratch file via stdin, then curled while tailing.
+- **Alternatives considered:**
+  - Scaffolding outside the repo was rejected: ADR-0006 already decided
+    `workers/hello/`.
+  - Keeping the vitest scaffold was rejected under ADR-0012.
+  - A secret-free Worker was rejected, because `REQ-C.5` Q4 needs a var and a
+    secret side by side.
+  - Plain `===` for the key was rejected: it's not constant-time, and
+    `timingSafeEqual` is a Workers-specific API worth knowing for Q2.
+- **Assumptions:**
+  - "Next step" meant C.3 only. I stopped before C.4.
+  - The Worker name `splitr-hello` is my choice.
+  - `workers/hello/` stays uncommitted until Raffaele asks.
+- **Verification:**
+  - `tsc --noEmit` is clean in `workers/hello/`, and the root `tsc` and ESLint
+    are still clean.
+  - Local and deployed: `/` returns 200, `/secret` returns 200 with the right
+    key and 401 with a wrong one, `/nope` returns 404.
+  - `/secret` returned 500 before `secret put`.
+  - Tail captured all four requests.
+  - The secret value appears 0 times in the tail output.
+- **Open questions:**
+  - **`splitr-hello` is live** and has to be torn down at C.5, after C.4
+    adds the `ai` binding.
+  - The observations for Raffaele's `REQ-X.2` notes are in the evidence file.
+    The notes themselves must be his.
+
+## 2026-09-23T11:10Z — AI integration: questions first, then the model problem, then C.4
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session, with no subagents
+- **Prompt intent:** "Continue the integration, but before taking any decision
+  on how we use the AI and integrate it, check it with me. Make a good round of
+  questions, and analyse the requests and the possible integrations."
+- **Inputs read:**
+  - `REQ-C.3`, `D.3`, `D.4`, `E.4`, `F.4`, `M.7`; the project brief; ADR-0004.
+  - The Workers AI JSON-mode docs, the 2026-05-08 planned-deprecations
+    changelog, and a web search on the deprecation.
+  - `wrangler ai models list` / `schema`, and the generated runtime types
+    (`AiTextGenerationInput`, the model id map).
+- **Actions:**
+  - Asked 13 questions in four rounds: product (4), architecture (4), cold
+    start and evidence (4), taxonomy (1). Wrote ADR-0016 from the answers.
+  - Found the mandated model missing from the catalogue and probed it through a
+    scratch Worker outside the repo: deprecated id vs `-fp8` vs 70B, with and
+    without JSON mode. Put the substitution to Raffaele and wrote ADR-0017.
+  - Built `/categorise` behind `HELLO_KEY`, deployed it, and ran a 15-item
+    clean set twice, a 10-item shorthand set, and six failure-mode cases.
+- **Alternatives considered:**
+  - Every question offered 2–4 options with the trade-offs stated. The
+    rejected options and the reasons are in ADR-0016 and ADR-0017.
+  - For the spike: zod in the throwaway Worker was rejected in favour of a
+    type-guard over a const object, to keep dependencies at zero in a
+    to-be-deleted Worker. Production uses zod, per ADR-0016 §4.
+  - An unguarded `/categorise` was rejected because it spends account neurons.
+- **Assumptions:**
+  - The category descriptions in the system prompt are my wording, and they
+    are spike material. The production prompt is E.4's to design.
+  - The spike's expected labels are my judgement, with the ambiguous ones
+    marked.
+- **Verification:** all numbers are from real calls against the deployed
+  Worker (version `a0a30e04`) and are pasted in the evidence file. `tsc` is
+  clean in `workers/hello`.
+- **What I'd flag about my own work:**
+  - The clean-description set flattered the model at 14/15. Adding the
+    shorthand set (2/10) was necessary to avoid overclaiming.
+  - The docs were wrong twice (JSON-mode support, and the schema lookup for the
+    deprecated id). Only real calls were reliable.
+- **Open questions (Raffaele's):**
+  - Whether OCR should expand abbreviations (D.6).
+  - Whether to tell the course owners about the dead model.
+  - Committing C.3 and C.4, which aren't committed yet.
+  - The C.5 teardown is next.

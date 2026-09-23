@@ -24,3 +24,10 @@ the real pasted output, and the date.
   (2026-09-23). Public URL, same 15-route build, and browser-shaped auth (with
   `Origin`) passing and a forged `Origin` refused. Also the `INVALID_ORIGIN`
   failure captured on the first deploy, before `BETTER_AUTH_URL` was set.
+- [`REQ-C.2-throwaway-worker.md`](./REQ-C.2-throwaway-worker.md): the throwaway
+  `splitr-hello` Worker. Created with C3, configured, a secret put (500 before,
+  200 after), curled, and tailed. **The teardown is still owed** at C.5.
+- [`REQ-C.3-first-edge-llm-call.md`](./REQ-C.3-first-edge-llm-call.md): the
+  first Llama call through an `ai` binding, and the categorisation spike. 14/15
+  on clean descriptions, **2/10 on receipt shorthand**, 15/15 stable, and one
+  prompt injection contained while another passed as a valid label.

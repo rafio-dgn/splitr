@@ -480,6 +480,23 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `CLAUDE.md` §5.
 - **Decision:** none
 
+## 2026-09-23 — Throwaway hello-world Worker, deployed and tailed (REQ-C.2, 5/6)
+- **Type:** added
+- **Scope:** `workers/hello/`, root `tsconfig.json`, `eslint.config.mjs`,
+  `wiki/evidence/REQ-C.2-throwaway-worker.md`, `wiki/requirements/clusters/C-workers.md`,
+  `wiki/todos/build-plan.md`, `wiki/todos/HANDOVER.md`, `wiki/evidence/README.md`
+- **What:** Scaffolded with `npm create cloudflare@latest` into `workers/hello/`,
+  and pruned the vitest scaffolding and editor config. Three routes: `/` reads
+  the `GREETING` var; `/secret` compares an `x-hello-key` header to the
+  `HELLO_KEY` secret with `crypto.subtle.timingSafeEqual`; anything else is
+  404. Deployed as `splitr-hello`, and `/secret` gave 500 before
+  `wrangler secret put` and 200 after. Curled and watched with `wrangler tail`.
+  The root `tsc` and ESLint now exclude `workers/`, whose runtime types would
+  clash with the DOM lib.
+- **Why:** `REQ-C.2`. The teardown (C.5) is still owed.
+- **Decision:** none. The location follows [ADR-0006](./decisions/0006-repo-layout.md)
+  and the test pruning follows [ADR-0012](./decisions/0012-test-the-invariants-and-the-money-nothing-else.md).
+
 ## 2026-09-23 — AI integration strategy, decided with Raffaele
 - **Type:** docs
 - **Scope:** `wiki/decisions/0016-ai-integration-strategy.md`, `wiki/decisions/README.md`,
@@ -508,3 +525,18 @@ shape that triggers them. They are listed rather than ticked.
   each with and without RAG.
 - **Why:** `REQ-C.3` names a model that no longer answers.
 - **Decision:** [ADR-0017](./decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md)
+
+## 2026-09-23 — First edge LLM call: the categorisation spike (REQ-C.3)
+- **Type:** added
+- **Scope:** `workers/hello/wrangler.jsonc`, `workers/hello/src/index.ts`,
+  `wiki/evidence/REQ-C.3-first-edge-llm-call.md`, `wiki/evidence/README.md`,
+  `wiki/requirements/clusters/C-workers.md`, `wiki/todos/build-plan.md`,
+  `wiki/todos/backlog.md`, `wiki/todos/HANDOVER.md`
+- **What:** Added an `ai` binding and a key-guarded `POST /categorise` that
+  asks `-fp8` for one key from the closed taxonomy, parses it, and checks it
+  against the list (`uncategorised` otherwise). Deployed and measured:
+  - clean descriptions 14/15, stable 15/15, median 426 ms, 2.90 neurons per call;
+  - receipt shorthand 2/10;
+  - one prompt injection contained, one passed as a valid label.
+- **Why:** `REQ-C.3`, and the spike from ADR-0016 §12.
+- **Decision:** [ADR-0016](./decisions/0016-ai-integration-strategy.md), [ADR-0017](./decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md)

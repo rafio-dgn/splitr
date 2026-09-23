@@ -252,4 +252,20 @@ requirement work, not new scope; they sit here only so they are not lost.
       https://splitr.raffaele-digennaro.workers.dev, which is the build the demo
       will actually show. It doesn't make the decision, but it changes what
       "record both logs" costs.
+- [ ] `decision` **Should the vision model expand receipt abbreviations at OCR
+      time (D.6)?** The C.4 spike scored 14/15 on clean descriptions and **2/10
+      on receipt shorthand** ("KNG PRWN PHAD" → `drinks`). RAG over a group's
+      history is one answer; normalising at OCR is another; they can be
+      combined. Raise it with Raffaele at D.6, and measure it in the vision
+      spike ([evidence](../evidence/REQ-C.3-first-edge-llm-call.md)).
+- [ ] `decision` **Tell the course owners that `REQ-C.3`'s model is dead.**
+      `@cf/meta/llama-3.1-8b-instruct` has failed with `AiError 5028` since
+      2026-05-30, so every learner following the brief will hit it. It's
+      Raffaele's call whether to post in `#project-jedi`
+      ([ADR-0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md)).
+- [ ] `watch` **Before the demo, check the Workers AI changelog for `-fp8`.**
+      Its un-suffixed sibling and `-awq` were retired in May 2026.
+- [ ] `E.4` **The eval must record neurons as well as accuracy.** The prompt
+      size dominated cost in the spike (8B-fp8: 2.90 neurons per call with an
+      11-line prompt), and RAG examples will grow the prompt.
 

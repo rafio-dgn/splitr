@@ -33,14 +33,15 @@ record it as an ADR — this is a genuine decision, not a lookup.
 (`npm create cloudflare@latest`), then take it through the whole lifecycle.
 
 **Acceptance criteria:**
-- [ ] Created in its own directory via `npm create cloudflare@latest`
-- [ ] `wrangler.jsonc` configured
-- [ ] A secret set with `wrangler secret put`
-- [ ] Hit with `curl`, response captured
-- [ ] Watched with `wrangler tail`
-- [ ] **Torn down cleanly** afterwards
+- [x] Created in its own directory via `npm create cloudflare@latest` (`workers/hello/`)
+- [x] `wrangler.jsonc` configured (one var, observability, no secret in the file)
+- [x] A secret set with `wrangler secret put` (`HELLO_KEY`, 500 before and 200 after)
+- [x] Hit with `curl`, response captured
+- [x] Watched with `wrangler tail`
+- [ ] **Torn down cleanly** afterwards. Owed at build plan C.5, after C.4
 
-**Source:** capture §6 · **Status:** Not started
+**Source:** capture §6 · **Status:** 🟡 **In progress**, 5/6 on 2026-09-23.
+Evidence: [`REQ-C.2-throwaway-worker.md`](../../evidence/REQ-C.2-throwaway-worker.md).
 
 **Notes:** The teardown is part of the requirement. This Worker is a throwaway
 exercise, separate from the app.
@@ -53,12 +54,15 @@ exercise, separate from the app.
 with `@cf/meta/llama-3.1-8b-instruct` — no API key, no SDK.
 
 **Acceptance criteria:**
-- [ ] An `ai` binding is declared in `wrangler.jsonc`
-- [ ] The Worker responds using `@cf/meta/llama-3.1-8b-instruct`
-- [ ] No third-party API key involved
-- [ ] No SDK — the binding directly
+- [x] An `ai` binding is declared in `wrangler.jsonc`
+- [x] The Worker responds using `@cf/meta/llama-3.1-8b-instruct`, as its
+      `-fp8` variant, because the exact id was deprecated on 2026-05-30
+      ([ADR-0017](../../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md))
+- [x] No third-party API key involved
+- [x] No SDK, only the binding
 
-**Source:** capture §6 · **Status:** Not started
+**Source:** capture §6 · **Status:** ✅ **Done**, 2026-09-23, with the model
+substitution above. Evidence: [`REQ-C.3-first-edge-llm-call.md`](../../evidence/REQ-C.3-first-edge-llm-call.md).
 
 **Notes:** Exact model id. Cluster E (`REQ-E.4`) builds on this with RAG; Cluster
 D (`REQ-D.4`) adds the embedding model `@cf/baai/bge-base-en-v1.5`.
