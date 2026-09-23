@@ -30,7 +30,10 @@ global — not the `{ children }: { children: React.ReactNode }` you may recall.
 
 ## 2. Read before you act
 
-Start with `wiki/README.md`, then load only the pages your task touches.
+**Starting a new session? Read `wiki/todos/HANDOVER.md` first** — where we are,
+what is blocked, and what needs a human.
+
+Then `wiki/README.md`, and load only the pages your task touches.
 
 | You need to know… | Read |
 |---|---|

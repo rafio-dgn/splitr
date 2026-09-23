@@ -63,13 +63,16 @@ TypeScript + Cloudflare learning path, across six clusters in order:
 | Cluster | Topic | State |
 |---|---|---|
 | A | TypeScript & React fundamentals | ✅ Done |
-| B | App Router, Server Components, Server Actions, zod | Next |
+| B | App Router, Server Components, Server Actions, zod | 🟡 4/6 — `REQ-B.4` blocked on `REQ-D.1`, `REQ-B.6` is a spoken answer |
 | C | Workers, Wrangler, first edge LLM call | Not started |
 | D | D1, KV, R2, Vectorize | Not started |
 | E | Durable Objects, Cron, service bindings, RAG | Not started |
 | F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
 
-No Cloudflare services are wired up yet — Clusters A and B are local only.
+No Cloudflare services are wired up yet — Clusters A and B are local only, and
+**nothing persists**: both write paths validate and report "nothing was stored"
+rather than returning a 201 that implies otherwise. Persistence arrives at
+`REQ-D.1`.
 
 ## Running locally
 

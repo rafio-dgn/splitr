@@ -4,6 +4,10 @@ Knowledge base for the Project JEDI TypeScript + Cloudflare build. The root
 `CLAUDE.md` is the thin entry point; everything substantive lives here, one topic
 per file, so an agent loads only what a task needs.
 
+## New session? Start at [`todos/HANDOVER.md`](./todos/HANDOVER.md)
+
+State, blockers, open decisions and the two lessons the last session paid for.
+
 ## How to use it
 
 1. Find the folder that answers your question (below).

@@ -423,3 +423,14 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** The fix narrowed a security check; a wrong narrowing would be worse
   than the original bug.
 - **Decision:** none
+
+## 2026-09-22 — Session handover; stale README status corrected
+- **Type:** docs
+- **Scope:** `wiki/todos/HANDOVER.md`, `README.md`, `CLAUDE.md`, `wiki/README.md`
+- **What:** Wrote a handover note for the next session — state, the three things
+  needing a human, the open F-2 decision, the three logged defects, and the two
+  lessons this session paid for. Wired it into `CLAUDE.md` §2 and the wiki index.
+  Corrected the README's cluster table, which still showed Cluster B as "Next"
+  when it is 4/6 done, and made the no-persistence state explicit.
+- **Why:** Session close. A stale status table is read as truth.
+- **Decision:** none

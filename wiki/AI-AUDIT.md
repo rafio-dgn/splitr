@@ -776,3 +776,27 @@ does, months later, without the original chat transcript.
     boundary that cannot catch its own failure) remain in the backlog.
   - `REQ-B.4` stays `In progress` until `REQ-D.1` makes the four empty states
     reachable.
+
+## 2026-09-22T15:00Z — Session close and handover
+- **Agent:** Claude Opus 5 (1M context), acting as tech lead
+- **Prompt intent:** Raffaele is closing the session and asked whether the
+  documentation, changelog and AI-audit were kept current.
+- **Inputs read:** `git status`/`log`, `wiki/requirements/clusters/B-routing-and-forms.md`,
+  `README.md`.
+- **Actions:** Audited the paper trail rather than asserting it was fine; found
+  and fixed one stale status; wrote `wiki/todos/HANDOVER.md` and linked it from
+  `CLAUDE.md` §2 and the wiki index.
+- **Alternatives considered:** *Answer "yes, all updated" from memory* — rejected;
+  the question deserved a check, and the check found something.
+- **Assumptions:** none.
+- **Verification:**
+  - Working tree **clean**; `HEAD == origin/main` at `8adf547`. Nothing
+    uncommitted, nothing unpushed.
+  - Counts: 24 changelog entries, 14 audit entries, 13 ADRs, 3 evidence files.
+  - **One staleness found:** `README.md` listed Cluster B as "Next" while
+    `REQ-B.1`/`B.2`/`B.3`/`B.5` are Done and `B.4` is In progress. Corrected to
+    4/6 with the blockers named.
+  - Cross-checked the README table against the actual `REQ-B.*` statuses rather
+    than against the changelog's account of them.
+- **Open questions:** carried into `HANDOVER.md` — `wrangler login`, the agent
+  restart, `REQ-A.5`/`REQ-B.6` spoken answers, the F-2 demo decision, and O-1…O-3.
