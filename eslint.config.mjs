@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     ".open-next/**",
     ".wrangler/**",
     "worker-configuration.d.ts",
+    // Each Worker is its own package with its own toolchain (ADR-0006).
+    "workers/**",
   ]),
 ]);
 
