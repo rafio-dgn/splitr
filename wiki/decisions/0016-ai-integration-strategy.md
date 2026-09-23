@@ -1,6 +1,6 @@
 # ADR-0016: What the AI does in Splitr, and where it's allowed to reach
 
-- **Status:** Accepted
+- **Status:** Accepted. §9 and §12 amended by [ADR-0017](./0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md): the course's model is deprecated, C.4 uses `-fp8`, and the eval gains a model axis
 - **Date:** 2026-09-23
 - **Deciders:** Raffaele, in three rounds of structured questions on 2026-09-23.
   The AI proposed options and recommendations; every choice below is his.

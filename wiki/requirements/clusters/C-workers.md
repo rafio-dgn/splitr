@@ -63,6 +63,12 @@ with `@cf/meta/llama-3.1-8b-instruct` — no API key, no SDK.
 **Notes:** Exact model id. Cluster E (`REQ-E.4`) builds on this with RAG; Cluster
 D (`REQ-D.4`) adds the embedding model `@cf/baai/bge-base-en-v1.5`.
 
+**⚠️ 2026-09-23: the exact id no longer exists.** Cloudflare deprecated
+`@cf/meta/llama-3.1-8b-instruct` on 2026-05-30, and every call fails with
+`AiError 5028`, which was measured. We use `@cf/meta/llama-3.1-8b-instruct-fp8`,
+the same weights quantised. It has no JSON mode, so output is validated in
+code. See [ADR-0017](../../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md).
+
 ---
 
 ### REQ-C.4 — Three modules that won't run on Workers

@@ -497,3 +497,14 @@ shape that triggers them. They are listed rather than ticked.
   decisions.
 - **Why:** Raffaele asked that no AI decision be taken without him. `REQ-M.4`.
 - **Decision:** [ADR-0016](./decisions/0016-ai-integration-strategy.md)
+
+## 2026-09-23 — The course's Llama model is deprecated; `-fp8` replaces it
+- **Type:** docs
+- **Scope:** `wiki/decisions/0017-…`, ADR-0016 status line, `wiki/requirements/clusters/C-workers.md`
+- **What:** Measured through a real binding: `@cf/meta/llama-3.1-8b-instruct`
+  fails with `AiError 5028` (deprecated 2026-05-30), and `-fp8` works but
+  rejects JSON mode (`5025`). `llama-3.3-70b-instruct-fp8-fast` supports JSON
+  mode. Raffaele chose `-fp8` for C.4, with the E.4 eval comparing 8B and 70B,
+  each with and without RAG.
+- **Why:** `REQ-C.3` names a model that no longer answers.
+- **Decision:** [ADR-0017](./decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md)

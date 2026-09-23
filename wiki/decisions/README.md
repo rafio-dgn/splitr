@@ -47,3 +47,4 @@ obvious in hindsight.
 | [0014](./0014-opennext-as-the-deploy-adapter.md) | `@opennextjs/cloudflare` as the deploy adapter, not Pages and not vinext | Accepted |
 | [0015](./0015-one-database-driver-d1-everywhere.md) | One database driver: D1 everywhere, from Cluster C | Accepted |
 | [0016](./0016-ai-integration-strategy.md) | What the AI does in Splitr, and where it is allowed to reach | Accepted |
+| [0017](./0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) | `llama-3.1-8b-instruct-fp8` replaces the deprecated course model; the eval picks E.4's model | Accepted |
