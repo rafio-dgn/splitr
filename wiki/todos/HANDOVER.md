@@ -1,21 +1,24 @@
 # Handover — start here in a new session
 
-Written 2026-09-22 at the close of the first working session. Read this, then
+Written 2026-09-22 at the close of the first session; updated 2026-09-23
+mid-way through the second, after `REQ-C.1`. Read this, then
 [`build-plan.md`](./build-plan.md) and [`backlog.md`](./backlog.md).
 
 ## Where we are
 
 | | |
 |---|---|
-| Repo | [github.com/rafio-dgn/splitr](https://github.com/rafio-dgn/splitr), clean, pushed to `main` |
-| Last commit | `8adf547` — the auth origin fix |
+| Repo | [github.com/rafio-dgn/splitr](https://github.com/rafio-dgn/splitr). **Cluster C work is uncommitted**; the last commit is `18b7c24` |
+| Live | **https://splitr.raffaele-digennaro.workers.dev** (Worker `splitr`, D1 `splitr`, WEUR) |
 | Cluster A | ✅ Done |
 | Cluster B | 🟡 4/6 — see below |
-| Cluster C | Not started. **Blocked on `wrangler login`** |
+| Cluster C | 🟡 `REQ-C.1` ✅ deployed. Next is C.3, the throwaway Worker |
 
-Splitr runs locally. **Nothing persists yet** — both write paths validate and
-honestly report "nothing was stored" rather than a 201 implying a write. Group
-membership is a fixture (`grp_demo`). Real tables are `REQ-D.1`.
+Splitr runs on Workers via OpenNext ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
+**Accounts persist in D1**, locally and deployed. `better-sqlite3` is gone
+([ADR-0015](../decisions/0015-one-database-driver-d1-everywhere.md)). Groups and
+expenses still don't persist; both write paths honestly report "nothing was
+stored". Group membership is a fixture (`grp_demo`). Real tables are `REQ-D.1`.
 
 ```bash
 docker compose up -d          # http://localhost:3000
@@ -27,8 +30,7 @@ npm run dev -- -p 3100        # or natively, any port
 1. **Restart Claude Code** if you have not since 2026-09-22. The six agents in
    `.claude/agents/` only register on a fresh start (the skills already work).
    Then `claude --agent tech-lead`, or `@frontend` / `@backend` / `@qa-test`.
-2. **`wrangler login`** — interactive browser flow, a human must run it. It
-   blocks all of Cluster C. `wrangler whoami` currently says not authenticated.
+2. ~~`wrangler login`~~ ✅ done.
 3. **Answer `REQ-A.5` and `REQ-B.6`** — six questions, spoken, unaided. Notes in
    [`cluster-a-questions.md`](./cluster-a-questions.md). These are graded at the
    demo (`REQ-X.8`) and cannot be delegated.
@@ -93,10 +95,24 @@ of that mattered — a QA agent that silently repairs things destroys the signal
 
 ## Next real work
 
-Cluster C, once `wrangler login` is done: deploy the app to Cloudflare, stand up
-and tear down a throwaway Worker, make the first edge LLM call with
-`@cf/meta/llama-3.1-8b-instruct`, and write up three modules that will not run on
-Workers (`REQ-C.4` — a written deliverable, easy to forget).
+The rest of Cluster C: stand up the throwaway Worker in its own directory (C.3,
+`REQ-C.2`), give it an `ai` binding answering with
+`@cf/meta/llama-3.1-8b-instruct` (C.4), **tear it down** (C.5), and write up
+three modules that won't run on Workers (C.6, `REQ-C.4`, a written deliverable
+that's easy to forget).
 
-`REQ-C.1` needs an ADR first: OpenNext vs Cloudflare Pages as the deploy adapter.
-Neither is mandated.
+## New since 2026-09-23 — read before touching the deploy
+
+- **Local setup changed.** A fresh clone needs `npm run cf:types` (or `tsc`
+  fails) and `npm run db:local` (the auth tables). `npm run preview` also needs
+  a `.dev.vars` with a blank `BETTER_AUTH_URL=`, or every sign-in returns 403.
+  See `.env.example`.
+- **Worker is at ~69% of the free plan's 3 MiB gzipped limit** before Cluster D.
+  Watch it on every deploy.
+- **F-1 recurred on the first deploy**, as `403 INVALID_ORIGIN` on a new host,
+  and was caught because the probe sent an `Origin` header. That's lesson one
+  above working as intended. It's captured in
+  [`../evidence/REQ-C.1-deployed.md`](../evidence/REQ-C.1-deployed.md).
+- **A decision for Raffaele:** `wiki/techstack/` contains EdgeLedger-derived
+  specifics, a possible leak in the seal. It's in `backlog.md` under
+  *Raised in Cluster C*.

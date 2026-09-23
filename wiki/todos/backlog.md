@@ -12,7 +12,8 @@
 
 ## Blockers
 
-- [!] `blocker` **`wrangler login` — Raffaele must run it.** Interactive (opens a
+- [x] ~~`blocker` **`wrangler login` — Raffaele must run it.**~~ Done by 2026-09-23;
+      `wrangler whoami` reports the account. Kept for the record: Interactive (opens a
       browser); an agent cannot. `wrangler whoami` currently reports not
       authenticated. **Needed from Cluster C onward** — Clusters A and B are
       local-only, so this does not block starting.
@@ -196,7 +197,11 @@ requirement work, not new scope; they sit here only so they are not lost.
 
 ## New, found while fixing F-1 — 2026-09-22
 
-- [!] `blocker-for-local-dev` **The OrbStack container cannot serve the app.**
+- [x] ~~`blocker-for-local-dev` **The OrbStack container cannot serve the app.**~~
+      **Resolved 2026-09-23** by [ADR-0015](../decisions/0015-one-database-driver-d1-everywhere.md):
+      `better-sqlite3` is gone, so the image needs no toolchain. Rebuilt with
+      `docker compose up --build`, it serves :3000 and signs in against local D1.
+      Original note:
       Its `node_modules` volume was built before `better-auth` and
       `better-sqlite3` were added, so every page that imports the auth client is
       `500 Module not found: Can't resolve 'better-auth/react'`. Rebuilding is
@@ -211,3 +216,40 @@ requirement work, not new scope; they sit here only so they are not lost.
       work started. Port 3000 was verified with native `next dev -p 3000` /
       `next start -p 3000` instead. **Decide:** fix the dev image, or drop Docker
       now that Cluster C brings `wrangler dev`?
+
+## Raised in Cluster C — 2026-09-23
+
+- [ ] `watch` **Worker size: 2,123 KiB gzipped of the free plan's 3 MiB (≈69%)**,
+      measured on the first deploy, before any Cluster D/E code. Re-measure on
+      every deploy from now on. `wrangler deploy` prints "Total Upload … / gzip".
+      If it crosses the limit, that's a plan-tier decision, not an adapter one
+      ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
+- [ ] `REQ-D.1` **Retire `db:local` / `db:remote`.** They apply
+      `drizzle-kit export` DDL, and they aren't re-runnable (`CREATE TABLE`
+      fails on existing tables). Replace them with generated migrations
+      (`drizzle-kit generate` + `wrangler d1 migrations apply`) at `REQ-D.1`.
+      Note the remote D1 already holds the four auth tables, so the first
+      generated migration must not try to create them again. Plan for that at
+      `REQ-D.1` ([ADR-0015](../decisions/0015-one-database-driver-d1-everywhere.md)).
+- [ ] `decision` **Possible leak in the EdgeLedger seal: `wiki/techstack/`.**
+      `versions.md` says it was "read from `package.json` and `wrangler.jsonc`
+      in `typescript-cloudflare-project/`", and `frontend-nextjs-opennext.md`
+      describes `nextjs-edgeledger-flare`'s own files. `CLAUDE.md` §2 routes
+      agents there for "which Cloudflare API", so every agent that follows the
+      router reads EdgeLedger-derived specifics. Today's ADR-0014 and ADR-0015
+      were written *before* those pages were opened. **Raffaele to decide:**
+      move the EdgeLedger-specific parts into the sealed `reference-edgeledger/`,
+      or accept them as general platform notes and say so in ADR-0003.
+- [ ] `dx` **Fresh clone: `tsc` needs `npm run cf:types` first.** The bindings
+      type (`worker-configuration.d.ts`) is generated and gitignored. It's the
+      same class of caveat as `LayoutProps<"/">` (`CLAUDE.md` §1a).
+- [ ] `dx` **`npm run preview` needs a local `.dev.vars`** containing
+      `BETTER_AUTH_URL=` (blank), or it inherits the deployed origin and returns
+      403 on every sign-in. Documented in `.env.example`. The file is gitignored,
+      so a fresh clone doesn't have it.
+- [ ] `F-2` **New option for the F-2 decision:** the deployed Worker *is* a
+      production build now. The `REQ-B.3` network log can be re-captured against
+      https://splitr.raffaele-digennaro.workers.dev, which is the build the demo
+      will actually show. It doesn't make the decision, but it changes what
+      "record both logs" costs.
+

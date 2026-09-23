@@ -20,3 +20,7 @@ the real pasted output, and the date.
   **"F-1 — fix verified"**: the origin/port defect and the silent sign-out are
   fixed and re-proved in a real browser on both ports (F-2, F-3 and O-1…O-4 are
   still open).
+- [`REQ-C.1-deployed.md`](./REQ-C.1-deployed.md): Splitr live on Workers
+  (2026-09-23). Public URL, same 15-route build, and browser-shaped auth (with
+  `Origin`) passing and a forged `Origin` refused. Also the `INVALID_ORIGIN`
+  failure captured on the first deploy, before `BETTER_AUTH_URL` was set.

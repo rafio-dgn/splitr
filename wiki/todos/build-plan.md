@@ -17,7 +17,7 @@ Cluster F. Queues (`REQ-E.8`) is out.
 | 0.3 | Move `wiki/` + `CLAUDE.md` into the repo | — | ✅ |
 | 0.4 | Write the README with the project brief | `REQ-0.5` | ✅ |
 | 0.5 | Install the toolchain: Node 24 LTS via nvm, npm, Wrangler | `REQ-0.1` | ✅ |
-| 0.6 | `wrangler login` — **interactive, Raffaele** | `REQ-0.1` | ⛔ outstanding, needed by Cluster C |
+| 0.6 | `wrangler login` — **interactive, Raffaele** | `REQ-0.1` | ✅ done by 2026-09-23 |
 
 **Exit:** ✅ repo exists with the brief in its README; toolchain verified.
 **Not yet committed** — nothing has been committed or pushed. Awaiting the go-ahead.
@@ -66,15 +66,15 @@ Cluster F, is the single highest-value bit of foresight in this plan.
 
 ## Cluster C — Workers
 
-| # | Task | Req |
-|---|---|---|
-| C.1 | Choose the deploy adapter: OpenNext vs Pages. **ADR** | `REQ-C.1` |
-| C.2 | Deploy the Cluster B app to Cloudflare | `REQ-C.1` |
-| C.3 | Throwaway hello-world Worker: `npm create cloudflare@latest`, configure `wrangler.jsonc`, `wrangler secret put`, curl it, `wrangler tail` it | `REQ-C.2` |
-| C.4 | Add an `ai` binding; answer with `@cf/meta/llama-3.1-8b-instruct` | `REQ-C.3` |
-| C.5 | **Tear the throwaway Worker down cleanly** | `REQ-C.2` |
-| C.6 | Write up three modules that won't run on Workers + replacements → commit to the repo | `REQ-C.4` |
-| C.7 | Answer the five cluster questions | `REQ-C.5` |
+| # | Task | Req | Done |
+|---|---|---|---|
+| C.1 | Choose the deploy adapter: OpenNext vs Pages. **ADR** | `REQ-C.1` | ✅ 2026-09-23. OpenNext, [ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md). A third option, vinext, was also weighed |
+| C.2 | Deploy the Cluster B app to Cloudflare | `REQ-C.1` | ✅ 2026-09-23. [Live](https://splitr.raffaele-digennaro.workers.dev); D1 brought forward for the auth tables, [ADR-0015](../decisions/0015-one-database-driver-d1-everywhere.md); [evidence](../evidence/REQ-C.1-deployed.md) |
+| C.3 | Throwaway hello-world Worker: `npm create cloudflare@latest`, configure `wrangler.jsonc`, `wrangler secret put`, curl it, `wrangler tail` it | `REQ-C.2` | ⬜ |
+| C.4 | Add an `ai` binding; answer with `@cf/meta/llama-3.1-8b-instruct` | `REQ-C.3` | ⬜ |
+| C.5 | **Tear the throwaway Worker down cleanly** | `REQ-C.2` | ⬜ |
+| C.6 | Write up three modules that won't run on Workers + replacements → commit to the repo | `REQ-C.4` | ⬜ |
+| C.7 | Answer the five cluster questions | `REQ-C.5` | ⬜ |
 
 **Exit:** Splitr is live on Cloudflare; first edge LLM call proven.
 **Watch:** C.5 is part of the requirement, not tidying. C.6 is a written

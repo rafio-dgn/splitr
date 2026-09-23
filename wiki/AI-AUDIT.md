@@ -800,3 +800,70 @@ does, months later, without the original chat transcript.
     than against the changelog's account of them.
 - **Open questions:** carried into `HANDOVER.md` — `wrangler login`, the agent
   restart, `REQ-A.5`/`REQ-B.6` spoken answers, the F-2 demo decision, and O-1…O-3.
+
+## 2026-09-23T09:15Z — Cluster C: deploy adapter ADR, D1 swap, first deploy (`REQ-C.1`)
+- **Agent:** Claude Opus 5 (1M context), then Claude Opus 5.5 (1M context) after a model switch mid-task, acting as tech lead in the main session, with no subagents
+- **Prompt intent:** "Let's continue the integration." Raffaele confirmed this
+  meant Cluster C. He chose to provision D1 now for the auth tables only, after
+  being told `better-sqlite3` can't run on Workers.
+- **Inputs read:** `wiki/todos/HANDOVER.md`, `build-plan.md`, `CLAUDE.md`,
+  `requirements/clusters/C-workers.md`, ADR-0009, the ADR template and index,
+  `src/db/*`, `src/lib/auth.ts`, `session.ts`, the auth route,
+  `drizzle.config.ts`, `Dockerfile.dev`, `docker-compose.yml`,
+  `wiki/techstack/frontend-nextjs-opennext.md` and `versions.md` (read *after*
+  both ADRs, see below). External: the Cloudflare Workers Next.js guide, the
+  OpenNext Cloudflare docs and get-started page, and web searches on vinext and
+  Pages status. `npm view` for `@opennextjs/cloudflare` and `vinext`. The
+  installed `.d.ts` files for `getCloudflareContext` and `toNextJsHandler`.
+- **Actions:** Wrote ADR-0014 and ADR-0015. Created D1 `splitr`. Installed
+  `@opennextjs/cloudflare@1.20.6` and `wrangler@4.136.3`, and removed
+  `better-sqlite3`. Rewrote the DB and auth composition roots to request-scoped
+  accessors. Applied the DDL locally and remotely. Set the production secret
+  via stdin, never echoed. Deployed three times: once initially, once to add
+  `BETTER_AUTH_URL`, and once so the live code matches the tree. Created local
+  `.dev.vars` (gitignored). Rebuilt the dev container. Deleted two test users
+  from remote D1. Updated the docs listed in the CHANGELOG.
+- **Alternatives considered:**
+  - Pages (can't host Cluster E) and vinext (beta, replaces the compiler) are
+    in ADR-0014.
+  - Two drivers (SQLite locally, D1 deployed) were rejected because that's
+    F-1's failure pattern.
+  - `drizzle-kit push` with `d1-http` was rejected because it needs a second
+    credential. `generate` was rejected because it would spend `REQ-D.1`'s
+    first migration.
+  - A hand-written env bridge file was dropped once
+    `--env-interface CloudflareEnv` made it unnecessary.
+  - An R2 incremental cache (the OpenNext starter default) was deferred to
+    `REQ-D.3` under `REQ-M.2`.
+- **Assumptions:**
+  - "The integration" meant Cluster C. That was asked and confirmed.
+  - `workers_dev: true` and `preview_urls: false` are my choices, recorded in
+    `wrangler.jsonc`.
+  - `compatibility_date` is set to today.
+- **Wrong turns, corrected:**
+  1. `wrangler types` with the defaults broke `tsc` through a DOM clash. This
+     was confirmed by removing the file, then fixed with
+     `--include-runtime=false`.
+  2. I assumed Wrangler's local run reads `.env` to override `vars`. The
+     preview startup log showed it doesn't, so the override moved to
+     `.dev.vars`, and `.env.example` was corrected.
+  3. `drizzle-orm/d1`'s `D1Database` isn't a global without runtime types. The
+     key type is now derived from `CloudflareEnv["DB"]`.
+- **Verification:**
+  - `tsc --noEmit` and `eslint` clean. `opennextjs-cloudflare build` gives the
+    same 15 routes.
+  - Preview, `next dev`, and the container all pass sign-up or sign-in with an
+    `Origin` header against local D1.
+  - Deployed: landing 200; gate 307 without a session and 200 with one; sign-up
+    200; forged `Origin` 403. The pre-fix deploy returned 403 `INVALID_ORIGIN`,
+    as predicted.
+  - Worker size is 2,123 KiB gzipped of 3 MiB.
+- **Seal note:** `wiki/techstack/` pages contain EdgeLedger-derived specifics
+  (pinned versions and file descriptions from `nextjs-edgeledger-flare`).
+  `CLAUDE.md` §2 routes agents there, so reading them was within the rules, but
+  it undercuts ADR-0003. Both of today's ADRs were written before opening them,
+  and nothing in them came from there. It's logged as a decision for Raffaele.
+- **Open questions:**
+  - The `wiki/techstack/` seal question.
+  - Nothing is committed. Commit and push are waiting for Raffaele's go-ahead.
+  - F-2 can now be re-measured on the real production URL.

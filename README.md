@@ -64,15 +64,18 @@ TypeScript + Cloudflare learning path, across six clusters in order:
 |---|---|---|
 | A | TypeScript & React fundamentals | ✅ Done |
 | B | App Router, Server Components, Server Actions, zod | 🟡 4/6 — `REQ-B.4` blocked on `REQ-D.1`, `REQ-B.6` is a spoken answer |
-| C | Workers, Wrangler, first edge LLM call | Not started |
+| C | Workers, Wrangler, first edge LLM call | 🟡 1/5. **Live** at https://splitr.raffaele-digennaro.workers.dev (`REQ-C.1`) |
 | D | D1, KV, R2, Vectorize | Not started |
 | E | Durable Objects, Cron, service bindings, RAG | Not started |
 | F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
 
-No Cloudflare services are wired up yet — Clusters A and B are local only, and
-**nothing persists**: both write paths validate and report "nothing was stored"
-rather than returning a 201 that implies otherwise. Persistence arrives at
-`REQ-D.1`.
+Splitr runs on Cloudflare Workers through the OpenNext adapter
+([ADR-0014](./wiki/decisions/0014-opennext-as-the-deploy-adapter.md)). **Accounts
+persist**: sign-up and sessions are stored in D1, both deployed and locally
+([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)).
+**Groups and expenses don't persist yet**: both write paths validate and report
+"nothing was stored" rather than returning a 201 that implies otherwise. Their
+tables arrive at `REQ-D.1`.
 
 ## Running locally
 
@@ -84,8 +87,18 @@ Or natively, with Node 24+:
 
 ```bash
 cp .env.example .env     # then set BETTER_AUTH_SECRET
-npm install && npm run dev -- -p 3100
+npm install
+npm run cf:types         # bindings -> TypeScript; tsc fails without it
+npm run db:local         # create the auth tables in the local D1, once
+npm run dev -- -p 3100
 ```
+
+`next dev` reaches the local D1 through Wrangler, which `next.config.ts` starts.
+To run the real Workers runtime instead, use `npm run preview` (:8787). That
+needs a `.dev.vars` file, described at the bottom of `.env.example`.
+
+Deploying: `npm run deploy`. The production secret is set once with
+`wrangler secret put BETTER_AUTH_SECRET`, and never in a file.
 
 Any port works, including 3100 alongside the container on 3000 — nothing in the
 configuration names one. Do **not** set `BETTER_AUTH_URL` locally; a loopback
@@ -106,6 +119,8 @@ splitr/
 ├── src/               the application
 │   ├── app/           App Router routes
 │   └── lib/           fetchJson and friends
+├── wrangler.jsonc     the Worker: bindings (D1), vars, compatibility date
+├── open-next.config.ts  the OpenNext adapter's build config
 ├── Dockerfile.dev     dev container
 └── docker-compose.yml local stack
 ```

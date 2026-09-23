@@ -464,3 +464,18 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-C.1`. `better-sqlite3` can't load on a V8 isolate.
 - **Decision:** [ADR-0015](./decisions/0015-one-database-driver-d1-everywhere.md);
   timing amends [ADR-0009](./decisions/0009-better-auth-on-local-sqlite-via-drizzle.md)
+
+## 2026-09-23 — REQ-C.1 evidence, status and planning docs
+- **Type:** docs
+- **Scope:** `wiki/evidence/REQ-C.1-deployed.md`, `wiki/evidence/README.md`,
+  `wiki/requirements/clusters/C-workers.md`, `wiki/todos/build-plan.md`,
+  `wiki/todos/backlog.md`, `wiki/todos/HANDOVER.md`, `README.md`
+- **What:** Recorded the deployed verification, including the
+  `403 INVALID_ORIGIN` caught on the first deploy. Marked `REQ-C.1` Done and
+  C.1/C.2 and step 0.6 done. Closed the `wrangler login` and container
+  blockers. Logged five new backlog items: Worker size at about 69% of the
+  free limit, retiring `db:local`/`db:remote` at `REQ-D.1`, the possible
+  EdgeLedger leak in `wiki/techstack/`, and two fresh-clone setup steps.
+  Updated the README's status table and run instructions.
+- **Why:** `CLAUDE.md` §5.
+- **Decision:** none

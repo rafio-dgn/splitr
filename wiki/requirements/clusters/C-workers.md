@@ -11,10 +11,15 @@ Source: capture §6.
 **Statement:** Deploy the Cluster B app to Cloudflare.
 
 **Acceptance criteria:**
-- [ ] The Next.js app is deployed and reachable at a public URL
-- [ ] It is the same app from Cluster B, not a rebuild
+- [x] The Next.js app is deployed and reachable at a public URL:
+      https://splitr.raffaele-digennaro.workers.dev
+- [x] It is the same app from Cluster B, not a rebuild. It's the same
+      `next build` with the same 15 routes, and only the DB driver changed
 
-**Source:** capture §6 · **Status:** Not started
+**Source:** capture §6 · **Status:** ✅ **Done**, 2026-09-23. Adapter:
+[ADR-0014](../../decisions/0014-opennext-as-the-deploy-adapter.md). Driver:
+[ADR-0015](../../decisions/0015-one-database-driver-d1-everywhere.md).
+Evidence: [`REQ-C.1-deployed.md`](../../evidence/REQ-C.1-deployed.md).
 
 **Notes:** The course does not name the adapter. EdgeLedger uses
 `@opennextjs/cloudflare`; the stack list (§12) mentions Pages. Pick one and
