@@ -134,7 +134,7 @@ flowchart LR
 |---|---|---|
 | `splitr` Worker | The whole Next.js app (App Router, Server Components, Server Actions) on the Workers runtime, via `@opennextjs/cloudflare` ([ADR-0014](./wiki/decisions/0014-opennext-as-the-deploy-adapter.md)) | ✅ live at https://splitr.raffaele-digennaro.workers.dev |
 | Better Auth | Email/password auth used as a black box: `getSession()` plus route gating in layouts ([ADR-0009](./wiki/decisions/0009-better-auth-on-local-sqlite-via-drizzle.md)) | ✅ live |
-| D1 `splitr` | The one relational store, reached only through `getDb()` per request ([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)) | ✅ all 10 tables, from the first migration (`REQ-D.1`) · ⏳ domain writes wired at D.3 |
+| D1 `splitr` | The one relational store, reached only through `getDb()` per request ([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)) | ✅ all 10 tables, from the first migration; groups, expenses and settlements written (D.3) |
 | `GroupLedger` Durable Object | One instance per group (`idFromName(groupId)`). Validates, writes to D1, and refuses the duplicate settlement | ⏳ E.1–E.6. **Open question:** does it *own* the balance or only *arbitrate*? It gets its own ADR |
 | AI Worker | A separate Worker with no public URL and a shared-secret check. Line-item categorisation by RAG, and eventually every model call | ⏳ E.7 ([ADR-0016](./wiki/decisions/0016-ai-integration-strategy.md) §6) |
 | KV | Hot per-group balance snapshot, rebuildable from D1 | ⏳ D.4 |
@@ -350,16 +350,18 @@ TypeScript + Cloudflare learning path, across six clusters in order:
 | Cluster | Topic | State |
 |---|---|---|
 | A | TypeScript & React fundamentals | ✅ Done |
-| B | App Router, Server Components, Server Actions, zod | 🟡 4/6. `REQ-B.4` is blocked on `REQ-D.1`; `REQ-B.6` is a spoken answer |
+| B | App Router, Server Components, Server Actions, zod | 🟡 5/6. `REQ-B.6` is a spoken answer |
 | C | Workers, Wrangler, first edge LLM call | 🟡 4/5. **Live** at https://splitr.raffaele-digennaro.workers.dev. `REQ-C.5` is a spoken answer |
-| D | D1, KV, R2, Vectorize | 🟡 1/6. The schema and first migration are applied (`REQ-D.1`, [ADR-0018](./wiki/decisions/0018-splitr-domain-model.md)) |
+| D | D1, KV, R2, Vectorize | 🟡 1/6. `REQ-D.1` is done: the schema, and groups, expenses and settlements **persist** |
 | E | Durable Objects, Cron, service bindings, RAG | Not started |
 | F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
 
-**Accounts persist** in D1, both deployed and locally. **The domain tables
-exist** (`REQ-D.1`), but **groups and expenses aren't written to them yet**: both
-write paths validate and report "nothing was stored" rather than returning a
-201 that implies otherwise. Wiring them through D1 is D.3.
+**Everything persists in D1**: accounts, groups, memberships, expenses and
+settlements. **One known, deliberate gap:** until the Durable Object arrives
+(E.1), two people settling the same debt *at the same moment* can both
+succeed. It's reproduced and documented in
+[the "before" evidence](./wiki/evidence/REQ-E.1-double-settle-without-the-do.md);
+fixing it is the heart of Cluster E.
 
 ## Running locally
 
@@ -374,6 +376,7 @@ cp .env.example .env     # then set BETTER_AUTH_SECRET
 npm install
 npm run cf:types         # bindings -> TypeScript; tsc fails without it
 npm run db:migrate:local # apply the migrations in ./drizzle to the local D1
+npx next typegen         # generate route types (RouteContext) before tsc
 npm run dev -- -p 3100
 ```
 

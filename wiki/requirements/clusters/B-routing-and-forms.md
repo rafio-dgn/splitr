@@ -141,10 +141,14 @@ verify in devtools that there are **no client-side data calls**.
       the expense-detail "No line items" empty (no expense can exist before
       `REQ-D.1`).
 
-**Source:** capture §5 · **Status:** ⚠️ **In progress** — downgraded from Done by the tech lead on QA finding F-3.
-Four of thirteen empty states are coded but have **never rendered** — unreachable
-until `REQ-D.1` replaces the group fixture with real tables. "Compiled" is not
-"has". Reachable again at `REQ-D.1`.
+**Source:** capture §5 · **Status:** ✅ **Done**, 2026-09-24. It was downgraded by
+the tech lead on QA finding F-3 ("compiled is not has"): four of thirteen empty
+states had never rendered while the group fixture existed. D.3 replaced the
+fixture with D1, and **all four were then rendered in a real browser**:
+*No groups yet*, *It's just you in here so far*, *You're the only member of…*,
+and *No line items*. The non-empty balance branch (finding O-4) rendered too
+("You owe £40.00"). Evidence:
+[`REQ-D.1-writes-through-d1.md`](../../evidence/REQ-D.1-writes-through-d1.md).
 
 **Notes:** The empty state comes from the concepts list ("give every async page a
 loading, error and empty state"), not the build list — worth doing anyway.

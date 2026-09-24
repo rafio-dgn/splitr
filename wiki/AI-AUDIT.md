@@ -1122,3 +1122,59 @@ does, months later, without the original chat transcript.
   - Production has 0 users.
 - **Open questions:** Raffaele re-registering; E.1's scope (does every
   balance-changing write go through the DO?); the glossary seal leak.
+
+## 2026-09-24T13:30Z — D.3: writes through D1, naive settlements, tests, browser E2E
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "Commit what you did and continue." Committed and pushed
+  as `a071078`/`510adca`, then built D.3.
+- **Inputs read:**
+  - Every file that consumed the fixture (15).
+  - `screens-cluster-b.md` §6 (the settle design) and ADR-0012's decision.
+  - The installed Drizzle D1 `batch` typings.
+- **Decision asked:** whether settlements are written at D.3 (naive, with the
+  race) or only at E, with the DO. Raffaele chose naive at D.3, so it serves as
+  E.2's "before".
+- **Actions:**
+  - Replaced the fixture bodies with D1 queries and wrote the join Server
+    Action.
+  - Batched writes for group/membership and expense/shares; a naive
+    settlement service, form and Route Handler; balances with settlements;
+    `cache()` on every read; a shared audit helper.
+  - Fixed stale comments (expense detail, members error) and false copy (the
+    join form's O-2 promise).
+  - Wrote the ADR-0012 tests.
+  - A Puppeteer two-context E2E, run locally and on production (production
+    rows deleted afterwards, scoped by group id and `@example.test`); a
+    concurrency probe with curl; and the four `REQ-B.4` empty states
+    rendered.
+- **Alternatives considered:**
+  - Voiding and leaving UIs were deferred, since no `REQ` asks for them.
+  - Considered an aggregate SQL query for balances, and rejected it: one pure,
+    tested `deriveBalances` is the single source of the formula, and group
+    sizes are small.
+  - zod in the settlement *rule* was rejected: the rule is pure arithmetic,
+    and the shape is in `schemas/settlement.ts`.
+- **Caught in my own work:**
+  - My splice of `amountMinorUnitsField` cut at the inner `});`, which gave a
+    syntax error. It was found by `tsc` and fixed, then re-indented.
+  - The first Puppeteer import used the wrong entry path.
+  - The "Alice recorded Alice's payment" copy was fixed.
+  - `next typegen` was needed for the new route's `RouteContext`.
+- **Assumptions:**
+  - The invite code has 10 characters from a 56-symbol alphabet, and the
+    `grp_`/`exp_`/`stl_` id prefixes are my choice.
+  - The currency is fixed to GBP server-side at group creation, so it isn't a
+    form field.
+  - A refusal from the Route Handler is a `409`.
+- **Verification:**
+  - `tsc` and ESLint clean; 11/11 tests, and the mutation check fails 2 as
+    expected.
+  - The E2E passes locally and on production (version `6276cbc0`).
+  - The race: round 1 gave 201/201 with two settlements in D1.
+  - The `[AUDIT]` lines show `persisted: true`.
+  - Production is back to 0 rows in every table.
+- **Open questions:**
+  - E.1's scope (does every balance-changing write go through the DO?).
+  - CSRF on the JSON Route Handlers, to verify at F.
+  - Worker size at 76%.
+  - Raffaele re-registering.

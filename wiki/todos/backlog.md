@@ -294,4 +294,30 @@ requirement work, not new scope; they sit here only so they are not lost.
       move it or accept it.
 - [ ] `todo` **Raffaele: re-register on the live site.** Production has 0
       users since the migration (2026-09-24).
+- [x] ~~`O-3` The feed read twice per render, uncached.~~ **Fixed at D.3:**
+      every read in `expense-feed.ts` is `cache()`d, and balances come from
+      one `getGroupBalances()`.
+- [x] ~~`REQ-B.4` Four empty states that never rendered.~~ **All four were
+      rendered in a real browser at D.3.** `REQ-B.4` is Done.
+- [ ] `O-2` **Still open, with honest copy for now.** The join form used to
+      promise "Log in instead and you'll join". Nothing implements a return
+      path, so it now says "Log in, then open this invite link again". The real
+      fix is `/login?next=`.
+- [ ] `D.3-gap` **Voiding and leaving aren't built.** ADR-0018 §3/§6/§7 fixed
+      how they work, and the schema supports them (`voided_at`/`voided_by`,
+      `left_at`), but no `REQ` asks for the UI. They're candidates for
+      `REQ-D.5`'s natural schema change, or for E.1 if every balance-changing
+      write must go through the DO.
+- [ ] `watch` **Worker size is 2,329 KiB gzipped (about 76% of 3 MiB)** after
+      D.3, up from 69%. Cluster D still adds R2 signing, the embedding path and
+      search. Re-measure every deploy.
+- [ ] `F` **The cookie-authenticated JSON Route Handlers need a CSRF check.**
+      `POST …/expenses` and `…/settlements` accept a session cookie and parse
+      the body regardless of `Content-Type`. The mitigation today is Better
+      Auth's `SameSite=Lax` cookie, which isn't sent on cross-site POSTs.
+      Verify that at Cluster F (`REQ-F.2`/F.3's "forge a submit") rather than
+      assume it.
+- [ ] `dx` **A fresh clone needs `npx next typegen`** as well as
+      `npm run cf:types`. A new route's `RouteContext<…>` type doesn't exist
+      until Next generates it, which is the same class as `LayoutProps<"/">`.
 

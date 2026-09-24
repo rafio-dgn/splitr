@@ -36,3 +36,11 @@ the real pasted output, and the date.
   10 tables from `0000_initial_schema.sql`, applied locally and remotely. Six
   bad writes each refused by a named `CHECK` or foreign key, and the handling
   of the auth tables that already existed (including Raffaele's own account).
+- [`REQ-D.1-writes-through-d1.md`](./REQ-D.1-writes-through-d1.md) (D.3):
+  groups, joining, expenses and settlements in D1. A two-browser run passed
+  locally and on production; `REQ-B.4`'s four empty states rendered; the
+  `[AUDIT]` lines show `persisted: true`; 11 tests pass, plus a mutation check.
+- [`REQ-E.1-double-settle-without-the-do.md`](./REQ-E.1-double-settle-without-the-do.md):
+  **E.2's "before"**. Two concurrent settlements of one £40 debt, both
+  accepted, and visible in the audit log. The "after" (with the DO) is owed at
+  E.2.

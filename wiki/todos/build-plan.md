@@ -88,7 +88,7 @@ deliverable that is easy to forget.
 |---|---|---|---|
 | D.1 | Design the D1 schema in `src/db/schema.ts` with Drizzle: users, groups, members, expenses, expense_items, settlements. **ADR** for the split model (equal shares vs per-item). Item `category` is constrained to the 12 keys, default `uncategorised` ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §4). The auth tables that already existed in D1 (ADR-0015) were **dropped and recreated by the first migration**, so the history is complete (see the evidence) | `REQ-D.1` | ✅ 2026-09-24. Equal shares, pairwise settlements, void-not-edit ([ADR-0018](../decisions/0018-splitr-domain-model.md)); [evidence](../evidence/REQ-D.1-schema-and-first-migration.md) |
 | D.2 | `drizzle-kit generate`, apply the migration | `REQ-D.1` | ✅ 2026-09-24. `0000_initial_schema.sql`, applied locally and remotely |
-| D.3 | Wire expenses + settlements through D1; group balance computed from them | `REQ-D.1` | ⬜ |
+| D.3 | Wire expenses + settlements through D1; group balance computed from them | `REQ-D.1` | ✅ 2026-09-24. Groups, joining, expenses and settlements in D1; the fixture is gone; **settlement is naive by design** (E.2's before); [evidence](../evidence/REQ-D.1-writes-through-d1.md) |
 | D.4 | KV: hot per-group balance snapshot, rebuildable from D1 | `REQ-D.2` | ⬜ |
 | D.5 | R2 **presigned URL** flow: Worker issues the URL, client uploads the photo direct, only the key is stored | `REQ-D.3` | ⬜ |
 | D.6 | Vision model itemises the receipt into a **draft the user confirms**, never straight into the ledger. **Spike every available vision model on the same ~10 real English receipts**, then write the ADR for the choice ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §2, §10). Manual entry stays the fallback | `REQ-D.3`, ADR-0004 | ⬜ |
@@ -109,7 +109,7 @@ you hit.
 | # | Task | Req |
 |---|---|---|
 | E.1 | `GroupLedger` Durable Object, `idFromName(groupId)`. Validates pre-conditions, writes to D1, returns the new balance. **ADR:** does the DO own the balance or only arbitrate? | `REQ-E.1` |
-| E.2 | **Refuse the second settlement.** Two concurrent settlements of the same debt → one wins, one is told it lost | `REQ-E.1`, `REQ-P.3` |
+| E.2 | **Refuse the second settlement.** Two concurrent settlements of the same debt → one wins, one is told it lost. 🟡 **"Before" captured on 2026-09-24:** [both accepted](../evidence/REQ-E.1-double-settle-without-the-do.md). The "after" is owed | `REQ-E.1`, `REQ-P.3` |
 | E.3 | `idempotencyKey` **header**, cached 24h in DO storage; replay returns the cached result, no second write | `REQ-E.2` |
 | E.4 | DO alarm evicts expired idempotency entries | `REQ-E.2` |
 | E.5 | `[AUDIT]` line on every mutation: actor, action, target, timestamp, outcome | `REQ-E.3`, `REQ-M.5` |

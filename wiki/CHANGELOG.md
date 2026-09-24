@@ -623,3 +623,37 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-D.1`. The domain decisions come from two rounds of questions
   with Raffaele.
 - **Decision:** [ADR-0018](./decisions/0018-splitr-domain-model.md)
+
+## 2026-09-24 — D.3: groups, joining, expenses and settlements through D1
+- **Type:** added
+- **Scope:**
+  - `src/lib/groups/{membership,create-group,join-group}.ts`
+  - `src/lib/expenses/{expense-feed,balances,group-balances,add-expense}.ts`
+  - `src/lib/settlements/{rules,record-settlement}.ts`
+  - `src/lib/schemas/{expense,settlement}.ts`
+  - `src/lib/{audit,ids,money}.ts`
+  - `src/lib/money.test.ts` (new)
+  - the group, join, expense and settle pages, actions and forms
+  - `src/app/api/groups/[groupId]/settlements/route.ts` (new)
+  - `package.json`, `tsconfig.json`, the evidence files, and status docs
+- **What:**
+  - **The group fixture is replaced by D1 queries**, with the same
+    signatures and the same "`null` means 404" contract.
+  - **Creating a group** writes the group and the creator's membership in one
+    batch. **Joining** goes through a new Server Action that re-checks the
+    code. **Adding an expense** writes it and its shares in one batch and
+    redirects; the Route Handler now returns 201 with `Location`.
+  - **Settlements** check ADR-0018 §2's rule and then write. This is naive by
+    design, with the race marked `RACE (REQ-E.1)`. There's a new settle form
+    with §6's four outcomes, and a Route Handler for curl evidence.
+  - **Balances** now include settlements through one cached
+    `getGroupBalances()`, and every read is `cache()`d (O-3). The `[AUDIT]`
+    helper is shared and logs `persisted: true` only after the write.
+  - **The tests ADR-0012 promised** (`npm test`, `node --test`, no
+    dependencies) are written: 11 pass, plus a mutation check.
+  - **Verified in two real browsers**, locally and on production (then
+    cleaned). The race was reproduced: both concurrent settlements accepted.
+  - `REQ-B.4` is promoted to Done, since all four empty states render.
+- **Why:** build plan D.3 / `REQ-D.1`. The naive settlement is Raffaele's
+  sequencing, E.2's "before".
+- **Decision:** [ADR-0018](./decisions/0018-splitr-domain-model.md) (implemented). No new ADR.

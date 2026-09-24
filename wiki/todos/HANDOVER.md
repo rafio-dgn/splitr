@@ -12,9 +12,9 @@ mid-way through the second, after `REQ-C.1`. Read this, then
 | Repo | [github.com/rafio-dgn/splitr](https://github.com/rafio-dgn/splitr). **Cluster C work is uncommitted**; the last commit is `18b7c24` |
 | Live | **https://splitr.raffaele-digennaro.workers.dev** (Worker `splitr`, D1 `splitr`, WEUR) |
 | Cluster A | ✅ Done |
-| Cluster B | 🟡 4/6 — see below |
+| Cluster B | 🟡 5/6: `REQ-B.4` ✅ since D.3; only `REQ-B.6` (spoken) remains |
 | Cluster C | 🟡 4/5: only `REQ-C.5`, the spoken questions, remains |
-| Cluster D | 🟡 `REQ-D.1` ✅ (schema + first migration, ADR-0018). Next is D.3: wire expenses and settlements through D1 |
+| Cluster D | 🟡 `REQ-D.1` ✅ incl. D.3: groups, joining, expenses and settlements persist. **Settlement is naive by design**: the double-settle race is real and documented until E.1. Next is D.4, the KV balance snapshot |
 
 Splitr runs on Workers via OpenNext ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
 **Accounts persist in D1**, locally and deployed. `better-sqlite3` is gone

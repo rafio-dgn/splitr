@@ -7,7 +7,7 @@ you need to take from each one, and what's still to be written or answered.
 
 **It's kept current.** Every session that adds an ADR, evidence file,
 deliverable or open question also updates this page (`CLAUDE.md` §3).
-*Last updated: 2026-09-24, after `REQ-D.1` (the schema and first migration).*
+*Last updated: 2026-09-24, after D.3 (writes through D1, and the race reproduced).*
 
 ---
 
@@ -62,6 +62,8 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [REQ-C.2 throwaway Worker](../evidence/REQ-C.2-throwaway-worker.md) | The full lifecycle, including a clean teardown | Var vs secret, and "tail says `Ok` even for a 401" |
 | [REQ-C.3 first edge LLM call](../evidence/REQ-C.3-first-edge-llm-call.md) | Llama through a binding; the categorisation spike | "14/15 on descriptions, **2/10 on receipt shorthand**: that's why RAG" |
 | [REQ-D.1 schema and first migration](../evidence/REQ-D.1-schema-and-first-migration.md) | The generated migration is genuinely the first; the database refuses bad rows itself | "Six bad writes, six refusals, each naming the rule it broke" |
+| [D.3 writes through D1](../evidence/REQ-D.1-writes-through-d1.md) | The whole flow in two real browsers, on production; `REQ-B.4`'s empty states render; 11 tests plus a mutation check | "The fixture was built to be swapped, and no page changed its contract" |
+| [**The double settlement, without the DO**](../evidence/REQ-E.1-double-settle-without-the-do.md) | **E.2's "before"**: two concurrent settlements of one £40 debt, both accepted | "The ledger is internally consistent and factually wrong. That's why the DO exists." **The centre of the demo** |
 
 ## 4. The spoken questions: where your material is
 
@@ -127,6 +129,11 @@ these are here so you don't have to reconstruct them later.
   `Element` clash.
 - **A `var` leaked into local preview** and broke auth there too. Wrangler reads
   `.dev.vars`, not `.env`.
+- **The sequential duplicate was refused, and the concurrent one wasn't.** Same
+  rule, same code. The only difference is *timing*, and that's the whole case
+  for a Durable Object.
+- **ADR-0012 promised tests "now", and none existed until D.3.** The first run
+  of the mutation check proved they catch the bug they're for.
 - **The first migration collided with tables that already existed**, and
   production held your own account. The row counts were checked before
   anything was dropped, and it turned out not to be empty.
