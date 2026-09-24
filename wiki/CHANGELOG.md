@@ -553,3 +553,22 @@ shape that triggers them. They are listed rather than ticked.
   Done. The code remains in history at `f18efcd`.
 - **Why:** `REQ-C.2`: "torn down cleanly" is part of the requirement.
 - **Decision:** none. Follows [ADR-0006](./decisions/0006-repo-layout.md).
+
+## 2026-09-24 — Draft: three modules that won't run on Workers (REQ-C.4)
+- **Type:** docs
+- **Scope:** `docs/modules-that-wont-run-on-workers.md` (new), `README.md`,
+  `wiki/requirements/clusters/C-workers.md`, `wiki/todos/build-plan.md`
+- **What:** Drafted from Raffaele's own module list, choosing one failure class
+  each:
+  - `bcrypt` (native addon) → Web Crypto PBKDF2;
+  - `puppeteer`/`playwright` (launches a binary) → Browser Rendering;
+  - `socket.io` (long-lived process with in-memory state) → Durable Objects
+    with WebSocket hibernation.
+
+  The same-class modules are folded in: `bcryptjs`, `html-pdf`, `ffmpeg`,
+  `node-cron`, `bullmq`, `redis`. There's also an aside on `dotenv`/`config`
+  failing silently, and a list of former textbook examples that now work
+  (`fs`, `pg`).
+- **Why:** `REQ-C.4`. It's a written deliverable, and it stays in the repo for
+  the demo.
+- **Decision:** none. `docs/` is the location the requirement itself suggests.

@@ -989,3 +989,44 @@ does, months later, without the original chat transcript.
   - C.6 needs Raffaele to name three modules from his own past projects; an
     agent can't supply those.
   - This teardown isn't committed yet.
+
+## 2026-09-24T09:00Z — REQ-C.4: candidate list, probes, and the draft write-up
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:**
+  1. "List the possible modules; I'll say which I've used. Don't change any
+     decision."
+  2. Then: "These are the ones I know for sure. Tell me whatever you choose so
+     I can steer."
+- **Inputs read:**
+  - Workers docs on `node:fs`, TCP sockets / node-postgres / Hyperdrive, and
+    platform limits.
+  - `@better-auth/utils`'s export map and `password.mjs`.
+- **Actions:**
+  - Checked `fs` and `pg` before listing: both now work, so they were flagged
+    as weak examples.
+  - Gave a grouped candidate list with no file changes.
+  - Chose one module per failure class from Raffaele's confirmed list.
+  - Probed in a scratch Worker on local workerd, then deleted it:
+    - `bcrypt` bundles and then fails at runtime;
+    - `bcryptjs` takes 59 ms per hash;
+    - PBKDF2 100k takes 5 ms, and 600k 32 ms.
+  - Drafted `docs/modules-that-wont-run-on-workers.md` and linked it from the
+    README.
+- **Wrong beliefs caught by probing, not shipped:**
+  1. I expected `bcrypt` to fail at **build** time. It bundles (16.9 KiB) and
+     fails at runtime with `ReferenceError: __dirname is not defined`.
+  2. I believed workerd caps PBKDF2 at 100,000 iterations. 600,000 ran
+     locally. The claim was dropped.
+  3. I suspected Better Auth might hash with pure-JS scrypt on Workers, which
+     would have the same CPU problem as `bcryptjs`. Its export map sends
+     `workerd` to the native `node:crypto` variant, so it doesn't.
+- **Softened in the draft:**
+  - Chromium's exact size became "well over 100 MB".
+  - The "128 MB is less than one tab" comparison was dropped.
+  - Hibernation is described as avoiding *duration* charges, not CPU.
+- **Assumptions:**
+  - The contexts in which Raffaele used each module are unknown, so the draft
+    is written generically. He may want to add a line saying where he used
+    each.
+  - The local workerd timings may differ from production CPU accounting.
+- **Open questions:** Raffaele's review of the draft; then committing it.

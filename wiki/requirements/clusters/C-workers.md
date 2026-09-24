@@ -83,11 +83,15 @@ code. See [ADR-0017](../../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecat
 *why* plus an edge-friendly replacement for each.
 
 **Acceptance criteria:**
-- [ ] Three real modules identified, from actual past projects
-- [ ] One paragraph each explaining *why* it fails on V8 isolates
-- [ ] An edge-friendly replacement named for each
+- [x] Three real modules identified, from actual past projects: `bcrypt`,
+      `puppeteer`/`playwright` and `socket.io`, all from Raffaele's own list
+- [x] One paragraph each explaining *why* it fails on V8 isolates, one
+      failure class each
+- [x] An edge-friendly replacement named for each
 
-**Source:** capture §6 · **Status:** Not started
+**Source:** capture §6 · **Status:** ✅ **Done**, 2026-09-24. Reviewed by
+Raffaele and cut to three paragraphs at his request:
+[`docs/modules-that-wont-run-on-workers.md`](../../../docs/modules-that-wont-run-on-workers.md)
 
 **Notes:** A written deliverable, not code. It belongs in the repo — put it in
 the README or a `docs/` note so it survives to the demo. The examples given

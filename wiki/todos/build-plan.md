@@ -73,7 +73,7 @@ Cluster F, is the single highest-value bit of foresight in this plan.
 | C.3 | Throwaway hello-world Worker: `npm create cloudflare@latest`, configure `wrangler.jsonc`, `wrangler secret put`, curl it, `wrangler tail` it | `REQ-C.2` | ✅ 2026-09-23. `splitr-hello`, [evidence](../evidence/REQ-C.2-throwaway-worker.md) |
 | C.4 | Add an `ai` binding; answer with `@cf/meta/llama-3.1-8b-instruct`. **Per [ADR-0016](../decisions/0016-ai-integration-strategy.md) §12:** a no-RAG line-item categoriser over the closed taxonomy, measuring latency, output format and failure modes. It's also the eval's no-RAG baseline | `REQ-C.3` | ✅ 2026-09-23. `-fp8` stands in for the deprecated model ([ADR-0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md)). 14/15 on descriptions, **2/10 on receipt shorthand**, [evidence](../evidence/REQ-C.3-first-edge-llm-call.md) |
 | C.5 | **Tear the throwaway Worker down cleanly** | `REQ-C.2` | ✅ 2026-09-23. Worker, secret and directory deleted; before and after recorded in the [evidence](../evidence/REQ-C.2-throwaway-worker.md) |
-| C.6 | Write up three modules that won't run on Workers + replacements → commit to the repo | `REQ-C.4` | ⬜ |
+| C.6 | Write up three modules that won't run on Workers + replacements → commit to the repo | `REQ-C.4` | ✅ 2026-09-24. `bcrypt`, `puppeteer`, `socket.io` (Raffaele's choice), three paragraphs, [`docs/…`](../../docs/modules-that-wont-run-on-workers.md) |
 | C.7 | Answer the five cluster questions | `REQ-C.5` | ⬜ |
 
 **Exit:** Splitr is live on Cloudflare; first edge LLM call proven.
