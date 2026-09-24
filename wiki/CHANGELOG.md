@@ -704,3 +704,35 @@ shape that triggers them. They are listed rather than ticked.
     attach attacks refused.
 - **Why:** `REQ-D.3`.
 - **Decision:** [ADR-0020](./decisions/0020-receipts-via-presigned-r2-urls.md)
+
+## 2026-09-24 — D.6: receipt-reading decisions, and the vision spike (interim)
+- **Type:** added
+- **Scope:** `wiki/decisions/0021-receipt-reading-approach.md` (new),
+  `scripts/vision-spike/` (new, dev-only), `wiki/evidence/D.6-vision-spike.md`
+  (new), and status docs. Receipt images are in `.data/receipts/`, which is
+  gitignored.
+- **What:**
+  - Recorded Raffaele's four answers: two Llamas, raw and expanded lines, a
+    "Read receipt" button with the total confirmed, and a mix of his receipts
+    and SROIE.
+  - Accepted Meta's Llama 3.2 licence on his instruction.
+  - Took six SROIE (CC-BY-4.0) receipts with published totals and
+    hand-labelled their 14 items before any model ran.
+  - Built a harness (the same prompt for both models, `temperature: 0`) and
+    ran two prompts. v1: Scout 5/6 totals and 14/14 items, Llama 3.2 4/6 and
+    13/14. v2: Scout was unchanged, while Llama 3.2 broke into Markdown (3/6
+    valid JSON). A GST-summary "Total" fooled both.
+- **Why:** build plan D.6 and ADR-0016 §10.
+- **Decision:** [ADR-0021](./decisions/0021-receipt-reading-approach.md). The
+  model is pending Raffaele's receipts.
+
+## 2026-09-24 — D.6 model chosen: Llama 4 Scout
+- **Type:** docs
+- **Scope:** `wiki/decisions/0021-receipt-reading-approach.md`, `wiki/todos/STUDY-GUIDE.md`
+- **What:** Raffaele chose `@cf/meta/llama-4-scout-17b-16e-instruct`, after a
+  pros-and-cons comparison of all six live vision models (two of them
+  measured). He declined adding more models to the spike. The ADR records the
+  evidence, the deciding factors, the limit of what was compared, and my
+  corrected GLM pricing claim.
+- **Why:** ADR-0016 §10.
+- **Decision:** [ADR-0021](./decisions/0021-receipt-reading-approach.md)

@@ -52,3 +52,7 @@ the real pasted output, and the date.
   photos go straight from the browser to R2 (from the browser's own request
   log). A Content-Type pin that **didn't hold** until `allHeaders: true` was
   added, and five attach-time attacks, all refused.
+- [`D.6-vision-spike.md`](./D.6-vision-spike.md) (**interim**): Llama 4 Scout
+  against Llama 3.2 Vision on six SROIE receipts, with two prompts. Scout gets
+  5/6 totals and valid JSON 12/12; Llama 3.2 drops to Markdown on a longer
+  prompt. Raffaele's receipts are still to come.

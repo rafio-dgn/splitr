@@ -45,6 +45,7 @@ answer to "why?".
 | [0015](../decisions/0015-one-database-driver-d1-everywhere.md) | Why D1 locally too? | Two drivers would make every local check say nothing about the deployed database |
 | [0016](../decisions/0016-ai-integration-strategy.md) | What does the AI do? | 12 decisions **you** made: RAG categorises items, money needs a human, English only, a closed list of 11 categories, after the write, behind the AI Worker, one vector per item, group first then a seed corpus, a labelled eval |
 | [0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) | The course's Llama is dead | It was deprecated on 2026-05-30 (error 5028). We use the same weights as `-fp8`; the eval picks E.4's model |
+| [0021](../decisions/0021-receipt-reading-approach.md) | How are receipts read? | **Your answers:** two Llamas compared; each line stored raw *and* expanded (a new column, which is `REQ-D.5`); a "Read receipt" button; you confirm the total; test receipts are yours plus SROIE (CC-BY-4.0). You accepted Meta's Llama 3.2 licence. **Model: Llama 4 Scout** (your choice): 5/6 totals against 4/6, valid JSON 12/12 against 9/12, JSON mode, twice as fast, twice the neurons |
 | [0020](../decisions/0020-receipts-via-presigned-r2-urls.md) | How do receipt photos get stored? | The browser PUTs straight to R2 with a 5-minute presigned URL; the Worker only signs, and stores the key. It's checked on attach (group prefix, exists, ≤10 MB, image type) |
 | [0019](../decisions/0019-kv-holds-recent-descriptions-not-balances.md) | What goes in KV? | Recent descriptions for autofill, **not** the balance: KV can be a minute stale, and a stale balance is a wrong balance. **Your choice**, which changed the original plan |
 | [0018](../decisions/0018-splitr-domain-model.md) | The domain model | **Your 8 answers:** equal shares (items are informational); a settlement is "A paid B", valid only if A owes and B is owed; void-and-re-add, never edit; one currency per group; one rotatable invite code; leave only when square; any member may void; only the two parties record a settlement |
@@ -138,6 +139,10 @@ these are here so you don't have to reconstruct them later.
   `Element` clash.
 - **A `var` leaked into local preview** and broke auth there too. Wrangler reads
   `.dev.vars`, not `.env`.
+- **A better prompt made the smaller model worse.** Llama 3.2 went from 12/12 to
+  9/12 valid JSON when the prompt got longer; it wrote a Markdown report
+  instead. And a "tax summary" line fooled *both* models, even when told
+  explicitly to ignore it.
 - **The "pinned" Content-Type wasn't pinned.** Cloudflare's own `aws4fetch`
   example signs only `host`, and a `text/html` PUT was accepted. It was found
   by attacking it, and fixed with `allHeaders: true`. The attach check would
@@ -164,4 +169,5 @@ Kept in sync with [`backlog.md`](./backlog.md):
 - **D.8:** does search cover the current group or all your groups? The brief and the build plan disagree.
 - **Re-register on the live site.** Your account was dropped by the first migration, your choice.
 - **The seal leak also covers `wiki/context/glossary.md`** (EdgeLedger's domain terms).
+- **D.6: photograph 3–5 English receipts** into `splitr/.data/receipts/mine/`. Then you choose the vision model from the spike.
 - **Spoken answers:** `REQ-A.5`, `REQ-B.6`, `REQ-C.5`.

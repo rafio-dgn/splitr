@@ -14,7 +14,7 @@ mid-way through the second, after `REQ-C.1`. Read this, then
 | Cluster A | ✅ Done |
 | Cluster B | 🟡 5/6: `REQ-B.4` ✅ since D.3; only `REQ-B.6` (spoken) remains |
 | Cluster C | 🟡 4/5: only `REQ-C.5`, the spoken questions, remains |
-| Cluster D | 🟡 `REQ-D.1` ✅ incl. D.3: groups, joining, expenses and settlements persist. **Settlement is naive by design**: the double-settle race is real and documented until E.1. `REQ-D.2` ✅ (KV: recent descriptions, ADR-0019) · `REQ-D.3` ✅ (R2 presigned uploads, ADR-0020). Next is D.6, the **vision model spike**: an AI decision, so ask Raffaele first |
+| Cluster D | 🟡 `REQ-D.1` ✅ incl. D.3: groups, joining, expenses and settlements persist. **Settlement is naive by design**: the double-settle race is real and documented until E.1. `REQ-D.2` ✅ (KV: recent descriptions, ADR-0019) · `REQ-D.3` ✅ (R2 presigned uploads, ADR-0020). D.6's **vision spike is in progress**: ADR-0021 records Raffaele's four answers; the SROIE six have been run ([interim](../evidence/D.6-vision-spike.md)); it's **waiting on his 3–5 English receipts** in `.data/receipts/mine/` |
 
 Splitr runs on Workers via OpenNext ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
 **Accounts persist in D1**, locally and deployed. `better-sqlite3` is gone

@@ -330,4 +330,10 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `D.6` **Before the vision spike, ask Raffaele** (the AI-decision rule):
       the candidate models, the ~10 real English receipts he'll photograph,
       whether OCR expands abbreviations, and how the draft-to-confirm UI looks.
+- [ ] `D.6` **Raffaele: 3–5 English receipts** into `.data/receipts/mine/`
+      (gitignored). They'll be labelled together, then the spike re-runs v1,
+      v2, and Scout with JSON mode.
+- [ ] `D.6` **Receipt-size check:** SROIE's 4961×7016 scan was read fine by
+      both models (16.6 s on Llama 3.2). Re-check with real phone photos
+      before deciding whether resizing (the Images binding) is needed.
 

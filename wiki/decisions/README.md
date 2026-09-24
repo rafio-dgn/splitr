@@ -51,3 +51,4 @@ obvious in hindsight.
 | [0018](./0018-splitr-domain-model.md) | Splitr's domain model: equal shares, pairwise settlements, void-not-edit | Accepted |
 | [0019](./0019-kv-holds-recent-descriptions-not-balances.md) | KV holds recent expense descriptions, not a balance snapshot | Accepted |
 | [0020](./0020-receipts-via-presigned-r2-urls.md) | Receipts go straight to R2 via presigned URLs, signed with aws4fetch and verified on attach | Accepted |
+| [0021](./0021-receipt-reading-approach.md) | Receipt reading: two Llamas in the spike, raw + expanded lines, a "Read receipt" button | Accepted (model pending the spike) |

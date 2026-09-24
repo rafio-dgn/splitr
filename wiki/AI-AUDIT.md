@@ -1267,3 +1267,43 @@ does, months later, without the original chat transcript.
   - Production is back to 0 rows and 0 keys.
 - **Open questions:** D.6 is an AI decision, so it needs Raffaele's answers
   first; orphaned photos (backlog).
+
+## 2026-09-24T19:00Z — D.6: questions, licence, dataset, and the first two spike runs
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "yes": commit D.4/D.5 (done, `6f652f6`..`fb96e8a`) and ask
+  the D.6 questions.
+- **Inputs read:**
+  - The live Workers AI catalogue and both Llamas' schemas.
+  - SROIE's Hugging Face metadata, README and NOTICE (CC-BY-4.0).
+  - The six receipt images, which I looked at myself to label.
+- **Decisions asked:**
+  1. Four questions: candidates, shorthand, review UX, receipt source.
+     Raffaele chose **the Llamas only** (I had recommended four models), and
+     took my recommendation on the other three.
+  2. Meta's licence gate (5016). He said he'd read it and authorised `agree`,
+     so I sent it once.
+- **Actions:**
+  - Wrote ADR-0021.
+  - Downloaded SROIE's test split to the scratchpad, and extracted six at
+    fixed, evenly spaced indices with their totals.
+  - Labelled 14 items by eye, *before* running any model.
+  - Built the dev-only harness, and ran prompt v1, then v2.
+  - Inspected a failing response to find its cause.
+- **Caught in my own work:**
+  - I symlinked `node_modules` into `scripts/vision-spike/`. A symlink isn't
+    matched by `node_modules/` in `.gitignore`, so it would have been
+    committed. Removed before any commit.
+  - v2 was my prompt improvement, and it *hurt* one model. It's reported as a
+    finding, not quietly reverted.
+- **Assumptions:**
+  - The SROIE indices, the scoring order, the prompts and `max_tokens: 1024`
+    are my choices.
+  - An item "matches" when its amount matches a labelled amount, which is a
+    lenient measure. It's stated in the evidence.
+- **Verification:**
+  - Each run's per-receipt output and summary is pasted in the evidence file,
+    with the full results JSON in `.data/receipts/`.
+  - The failure diagnosis was a direct re-ask: prose, not truncation (162
+    tokens).
+- **Open questions:** Raffaele's receipts; his check of the 14 item labels;
+  the model choice.
