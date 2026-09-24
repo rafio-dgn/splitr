@@ -7,7 +7,7 @@ you need to take from each one, and what's still to be written or answered.
 
 **It's kept current.** Every session that adds an ADR, evidence file,
 deliverable or open question also updates this page (`CLAUDE.md` §3).
-*Last updated: 2026-09-24, after Cluster C's written deliverable.*
+*Last updated: 2026-09-24, after `REQ-D.1` (the schema and first migration).*
 
 ---
 
@@ -45,10 +45,11 @@ answer to "why?".
 | [0015](../decisions/0015-one-database-driver-d1-everywhere.md) | Why D1 locally too? | Two drivers would make every local check say nothing about the deployed database |
 | [0016](../decisions/0016-ai-integration-strategy.md) | What does the AI do? | 12 decisions **you** made: RAG categorises items, money needs a human, English only, a closed list of 11 categories, after the write, behind the AI Worker, one vector per item, group first then a seed corpus, a labelled eval |
 | [0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) | The course's Llama is dead | It was deprecated on 2026-05-30 (error 5028). We use the same weights as `-fp8`; the eval picks E.4's model |
+| [0018](../decisions/0018-splitr-domain-model.md) | The domain model | **Your 8 answers:** equal shares (items are informational); a settlement is "A paid B", valid only if A owes and B is owed; void-and-re-add, never edit; one currency per group; one rotatable invite code; leave only when square; any member may void; only the two parties record a settlement |
 
-**Still to decide, each with its own ADR:** the split model (equal vs per-item,
-D.1); the vision model (by spike, D.6); whether the DO *owns* the balance or only
-*arbitrates* (E.1); which Worker hosts `scheduled()` (E.8).
+**Still to decide, each with its own ADR:** the vision model (by spike, D.6); whether the DO *owns* the balance or only
+*arbitrates*, and whether **every** balance-changing write goes through it (E.1,
+raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 
 ## 3. Evidence: what you'll show, and what each piece proves
 
@@ -60,6 +61,7 @@ D.1); the vision model (by spike, D.6); whether the DO *owns* the balance or onl
 | [REQ-C.1 deployed](../evidence/REQ-C.1-deployed.md) | Live on Workers; a forged `Origin` gets 403 | "F-1 came back on deploy, and the `Origin` header caught it" |
 | [REQ-C.2 throwaway Worker](../evidence/REQ-C.2-throwaway-worker.md) | The full lifecycle, including a clean teardown | Var vs secret, and "tail says `Ok` even for a 401" |
 | [REQ-C.3 first edge LLM call](../evidence/REQ-C.3-first-edge-llm-call.md) | Llama through a binding; the categorisation spike | "14/15 on descriptions, **2/10 on receipt shorthand**: that's why RAG" |
+| [REQ-D.1 schema and first migration](../evidence/REQ-D.1-schema-and-first-migration.md) | The generated migration is genuinely the first; the database refuses bad rows itself | "Six bad writes, six refusals, each naming the rule it broke" |
 
 ## 4. The spoken questions: where your material is
 
@@ -125,6 +127,9 @@ these are here so you don't have to reconstruct them later.
   `Element` clash.
 - **A `var` leaked into local preview** and broke auth there too. Wrangler reads
   `.dev.vars`, not `.env`.
+- **The first migration collided with tables that already existed**, and
+  production held your own account. The row counts were checked before
+  anything was dropped, and it turned out not to be empty.
 
 ## 7. Open questions waiting on you
 
@@ -134,6 +139,7 @@ Kept in sync with [`backlog.md`](./backlog.md):
 - **The `wiki/techstack/` seal leak:** move the EdgeLedger-derived parts, or accept them.
 - **D.6:** should OCR expand receipt abbreviations?
 - **Tell the course owners** that `REQ-C.3`'s model is dead?
-- **D.1:** equal shares or per-item split? It's needed before the schema.
 - **D.8:** does search cover the current group or all your groups? The brief and the build plan disagree.
+- **Re-register on the live site.** Your account was dropped by the first migration, your choice.
+- **The seal leak also covers `wiki/context/glossary.md`** (EdgeLedger's domain terms).
 - **Spoken answers:** `REQ-A.5`, `REQ-B.6`, `REQ-C.5`.

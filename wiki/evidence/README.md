@@ -32,3 +32,7 @@ the real pasted output, and the date.
   first Llama call through an `ai` binding, and the categorisation spike. 14/15
   on clean descriptions, **2/10 on receipt shorthand**, 15/15 stable, and one
   prompt injection contained while another passed as a valid label.
+- [`REQ-D.1-schema-and-first-migration.md`](./REQ-D.1-schema-and-first-migration.md):
+  10 tables from `0000_initial_schema.sql`, applied locally and remotely. Six
+  bad writes each refused by a named `CHECK` or foreign key, and the handling
+  of the auth tables that already existed (including Raffaele's own account).

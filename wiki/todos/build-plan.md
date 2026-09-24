@@ -84,18 +84,18 @@ deliverable that is easy to forget.
 
 ## Cluster D — Storing data
 
-| # | Task | Req |
-|---|---|---|
-| D.1 | Design the D1 schema in `src/db/schema.ts` with Drizzle: users, groups, members, expenses, expense_items, settlements. **ADR** for the split model (equal shares vs per-item). Item `category` is constrained to the 12 keys, default `uncategorised` ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §4). **The auth tables already exist in D1**, so the first migration must not recreate them (ADR-0015) | `REQ-D.1` |
-| D.2 | `drizzle-kit generate`, apply the migration | `REQ-D.1` |
-| D.3 | Wire expenses + settlements through D1; group balance computed from them | `REQ-D.1` |
-| D.4 | KV: hot per-group balance snapshot, rebuildable from D1 | `REQ-D.2` |
-| D.5 | R2 **presigned URL** flow: Worker issues the URL, client uploads the photo direct, only the key is stored | `REQ-D.3` |
-| D.6 | Vision model itemises the receipt into a **draft the user confirms**, never straight into the ledger. **Spike every available vision model on the same ~10 real English receipts**, then write the ADR for the choice ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §2, §10). Manual entry stays the fallback | `REQ-D.3`, ADR-0004 |
-| D.7 | Vectorize: **one vector per line item** with `@cf/baai/bge-base-en-v1.5`, `groupId` in the metadata, upsert. Plus the **seed corpus** of about 50 labelled example items for the RAG cold start ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §7, §8) | `REQ-D.4` |
-| D.8 | `/search` route: semantic search over past expenses, **scoped to the viewer's group**, with item hits grouped back to their expense. **Show it beats keyword** with about 10 labelled queries, semantic vs keyword ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §9) | `REQ-D.4` |
-| D.9 | Let a schema change arise naturally; migrate; update call sites | `REQ-D.5` |
-| D.10 | Answer the three cluster questions | `REQ-D.6` |
+| # | Task | Req | Done |
+|---|---|---|---|
+| D.1 | Design the D1 schema in `src/db/schema.ts` with Drizzle: users, groups, members, expenses, expense_items, settlements. **ADR** for the split model (equal shares vs per-item). Item `category` is constrained to the 12 keys, default `uncategorised` ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §4). The auth tables that already existed in D1 (ADR-0015) were **dropped and recreated by the first migration**, so the history is complete (see the evidence) | `REQ-D.1` | ✅ 2026-09-24. Equal shares, pairwise settlements, void-not-edit ([ADR-0018](../decisions/0018-splitr-domain-model.md)); [evidence](../evidence/REQ-D.1-schema-and-first-migration.md) |
+| D.2 | `drizzle-kit generate`, apply the migration | `REQ-D.1` | ✅ 2026-09-24. `0000_initial_schema.sql`, applied locally and remotely |
+| D.3 | Wire expenses + settlements through D1; group balance computed from them | `REQ-D.1` | ⬜ |
+| D.4 | KV: hot per-group balance snapshot, rebuildable from D1 | `REQ-D.2` | ⬜ |
+| D.5 | R2 **presigned URL** flow: Worker issues the URL, client uploads the photo direct, only the key is stored | `REQ-D.3` | ⬜ |
+| D.6 | Vision model itemises the receipt into a **draft the user confirms**, never straight into the ledger. **Spike every available vision model on the same ~10 real English receipts**, then write the ADR for the choice ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §2, §10). Manual entry stays the fallback | `REQ-D.3`, ADR-0004 | ⬜ |
+| D.7 | Vectorize: **one vector per line item** with `@cf/baai/bge-base-en-v1.5`, `groupId` in the metadata, upsert. Plus the **seed corpus** of about 50 labelled example items for the RAG cold start ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §7, §8) | `REQ-D.4` | ⬜ |
+| D.8 | `/search` route: semantic search over past expenses, **scoped to the viewer's group**, with item hits grouped back to their expense. **Show it beats keyword** with about 10 labelled queries, semantic vs keyword ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §9) | `REQ-D.4` | ⬜ |
+| D.9 | Let a schema change arise naturally; migrate; update call sites | `REQ-D.5` | ⬜ |
+| D.10 | Answer the three cluster questions | `REQ-D.6` | ⬜ |
 
 **Exit:** ✅ **Part 2 complete** — every store in use, each justifiable.
 **Watch:** D.5 must not stream through the Worker. D.7 is where D1's
@@ -194,7 +194,7 @@ Demo material. Capture at the moment it works, not afterwards:
 |---|---|---|
 | Auth library | B.2 | `REQ-B.5` |
 | Deploy adapter — OpenNext vs Pages | C.1 | `REQ-C.1` |
-| Split model — equal shares vs per-item | D.1 | `REQ-D.1` |
+| Split model: equal shares ✅ ([ADR-0018](../decisions/0018-splitr-domain-model.md)) | D.1 | `REQ-D.1` |
 | Vision model for receipt OCR, chosen by spike ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §10) | D.6 | ADR-0004 |
 | DO owns the balance, or only arbitrates | E.1 | `REQ-E.1` |
 | Test strategy | before A.1 | `../guidelines/testing.md` |

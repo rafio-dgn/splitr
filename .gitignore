@@ -54,5 +54,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local dev database (ADR-0009) — disposable, recreated with `npm run db:push`
+# scratch output (the local DB is now D1 in .wrangler/state, ADR-0015)
 .data/

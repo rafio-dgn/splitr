@@ -1073,3 +1073,52 @@ does, months later, without the original chat transcript.
   plan's D.8 says "the viewer's group". It's logged as a decision for Raffaele
   and not resolved.
 - **Open questions:** the search scope; committing this work.
+
+## 2026-09-24T11:30Z — REQ-D.1: domain questions, schema, first migration
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "Create the dedicated commit, push, and let's go to the
+  next step." The commits were pushed as `4ac1ef9` and `2c65b0d`. The next
+  build step is D.1, since `REQ-C.5` is spoken.
+- **Inputs read:**
+  - `REQ-D.1` and `D.5`, the glossary (stopped at its EdgeLedger section),
+    `schemas/expense.ts` and `group.ts`, `balances.ts`, the membership
+    fixture, `money.ts`, and the conventions and `equalShares` in `schema.ts`.
+  - The installed Drizzle `check`/`primaryKey` typings.
+- **Actions:**
+  - Asked eight domain questions in two rounds. Six matched the
+    recommendations; two differ (leave only when square, and any member may
+    void) and are recorded as his. Wrote ADR-0018.
+  - Wrote `categories.ts` and the six tables; generated the migration.
+  - Dropped the local auth tables, applied locally, and proved the
+    constraints.
+  - **Checked the remote row counts before dropping anything.** They were
+    not empty: Raffaele's own account was there. Asked him; he chose "drop it,
+    I'll re-register". Dropped the remote tables and applied the migration.
+  - Redeployed, verified, and deleted the test accounts. Replaced the
+    scripts; fixed the stale `.gitignore`/README/build-plan lines.
+- **Alternatives considered:**
+  - Hand-editing the migration to `IF NOT EXISTS`, and faking a
+    `d1_migrations` row, were rejected because the history would be untrue.
+  - Adding the domain-table relations now was rejected: they're only needed
+    when D.3 queries through `db.query`.
+  - A fourth alternative, backup-and-restore of his account, was offered and
+    declined by Raffaele.
+- **Caught in my own work:**
+  - `categories.ts` first used an `Object.keys(...) as ModelCategory[]` cast,
+    which the coding standards forbid. It was restructured as a literal tuple,
+    so the types are derived.
+  - The build-plan D.1 row claimed the migration "must not recreate" the auth
+    tables, which is the opposite of what was done. Corrected.
+- **Assumptions:**
+  - `receipt_key` was added now, because R2 (D.5) is planned. That makes it an
+    anticipated column, not a `REQ-D.5` candidate.
+  - `group` is kept as the table name, per `schema.ts`'s own conventions,
+    despite being an SQL keyword. It's documented in a comment.
+- **Verification:**
+  - `tsc` and ESLint clean.
+  - The migration applied at both ends, with nothing pending.
+  - 2 valid writes accepted and 6 invalid ones refused by a named constraint.
+  - Local sign-up 200. Deployed: sign-up 200, gate 200, forged `Origin` 403.
+  - Production has 0 users.
+- **Open questions:** Raffaele re-registering; E.1's scope (does every
+  balance-changing write go through the DO?); the glossary seal leak.

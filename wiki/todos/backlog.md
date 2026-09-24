@@ -224,7 +224,7 @@ requirement work, not new scope; they sit here only so they are not lost.
       every deploy from now on. `wrangler deploy` prints "Total Upload … / gzip".
       If it crosses the limit, that's a plan-tier decision, not an adapter one
       ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
-- [ ] `REQ-D.1` **Retire `db:local` / `db:remote`.** They apply
+- [x] ~~`REQ-D.1` **Retire `db:local` / `db:remote`.**~~ Done on 2026-09-24: replaced by `db:generate` and `db:migrate:local|remote`. The auth tables were dropped and recreated by the first migration, with Raffaele's approval for his own account. Original note: They apply
       `drizzle-kit export` DDL, and they aren't re-runnable (`CREATE TABLE`
       fails on existing tables). Replace them with generated migrations
       (`drizzle-kit generate` + `wrangler d1 migrations apply`) at `REQ-D.1`.
@@ -273,4 +273,25 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `E.4` **The eval must record neurons as well as accuracy.** The prompt
       size dominated cost in the spike (8B-fp8: 2.90 neurons per call with an
       11-line prompt), and RAG examples will grow the prompt.
+
+## Raised in Cluster D — 2026-09-24
+
+- [ ] `E.1` **Does every balance-changing write go through the Durable
+      Object?** A settlement checks the payer still owes, and leaving checks
+      the member is square (ADR-0018 §2, §6). Both are check-then-write
+      against net balances, and a void or new expense can land in between.
+      That's decided at E.1 together with "own vs arbitrate"
+      ([ADR-0018](../decisions/0018-splitr-domain-model.md), Consequences).
+- [ ] `D.3` **Rules only code can enforce**, needed when writes are wired
+      through D1: the expense currency must equal the group's; payers,
+      participants and settlement parties must be current (not-left) members;
+      leaving requires a net of exactly 0.
+- [ ] `stretch` Per-item splits, multi-currency, single-use invites
+      (declined in ADR-0018, kept as ideas).
+- [ ] `decision` **The seal leak extends to `wiki/context/glossary.md`.** Its
+      "Project" section describes EdgeLedger's domain (`daily_summary`, the
+      100-at-a-time backfill). It's the same question as `wiki/techstack/`:
+      move it or accept it.
+- [ ] `todo` **Raffaele: re-register on the live site.** Production has 0
+      users since the migration (2026-09-24).
 

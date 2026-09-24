@@ -10,9 +10,9 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf:types": "wrangler types --env-interface CloudflareEnv --include-runtime=false",
-    "db:ddl": "mkdir -p .data && drizzle-kit export --sql > .data/schema.sql",
-    "db:local": "npm run db:ddl && wrangler d1 execute splitr --local --file .data/schema.sql",
-    "db:remote": "npm run db:ddl && wrangler d1 execute splitr --remote --file .data/schema.sql",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply splitr --local",
+    "db:migrate:remote": "wrangler d1 migrations apply splitr --remote",
     "db:studio": "drizzle-kit studio",
     "auth:generate": "npx --yes auth@1.7.5 generate --config src/lib/auth.ts --output src/db/schema.ts"
   },

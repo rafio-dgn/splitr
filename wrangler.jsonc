@@ -43,7 +43,11 @@
 		{
 			"binding": "DB",
 			"database_name": "splitr",
-			"database_id": "bcbbea37-10b1-44d9-a8e6-4ad0103334a8"
+			"database_id": "bcbbea37-10b1-44d9-a8e6-4ad0103334a8",
+			// Where `drizzle-kit generate` writes. `wrangler d1 migrations
+			// apply` reads the same folder and records each file it runs in
+			// the database's own `d1_migrations` table.
+			"migrations_dir": "drizzle"
 		}
 	],
 

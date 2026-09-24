@@ -598,3 +598,28 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** Raffaele's request. `REQ-X.5` is started (`🟡`: it must be accurate
   as shipped), and `REQ-M.4`.
 - **Decision:** none
+
+## 2026-09-24 — REQ-D.1: domain schema and the first generated migration
+- **Type:** added
+- **Scope:** `src/db/schema.ts`, `src/lib/categories.ts` (new),
+  `drizzle/0000_initial_schema.sql` and `drizzle/meta/` (new),
+  `drizzle.config.ts`, `wrangler.jsonc`, `package.json`, `.gitignore`,
+  `README.md`, `wiki/decisions/0018-splitr-domain-model.md` (new),
+  `wiki/evidence/REQ-D.1-schema-and-first-migration.md` (new), and the status
+  documents
+- **What:**
+  - Six domain tables: `group`, `group_member`, `expense`, `expense_share`,
+    `line_item` and `settlement`. They have `CHECK`s for every single-row rule
+    and `restrict` foreign keys. The category `CHECK` is built from the shared
+    `src/lib/categories.ts`.
+  - Generated `0000_initial_schema.sql`. The pre-existing auth tables were
+    dropped so the migration recreates everything, and it was applied locally
+    and remotely. Raffaele chose to drop his own production account and
+    re-register.
+  - The `db:ddl`/`db:local`/`db:remote` scripts are replaced by `db:generate`
+    and `db:migrate:local|remote`.
+  - Redeployed, and verified sign-up, the gate and the forged-`Origin`
+    refusal on the new schema.
+- **Why:** `REQ-D.1`. The domain decisions come from two rounds of questions
+  with Raffaele.
+- **Decision:** [ADR-0018](./decisions/0018-splitr-domain-model.md)

@@ -13,7 +13,8 @@ mid-way through the second, after `REQ-C.1`. Read this, then
 | Live | **https://splitr.raffaele-digennaro.workers.dev** (Worker `splitr`, D1 `splitr`, WEUR) |
 | Cluster A | ✅ Done |
 | Cluster B | 🟡 4/6 — see below |
-| Cluster C | 🟡 `REQ-C.1` ✅ · `REQ-C.2` ✅ (torn down) · `REQ-C.3` ✅ (on `-fp8`: the course's model is deprecated, ADR-0017) · next is C.6, the three-modules write-up (`REQ-C.4`) |
+| Cluster C | 🟡 4/5: only `REQ-C.5`, the spoken questions, remains |
+| Cluster D | 🟡 `REQ-D.1` ✅ (schema + first migration, ADR-0018). Next is D.3: wire expenses and settlements through D1 |
 
 Splitr runs on Workers via OpenNext ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
 **Accounts persist in D1**, locally and deployed. `better-sqlite3` is gone

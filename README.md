@@ -104,7 +104,7 @@ flowchart LR
     end
 
     subgraph data["Data"]
-        D1[("D1 · splitr<br/>auth tables today<br/>+ groups, expenses, items, settlements")]
+        D1[("D1 · splitr<br/>users, groups, expenses,<br/>items, settlements")]
         KV[("KV<br/>balance snapshot")]
         R2[("R2<br/>receipt photos")]
         VEC[("Vectorize<br/>one vector per line item")]
@@ -134,7 +134,7 @@ flowchart LR
 |---|---|---|
 | `splitr` Worker | The whole Next.js app (App Router, Server Components, Server Actions) on the Workers runtime, via `@opennextjs/cloudflare` ([ADR-0014](./wiki/decisions/0014-opennext-as-the-deploy-adapter.md)) | ✅ live at https://splitr.raffaele-digennaro.workers.dev |
 | Better Auth | Email/password auth used as a black box: `getSession()` plus route gating in layouts ([ADR-0009](./wiki/decisions/0009-better-auth-on-local-sqlite-via-drizzle.md)) | ✅ live |
-| D1 `splitr` | The one relational store, reached only through `getDb()` per request ([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)) | ✅ auth tables · ⏳ domain tables at `REQ-D.1` |
+| D1 `splitr` | The one relational store, reached only through `getDb()` per request ([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)) | ✅ all 10 tables, from the first migration (`REQ-D.1`) · ⏳ domain writes wired at D.3 |
 | `GroupLedger` Durable Object | One instance per group (`idFromName(groupId)`). Validates, writes to D1, and refuses the duplicate settlement | ⏳ E.1–E.6. **Open question:** does it *own* the balance or only *arbitrate*? It gets its own ADR |
 | AI Worker | A separate Worker with no public URL and a shared-secret check. Line-item categorisation by RAG, and eventually every model call | ⏳ E.7 ([ADR-0016](./wiki/decisions/0016-ai-integration-strategy.md) §6) |
 | KV | Hot per-group balance snapshot, rebuildable from D1 | ⏳ D.4 |
@@ -352,14 +352,14 @@ TypeScript + Cloudflare learning path, across six clusters in order:
 | A | TypeScript & React fundamentals | ✅ Done |
 | B | App Router, Server Components, Server Actions, zod | 🟡 4/6. `REQ-B.4` is blocked on `REQ-D.1`; `REQ-B.6` is a spoken answer |
 | C | Workers, Wrangler, first edge LLM call | 🟡 4/5. **Live** at https://splitr.raffaele-digennaro.workers.dev. `REQ-C.5` is a spoken answer |
-| D | D1, KV, R2, Vectorize | Not started |
+| D | D1, KV, R2, Vectorize | 🟡 1/6. The schema and first migration are applied (`REQ-D.1`, [ADR-0018](./wiki/decisions/0018-splitr-domain-model.md)) |
 | E | Durable Objects, Cron, service bindings, RAG | Not started |
 | F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
 
-**Accounts persist** in D1, both deployed and locally. **Groups and expenses
-don't persist yet**: both write paths validate and report "nothing was stored"
-rather than returning a 201 that implies otherwise. Their tables arrive at
-`REQ-D.1`.
+**Accounts persist** in D1, both deployed and locally. **The domain tables
+exist** (`REQ-D.1`), but **groups and expenses aren't written to them yet**: both
+write paths validate and report "nothing was stored" rather than returning a
+201 that implies otherwise. Wiring them through D1 is D.3.
 
 ## Running locally
 
@@ -373,7 +373,7 @@ Or natively, with Node 24+:
 cp .env.example .env     # then set BETTER_AUTH_SECRET
 npm install
 npm run cf:types         # bindings -> TypeScript; tsc fails without it
-npm run db:local         # create the auth tables in the local D1, once
+npm run db:migrate:local # apply the migrations in ./drizzle to the local D1
 npm run dev -- -p 3100
 ```
 
@@ -383,6 +383,11 @@ needs a `.dev.vars` file, described at the bottom of `.env.example`.
 
 Deploying: `npm run deploy`. The production secret is set once with
 `wrangler secret put BETTER_AUTH_SECRET`, and never in a file.
+
+**Changing the schema:** edit `src/db/schema.ts`, then `npm run db:generate`
+(writes a new migration into `./drizzle/`), `npm run db:migrate:local`, and,
+once it's verified, `npm run db:migrate:remote`. **Never edit a migration that
+has been applied.** Write a new one.
 
 Any port works, including 3100 alongside the container on 3000 — nothing in the
 configuration names one. Do **not** set `BETTER_AUTH_URL` locally; a loopback
