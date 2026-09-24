@@ -1,0 +1,9 @@
+{
+	// The D.6 vision-model spike (ADR-0021). DEV-ONLY: run with `wrangler dev`,
+	// never deployed. It exists to forward one image to one model, so the
+	// comparison runs through a real `ai` binding exactly as Splitr's own will.
+	"name": "splitr-vision-spike",
+	"main": "worker.mjs",
+	"compatibility_date": "2026-09-21",
+	"ai": { "binding": "AI" }
+}
