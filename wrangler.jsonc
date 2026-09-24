@@ -51,6 +51,34 @@
 		}
 	],
 
+	// REQ-D.2's one piece of hot state: each group's recent expense
+	// descriptions, for autofill (ADR-0019). Never money, never a decision
+	// input. KV is eventually consistent, and a stale list is harmless by
+	// construction. Bound as KV; the namespace is named `splitr-hot`.
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "24a62358624f42c99f01f7d1f5d82b68"
+		}
+	],
+
+	// Receipt photos (REQ-D.3, ADR-0020). The browser uploads to R2 directly
+	// through a presigned URL, so the bytes never pass through this Worker. The
+	// binding is for the server-side checks on attach, and for D.6 reading the
+	// image to itemise it.
+	"r2_buckets": [
+		{
+			"binding": "RECEIPTS",
+			"bucket_name": "splitr-receipts",
+			// Local dev uses the REAL bucket, not Wrangler's simulation. The
+			// presigned URL always points at real R2, so a simulated binding
+			// would check an empty local bucket and report every upload as
+			// missing. That was predicted before the first test, and it's the
+			// same bucket production uses: dev photos land in real R2 (ADR-0020).
+			"remote": true
+		}
+	],
+
 	// Splitr's one public origin. Explicit rather than Wrangler's default,
 	// which it warns about on every deploy.
 	"workers_dev": true,
@@ -67,9 +95,15 @@
 		// Without it the deployed app answers every browser sign-in with
 		// 403 INVALID_ORIGIN — measured on the first deploy, 2026-09-23: F-1
 		// again, on a new host (src/lib/auth.ts, ADR-0013).
-		"BETTER_AUTH_URL": "https://splitr.raffaele-digennaro.workers.dev"
+		"BETTER_AUTH_URL": "https://splitr.raffaele-digennaro.workers.dev",
+		// Identifiers, not credentials, for building presigned R2 URLs
+		// (ADR-0020). The credentials, R2_ACCESS_KEY_ID and
+		// R2_SECRET_ACCESS_KEY, are secrets: `wrangler secret put`, and
+		// `.dev.vars` locally.
+		"R2_ACCOUNT_ID": "3082c7652ac1003a678a5bc45ca0054f",
+		"R2_BUCKET": "splitr-receipts"
 	}
 
-	// BETTER_AUTH_SECRET is a secret: set with `wrangler secret put`, never
-	// here (CLAUDE.md §6).
+	// BETTER_AUTH_SECRET, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY are
+	// secrets: set with `wrangler secret put`, never here (CLAUDE.md §6).
 }

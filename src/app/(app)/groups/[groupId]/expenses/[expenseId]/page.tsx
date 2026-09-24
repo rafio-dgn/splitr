@@ -16,6 +16,7 @@ import { EmptyState, ScreenHeading } from "@/components/ui";
 import { getExpenseInGroup } from "@/lib/expenses/expense-feed";
 import { resolveGroup } from "@/lib/groups/current-group";
 import { formatGbp } from "@/lib/money";
+import { presignReceiptView } from "@/lib/receipts/receipts";
 import { requireSession } from "@/lib/session";
 
 const DAY = new Intl.DateTimeFormat("en-GB", {
@@ -40,6 +41,14 @@ export default async function ExpenseDetailPage({
 	if (expense === null) {
 		notFound();
 	}
+
+	// A short-lived presigned GET, so the photo is served by R2 directly and
+	// never streamed through the Worker (ADR-0020 §6). Signing failure means
+	// "no photo shown", never a broken page.
+	const receiptUrl =
+		expense.receiptKey === null
+			? null
+			: await presignReceiptView(expense.receiptKey).catch(() => null);
 
 	const nameOf = (userId: string): string =>
 		group.members.find((member) => member.id === userId)?.name ?? "Someone";
@@ -70,6 +79,27 @@ export default async function ExpenseDetailPage({
 				</ul>
 			</section>
 
+			{expense.receiptKey !== null ? (
+				<section>
+					<h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
+						Receipt
+					</h2>
+					{receiptUrl !== null ? (
+						// A plain <img>, deliberately not next/image: its optimiser would
+						// fetch the photo *through* the Worker, which is exactly what
+						// REQ-D.3 rules out. The URL is R2's own, signed, and five minutes long.
+						// eslint-disable-next-line @next/next/no-img-element
+						<img
+							src={receiptUrl}
+							alt={`Receipt for ${expense.description}`}
+							className="mt-4 max-h-[32rem] rounded-lg border border-zinc-200 dark:border-zinc-800"
+						/>
+					) : (
+						<p className="mt-4 text-sm text-zinc-500">The receipt photo can&rsquo;t be shown right now.</p>
+					)}
+				</section>
+			) : null}
+
 			<section>
 				<h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
 					Line items
@@ -77,8 +107,9 @@ export default async function ExpenseDetailPage({
 				<div className="mt-4">
 					{/* §5.9's empty state, and the slot Cluster D's OCR output lands in. */}
 					<EmptyState title="No line items">
-						This expense was entered by hand, so there&rsquo;s nothing to
-						itemise.
+						{expense.receiptKey === null
+							? "This expense was entered by hand, so there's nothing to itemise."
+							: "Reading the items off the photo arrives with the vision model (D.6)."}
 					</EmptyState>
 				</div>
 			</section>

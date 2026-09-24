@@ -36,7 +36,7 @@ import {
 	type FieldErrors,
 } from "@/lib/schemas/expense";
 
-import { addExpenseAction, type AddExpenseFormState } from "./actions";
+import { addExpenseAction, requestReceiptUploadAction, type AddExpenseFormState } from "./actions";
 
 type FieldName = keyof AddExpenseInput;
 
@@ -66,11 +66,14 @@ export function AddExpenseForm({
 	groupName,
 	members,
 	viewerId,
+	recentDescriptions,
 }: {
 	groupId: string;
 	groupName: string;
 	members: readonly GroupMember[];
 	viewerId: string;
+	/** Autofill from KV (ADR-0019). Suggestions only; the field stays free text. */
+	recentDescriptions: readonly string[];
 }) {
 	const [state, formAction, pending] = useActionState(
 		addExpenseAction,
@@ -112,6 +115,45 @@ export function AddExpenseForm({
 		if (server !== undefined) return server;
 		if (touched[field] !== true) return undefined;
 		return clientErrors[field]?.[0];
+	}
+
+	/**
+	 * The receipt photo (ADR-0020). It's separate from `values` because it
+	 * isn't typed, it's uploaded: the browser gets a presigned URL, PUTs the
+	 * file straight to R2, and only the resulting key joins the form.
+	 */
+	const [receipt, setReceipt] = useState<
+		| { status: "none" }
+		| { status: "uploading"; name: string }
+		| { status: "attached"; key: string; name: string }
+		| { status: "failed"; message: string }
+	>({ status: "none" });
+
+	async function attachReceipt(file: File): Promise<void> {
+		setReceipt({ status: "uploading", name: file.name });
+		const grant = await requestReceiptUploadAction(groupId, file.type);
+		if (!grant.ok) {
+			setReceipt({ status: "failed", message: grant.message });
+			return;
+		}
+		try {
+			// Direct to R2: this request never touches Splitr's Worker. The
+			// Content-Type must match the one that was signed, or R2 answers 403.
+			const upload = await fetch(grant.url, {
+				method: "PUT",
+				headers: { "Content-Type": grant.contentType },
+				body: file,
+			});
+			if (!upload.ok) {
+				throw new Error(`R2 answered ${upload.status}`);
+			}
+			setReceipt({ status: "attached", key: grant.key, name: file.name });
+		} catch {
+			setReceipt({
+				status: "failed",
+				message: "The photo didn't upload. Try again, or save the expense without it.",
+			});
+		}
 	}
 
 	function update<K extends FieldName>(
@@ -185,6 +227,8 @@ export function AddExpenseForm({
 				<input
 					id="description"
 					name="description"
+					list="recent-descriptions"
+					autoComplete="off"
 					autoFocus
 					value={values.description}
 					disabled={pending}
@@ -201,6 +245,13 @@ export function AddExpenseForm({
 					onBlur={() => markTouched("description")}
 					className="rounded-md border border-zinc-300 px-3 py-2 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
 				/>
+				{/* Native suggestions: no JavaScript of ours, and a stale list only means a
+				    missing suggestion (ADR-0019). */}
+				<datalist id="recent-descriptions">
+					{recentDescriptions.map((description) => (
+						<option key={description} value={description} />
+					))}
+				</datalist>
 			</Field>
 
 			<Field id="amount" label="Amount" error={errorFor("amount")}>
@@ -340,6 +391,31 @@ export function AddExpenseForm({
 				<p className="text-sm text-zinc-500">{formatGbp(perPerson)} each.</p>
 			) : null}
 
+			{/* The receipt photo: optional, and its failure never blocks the expense
+			    (ADR-0020 §9). */}
+			<Field id="receipt" label="Receipt photo (optional)" error={errorFor("receiptKey")}>
+				<input
+					id="receipt"
+					type="file"
+					accept="image/jpeg,image/png,image/webp"
+					capture="environment"
+					disabled={pending || receipt.status === "uploading"}
+					onChange={(event) => {
+						const file = event.target.files?.[0];
+						if (file !== undefined) {
+							void attachReceipt(file);
+						}
+					}}
+					className="text-sm"
+				/>
+				<input type="hidden" name="receiptKey" value={receipt.status === "attached" ? receipt.key : ""} />
+				<p role="status" className="text-xs text-zinc-500">
+					{receipt.status === "uploading" ? `Uploading ${receipt.name}…` : null}
+					{receipt.status === "attached" ? `Attached: ${receipt.name}` : null}
+					{receipt.status === "failed" ? receipt.message : null}
+				</p>
+			</Field>
+
 			{/* §5.11 — a whole-form failure. The values stay in the fields: retyping
 			    an itemised expense after a failed round trip is the fastest way to
 			    lose a user. */}
@@ -352,7 +428,7 @@ export function AddExpenseForm({
 
 			<button
 				type="submit"
-				disabled={pending}
+				disabled={pending || receipt.status === "uploading"}
 				className="self-start rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
 			>
 				{pending ? "Adding…" : "Add expense"}

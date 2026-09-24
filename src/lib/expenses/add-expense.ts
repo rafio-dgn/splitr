@@ -21,6 +21,9 @@ import { expense as expenseTable, expenseShare } from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { getGroupForViewer, isMember } from "@/lib/groups/membership";
 import { newId } from "@/lib/ids";
+import { checkUploadedReceipt } from "@/lib/receipts/receipts";
+
+import { forgetRecentDescriptions } from "./recent-descriptions";
 import {
 	equalShares,
 	parseAddExpense,
@@ -133,6 +136,36 @@ export async function addExpense(
 		return { status: "invalid", fieldErrors, formErrors: [] };
 	}
 
+	// 3b. The receipt, if any (ADR-0020). Only a key is ever sent. The object
+	//     must be under *this* group's prefix, must exist, and must be an
+	//     allowed type and size, all checked through the R2 binding. A failing
+	//     upload is deleted by the check, and nothing is saved.
+	if (expense.receiptKey !== undefined) {
+		const receipt = await checkUploadedReceipt(group.id, expense.receiptKey);
+		if (!receipt.ok) {
+			audit({
+				actor: actor.id,
+				action: "expense.add",
+				target: group.id,
+				outcome: `rejected:receipt-${receipt.reason}`,
+				persisted: false,
+			});
+			return {
+				status: "invalid",
+				fieldErrors: {
+					receiptKey: [
+						receipt.reason === "too-large"
+							? "That photo is over 10 MB. Try a smaller one."
+							: receipt.reason === "wrong-type"
+								? "Receipts must be a JPEG, PNG or WebP photo."
+								: "That photo didn't finish uploading. Attach it again.",
+					],
+				},
+				formErrors: [],
+			};
+		}
+	}
+
 	// 4. The split is derived here and never accepted from the client.
 	const shares = equalShares(expense.amount, expense.participantIds);
 
@@ -152,6 +185,8 @@ export async function addExpense(
 				spentOn: expense.spentAt,
 				paidBy: expense.paidById,
 				createdBy: actor.id,
+				// Only the key is persisted, never the bytes (REQ-D.3).
+				receiptKey: expense.receiptKey ?? null,
 			}),
 			db.insert(expenseShare).values(
 				shares.map((share) => ({
@@ -186,6 +221,11 @@ export async function addExpense(
 			participants: expense.participantIds.length,
 		},
 	});
+
+	// 7. The KV autofill list is now out of date (ADR-0019). It's dropped after
+	//    the response, so this save doesn't wait on KV, and a KV failure can't
+	//    fail it: the write above is already durable.
+	await forgetRecentDescriptions(group.id).catch(() => undefined);
 
 	return { status: "accepted", expenseId, expense, shares, persisted: true };
 }

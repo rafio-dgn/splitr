@@ -38,6 +38,8 @@ export interface RecordedExpense {
 	readonly paidById: string;
 	readonly paidByName: string;
 	readonly shares: readonly RecordedShare[];
+	/** R2 key of the receipt photo, or `null`. Only the key is stored (REQ-D.3). */
+	readonly receiptKey: string | null;
 }
 
 /** "A paid B", as the read side sees it (ADR-0018 §2). */
@@ -78,6 +80,7 @@ async function loadExpenses(groupId: string, expenseId?: string): Promise<readon
 				spentAt: expense.spentOn,
 				paidById: expense.paidBy,
 				paidByName: payer.name,
+				receiptKey: expense.receiptKey,
 			})
 			.from(expense)
 			.innerJoin(payer, eq(payer.id, expense.paidBy))

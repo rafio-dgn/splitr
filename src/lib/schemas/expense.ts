@@ -162,6 +162,17 @@ export const addExpenseSchema = z.object({
 		.refine((ids) => new Set(ids).size === ids.length, {
 			error: "That person is already in the split.",
 		}),
+
+	/**
+	 * The R2 key of an uploaded receipt photo, or absent (ADR-0020). Only the
+	 * *shape* is checked here, and the form sends "" when there's no photo.
+	 * Whether the key is this group's, and whether the object really exists,
+	 * is checked on the server through the R2 binding before it's stored.
+	 */
+	receiptKey: z
+		.string()
+		.optional()
+		.transform((value) => (value === undefined || value === "" ? undefined : value)),
 });
 
 /**

@@ -3,8 +3,8 @@
  *
  * `wiki/context/screens-cluster-b.md` §5.5 explains why this matters: the
  * balance is **derived**, so a failure to derive it is a display failure, and
- * the error boundary must never suggest the expense records are gone. KV's
- * snapshot (`REQ-D.2`) will be a cache of this function, never a second opinion.
+ * the error boundary must never suggest the expense records are gone. It's
+ * never cached in KV: a stale balance is a wrong one (ADR-0019).
  *
  * Pure arithmetic over integer minor units. No `server-only`, no path
  * aliases, and only structural input types, so `node --test` can import it

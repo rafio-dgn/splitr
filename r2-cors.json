@@ -1,0 +1,18 @@
+{
+	"rules": [
+		{
+			"allowed": {
+				"origins": [
+					"https://splitr.raffaele-digennaro.workers.dev",
+					"http://localhost:3000",
+					"http://localhost:3100",
+					"http://localhost:8787"
+				],
+				"methods": ["PUT", "GET"],
+				"headers": ["Content-Type"]
+			},
+			"exposeHeaders": ["ETag"],
+			"maxAgeSeconds": 3600
+		}
+	]
+}

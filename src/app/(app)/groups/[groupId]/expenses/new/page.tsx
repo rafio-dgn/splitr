@@ -17,6 +17,8 @@ import { ScreenHeading } from "@/components/ui";
 import { resolveGroup } from "@/lib/groups/current-group";
 import { requireSession } from "@/lib/session";
 
+import { getRecentDescriptions } from "@/lib/expenses/recent-descriptions";
+
 import { AddExpenseForm } from "./add-expense-form";
 
 export default async function NewExpensePage({
@@ -33,6 +35,10 @@ export default async function NewExpensePage({
 		return null;
 	}
 
+	// REQ-D.2's hot state (ADR-0019). Read only here, after the layout's
+	// membership check, because the list is the group's data.
+	const { descriptions } = await getRecentDescriptions(group.id);
+
 	return (
 		<div className="flex flex-col gap-8">
 			<ScreenHeading eyebrow={group.name} title="Add an expense" />
@@ -41,6 +47,7 @@ export default async function NewExpensePage({
 				groupName={group.name}
 				members={group.members}
 				viewerId={session.user.id}
+				recentDescriptions={descriptions}
 			/>
 		</div>
 	);
