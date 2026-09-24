@@ -5,11 +5,10 @@
  *
  * **A knowing deviation from the spec, flagged rather than hidden.** §5.8 says
  * the invite link should survive this failure because it is "rendered from the
- * route, not the failed fetch". In Cluster B the invite code is *not* a route
- * param — it comes from the group fixture, which is the read that just failed —
- * so there is no honest way to render the link here. When `REQ-D.1` gives
- * invites a table, the code becomes available independently and this boundary
- * should render it. Recorded in the changelog rather than quietly dropped.
+ * route, not the failed fetch". The invite code isn't a route param: it's a
+ * column on the `group` row (ADR-0018 §5: one code per group, no invite
+ * table), and that row is exactly the read that just failed. So there's still
+ * no honest way to render the link here, and the deviation stands by design.
  */
 import { ErrorState } from "@/components/ui";
 

@@ -78,11 +78,9 @@ export function CreateGroupForm() {
 				{pending ? "Creating…" : "Create group"}
 			</button>
 
-			{state.status === "accepted" ? (
-				<p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">
-					Validated &ldquo;{state.name}&rdquo;. Nothing was saved — Splitr has no
-					group table until D1 arrives at REQ-D.1, and this screen will not
-					pretend otherwise.
+			{state.status === "failed" ? (
+				<p role="alert" className="text-sm text-red-600">
+					We couldn&rsquo;t create the group. Nothing was saved. Try again.
 				</p>
 			) : null}
 		</form>

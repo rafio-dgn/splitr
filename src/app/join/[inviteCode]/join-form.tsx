@@ -14,26 +14,66 @@
  * is no placeholder widget, because a captcha that does not check anything is
  * worse than none.
  *
- * What this form does *not* do is create a membership row — there is no
- * membership table until `REQ-D.1`. Signing up is enough to be in the demo
- * group, which is the fixture's doing, and the redirect is honest about landing
- * the new member on the group.
+ * Two steps, in order: Better Auth's browser client signs the visitor up
+ * (which sets the session cookie), then `joinGroupAction` writes the
+ * membership row server-side and redirects to the group. The membership is
+ * never the client's claim: the action re-checks the invite code itself.
  */
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { signUp } from "@/lib/auth-client";
 
+import { joinGroupAction, type JoinOutcome } from "./actions";
+
+/** The failures `joinGroupAction` can come back with, in words (§5.2). */
+function joinFailureMessage(outcome: JoinOutcome): string {
+	return outcome.status === "invalid-invite"
+		? "This invite isn't valid any more. Ask whoever sent it for a fresh link."
+		: "We couldn't add you to the group. Try again.";
+}
+
+/**
+ * For someone already signed in who isn't a member yet (§4.4). The fixture
+ * made this case impossible, and real membership makes it the common one.
+ */
+export function JoinAsMember({ inviteCode, groupName }: { inviteCode: string; groupName: string }) {
+	const [error, setError] = useState<string | null>(null);
+	const [busy, setBusy] = useState(false);
+	return (
+		<div className="flex flex-col gap-3">
+			<button
+				type="button"
+				disabled={busy}
+				onClick={async () => {
+					setBusy(true);
+					setError(null);
+					// Success is a server-side redirect; only failures return.
+					const outcome = await joinGroupAction(inviteCode);
+					setBusy(false);
+					setError(joinFailureMessage(outcome));
+				}}
+				className="self-start rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+			>
+				{busy ? "Joining…" : `Join ${groupName}`}
+			</button>
+			{error !== null ? (
+				<p role="alert" className="text-sm text-red-600">
+					{error}
+				</p>
+			) : null}
+		</div>
+	);
+}
+
 export function JoinForm({
-	groupId,
+	inviteCode,
 	groupName,
 }: {
-	groupId: string;
+	inviteCode: string;
 	groupName: string;
 }) {
-	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 
@@ -59,17 +99,18 @@ export function JoinForm({
 						// is useless advice to someone who already has an account.
 						setError(
 							result.error.code === "USER_ALREADY_EXISTS"
-								? `That email already has a Splitr account. Log in instead and you'll join ${groupName}.`
+								? `That email already has a Splitr account. Log in, then open this invite link again to join ${groupName}.`
 								: "We couldn't complete the join. Nothing was created — try again.",
 						);
 						return;
 					}
 
-					// §4.4: land on the group with a one-line confirmation. The flag is
-					// read server-side by the dashboard, so the confirmation costs no
-					// client state.
-					router.replace(`/groups/${groupId}?joined=1`);
-					router.refresh();
+					// Signed up, so the session cookie is set. Now the membership, server-side.
+					// On success the action redirects to the group (§4.4: `?joined=1` shows
+					// the one-line confirmation); only a failure returns here.
+					const outcome = await joinGroupAction(inviteCode);
+					setBusy(false);
+					setError(joinFailureMessage(outcome));
 				}}
 			>
 				<label className="flex flex-col gap-1 text-sm">

@@ -12,8 +12,7 @@
 import Link from "next/link";
 
 import { ActionLink, EmptyState, ScreenHeading } from "@/components/ui";
-import { deriveBalances } from "@/lib/expenses/balances";
-import { listGroupExpenses } from "@/lib/expenses/expense-feed";
+import { getGroupBalances } from "@/lib/expenses/group-balances";
 import { getGroupForViewer, getGroupsForViewer } from "@/lib/groups/membership";
 import { formatGbp } from "@/lib/money";
 import { requireSession } from "@/lib/session";
@@ -31,15 +30,14 @@ export default async function GroupsPage() {
 
 	const summaries = await getGroupsForViewer(viewerId);
 
-	// One pass per group to work out where the viewer stands. In Cluster D this
-	// becomes a single aggregate query; the shape the screen needs does not
-	// change, which is the point of deriving it rather than storing it.
+	// One pass per group to work out where the viewer stands: the same
+	// derivation the dashboard uses, so the two can never disagree. A group
+	// count in the dozens makes this fine; an aggregate query is the answer if it
+	// ever isn't, and the shape the screen needs wouldn't change.
 	const cards = await Promise.all(
 		summaries.map(async (summary) => {
 			const group = await getGroupForViewer(summary.id, viewerId);
-			const expenses = await listGroupExpenses(summary.id);
-			const balances =
-				group === null ? [] : deriveBalances(group.members, expenses);
+			const balances = group === null ? [] : await getGroupBalances(group);
 			const mine = balances.find((balance) => balance.userId === viewerId);
 			return { ...summary, net: mine?.netMinorUnits ?? 0 };
 		}),

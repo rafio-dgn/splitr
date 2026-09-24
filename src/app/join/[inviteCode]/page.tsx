@@ -15,7 +15,7 @@ import { ActionLink, EmptyState, ScreenHeading } from "@/components/ui";
 import { getGroupForViewer, getInvite } from "@/lib/groups/membership";
 import { getSession } from "@/lib/session";
 
-import { JoinForm } from "./join-form";
+import { JoinAsMember, JoinForm } from "./join-form";
 
 export default async function JoinPage({
 	params,
@@ -46,13 +46,8 @@ export default async function JoinPage({
 		);
 	}
 
-	// Already a member? §5.1 gives that its own screen.
-	//
-	// In Cluster B this is the *only* signed-in outcome: `getGroupForViewer` is a
-	// fixture that puts every signed-in viewer in the demo group, so "signed in
-	// but not yet a member" — the §4.4 branch with a "Join" button — cannot
-	// occur. It is not written here rather than written as a button that would
-	// have nothing to do; it arrives with the membership table at `REQ-D.1`.
+	// Signed in: either already a member (§5.1 gives that its own screen), or
+	// signed in but not yet a member, which gets a one-tap "Join" (§4.4).
 	if (session !== null) {
 		const group = await getGroupForViewer(invite.groupId, session.user.id);
 		if (group !== null) {
@@ -69,6 +64,20 @@ export default async function JoinPage({
 				</main>
 			);
 		}
+		return (
+			<main className="mx-auto flex w-full max-w-lg flex-col gap-8 px-6 py-20">
+				<ScreenHeading
+					title={`${invite.invitedByName} invited you to ${invite.groupName}`}
+				>
+					<p>
+						{invite.memberCount}{" "}
+						{invite.memberCount === 1 ? "person is" : "people are"} already
+						splitting here.
+					</p>
+				</ScreenHeading>
+				<JoinAsMember inviteCode={invite.code} groupName={invite.groupName} />
+			</main>
+		);
 	}
 
 	return (
@@ -83,7 +92,7 @@ export default async function JoinPage({
 				</p>
 			</ScreenHeading>
 
-			<JoinForm groupId={invite.groupId} groupName={invite.groupName} />
+			<JoinForm inviteCode={invite.code} groupName={invite.groupName} />
 		</main>
 	);
 }

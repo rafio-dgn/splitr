@@ -1,22 +1,24 @@
 /**
- * Group membership — **Cluster B placeholder, deliberately not a table.**
+ * Group membership: who is in which group, answered from D1 (`REQ-D.1`).
  *
- * The add-expense form needs to know who is in a group so the server can refuse
- * a `paidById` or a `participantIds` entry that is not a member. That check is
- * the half of `REQ-B.2` the client cannot perform, so it has to exist now.
+ * This file was the Cluster B fixture, and it was built to be swapped: Cluster D
+ * replaced the *bodies*, not the signatures, so no call site changed. The one
+ * contract that matters survives the swap: **`null` means both "not a member" and
+ * "no such group"**, indistinguishably. Callers turn it into a 404, never a 403,
+ * because a 403 would confirm the group exists (enumeration defence).
  *
- * What does *not* have to exist now is the `group` / `group_member` schema.
- * `REQ-D.1` owns Splitr's domain tables and `REQ-M.2` forbids jumping ahead one
- * cluster to get them, so Cluster B answers the membership question from a
- * fixture instead. `src/db/schema.ts` therefore holds exactly what Better Auth
- * requires and nothing else (ADR-0009).
- *
- * **Cluster D replaces the body of `getGroupForViewer`, not its signature.** It
- * becomes a Drizzle query joining `group_member` to `user`, keeping the same
- * `null`-for-not-a-member contract — which is what makes the 404-not-403 rule
- * survive the swap.
+ * "Member" always means a **current** member: `left_at IS NULL`. Someone who
+ * left (ADR-0018 §6) can no longer see the group, but their past expenses still
+ * name them. The feed resolves names from `user`, not from this list.
  */
 import "server-only";
+
+import { and, asc, count, eq, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
+
+import { getDb } from "@/db";
+import { group, groupMember, user } from "@/db/schema";
+import { parseCurrency, type Currency } from "@/lib/money";
 
 export interface GroupMember {
 	readonly id: string;
@@ -26,68 +28,62 @@ export interface GroupMember {
 export interface Group {
 	readonly id: string;
 	readonly name: string;
+	readonly currency: Currency;
+	/** The reusable, rotatable code in the `/join/[code]` link (ADR-0018 §5). */
+	readonly inviteCode: string;
+	/** Current members, in the order they joined. */
 	readonly members: readonly GroupMember[];
 }
 
-/** The one group Cluster B knows about. */
-export const DEMO_GROUP_ID = "grp_demo";
-
 /**
- * Two stand-ins for the housemates who will be real rows in Cluster D. They are
- * here so that "someone who is not in this group" is a testable condition — the
- * `REQ-B.2` curl payload that proves server-only validation needs a user id that
- * is syntactically fine and semantically wrong.
- */
-const FIXTURE_MEMBERS: readonly GroupMember[] = [
-	{ id: "usr_fixture_bob", name: "Bob" },
-	{ id: "usr_fixture_chidi", name: "Chidi" },
-];
-
-/**
- * Returns the group as the viewer may see it, or `null` if the viewer is not a
- * member **or the group does not exist** — the two cases are deliberately
- * indistinguishable to the caller, so a caller cannot accidentally turn one into
- * a 403 and confirm the group exists.
+ * The group as the viewer may see it, or `null` if the viewer isn't a current
+ * member **or the group doesn't exist**. The two are deliberately
+ * indistinguishable.
+ *
+ * One query: the group joined to its current members. The viewer's own
+ * membership is then just "is the viewer in that list", which avoids a second
+ * round trip, and avoids an answer that could differ between two reads.
  */
 export async function getGroupForViewer(
 	groupId: string,
 	viewerId: string,
 ): Promise<Group | null> {
-	// `await` is not needed by the fixture, but the signature is async because
-	// Cluster D's implementation is a database round trip. Getting the call sites
-	// awaiting now means the swap touches one file.
-	await Promise.resolve();
+	const db = await getDb();
+	const rows = await db
+		.select({
+			id: group.id,
+			name: group.name,
+			currency: group.currency,
+			inviteCode: group.inviteCode,
+			memberId: user.id,
+			memberName: user.name,
+		})
+		.from(group)
+		.innerJoin(
+			groupMember,
+			and(eq(groupMember.groupId, group.id), isNull(groupMember.leftAt)),
+		)
+		.innerJoin(user, eq(user.id, groupMember.userId))
+		.where(eq(group.id, groupId))
+		.orderBy(asc(groupMember.joinedAt), asc(user.name));
 
-	if (groupId !== DEMO_GROUP_ID) {
+	const first = rows[0];
+	if (first === undefined || !rows.some((row) => row.memberId === viewerId)) {
 		return null;
 	}
 
 	return {
-		id: DEMO_GROUP_ID,
-		name: "Flat 3B",
-		members: [{ id: viewerId, name: "You" }, ...FIXTURE_MEMBERS],
+		id: first.id,
+		name: first.name,
+		currency: parseCurrency(first.currency),
+		inviteCode: first.inviteCode,
+		members: rows.map((row) => ({ id: row.memberId, name: row.memberName })),
 	};
 }
 
 export function isMember(group: Group, userId: string): boolean {
 	return group.members.some((member) => member.id === userId);
 }
-
-/* -------------------------------------------------------------------------- *
- * Added by the frontend agent for the Cluster B route tree (`REQ-B.1`).
- *
- * Same contract as everything above it: **fixtures, not tables.** Each function
- * below is the exact shape the Cluster D (`REQ-D.1`) Drizzle query will have, so
- * the swap replaces a body and touches no call site. Nothing here writes.
- * -------------------------------------------------------------------------- */
-
-/**
- * The invite code in the design spec's copy
- * (`wiki/context/screens-cluster-b.md` §4.3). Hard-coded because invites are
- * rows in Cluster D; the *screen* is Cluster B, and `REQ-F.2` drops Turnstile
- * onto it later.
- */
-export const DEMO_INVITE_CODE = "7fK2pQvm";
 
 /** What `/join/[inviteCode]` resolves to before it asks the visitor for anything. */
 export interface Invite {
@@ -101,25 +97,37 @@ export interface Invite {
 /**
  * Resolves an invite code, or `null` when it resolves to nothing.
  *
- * `null` is deliberately the only failure: §5.1 says the invalid-invite copy
- * must not distinguish "mistyped" from "turned off", so that adding expiry in a
- * later cluster needs no copy change.
+ * `null` is deliberately the only failure: `screens-cluster-b.md` §5.1 says
+ * the invalid-invite copy must not distinguish "mistyped" from "rotated away",
+ * so a leaked link that was rotated looks exactly like a typo.
+ *
+ * "Invited by" is the group's creator. The link is the group's, not a
+ * person's (ADR-0018 §5), so the creator is the honest name to show.
  */
 export async function getInvite(code: string): Promise<Invite | null> {
-	await Promise.resolve();
+	const db = await getDb();
+	const creator = alias(user, "creator");
+	const rows = await db
+		.select({
+			groupId: group.id,
+			groupName: group.name,
+			invitedByName: creator.name,
+			memberCount: count(groupMember.userId),
+		})
+		.from(group)
+		.innerJoin(creator, eq(creator.id, group.createdBy))
+		.leftJoin(
+			groupMember,
+			and(eq(groupMember.groupId, group.id), isNull(groupMember.leftAt)),
+		)
+		.where(eq(group.inviteCode, code))
+		.groupBy(group.id, group.name, creator.name);
 
-	if (code !== DEMO_INVITE_CODE) {
+	const row = rows[0];
+	if (row === undefined) {
 		return null;
 	}
-
-	return {
-		code: DEMO_INVITE_CODE,
-		groupId: DEMO_GROUP_ID,
-		groupName: "Flat 3B",
-		invitedByName: "Bob",
-		// The viewer is not counted: they are being invited, not a member yet.
-		memberCount: FIXTURE_MEMBERS.length,
-	};
+	return { code, ...row };
 }
 
 /** The absolute invite link shown on the members screen (§4.3). */
@@ -127,27 +135,32 @@ export function inviteUrl(origin: string, code: string): string {
 	return `${origin}/join/${code}`;
 }
 
-/** A row in the `/groups` list — §5.3: name, member count, the viewer's position. */
+/** A row in the `/groups` list: §5.3 shows the name, the member count and the viewer's position. */
 export interface GroupSummary {
 	readonly id: string;
 	readonly name: string;
 	readonly memberCount: number;
 }
 
-/**
- * Every group the viewer belongs to.
- *
- * Cluster B knows one group and puts every signed-in viewer in it, which is
- * exactly what `getGroupForViewer` already does — this reuses it rather than
- * inventing a second source of truth. It returns an array, so the **empty**
- * state of §5.3 is one fixture change away rather than a rewrite.
- */
+/** Every group the viewer is a current member of, by name. */
 export async function getGroupsForViewer(
 	viewerId: string,
 ): Promise<readonly GroupSummary[]> {
-	const group = await getGroupForViewer(DEMO_GROUP_ID, viewerId);
-	if (group === null) {
-		return [];
-	}
-	return [{ id: group.id, name: group.name, memberCount: group.members.length }];
+	const db = await getDb();
+	const mine = alias(groupMember, "mine");
+	return db
+		.select({
+			id: group.id,
+			name: group.name,
+			memberCount: count(groupMember.userId),
+		})
+		.from(mine)
+		.innerJoin(group, eq(group.id, mine.groupId))
+		.innerJoin(
+			groupMember,
+			and(eq(groupMember.groupId, group.id), isNull(groupMember.leftAt)),
+		)
+		.where(and(eq(mine.userId, viewerId), isNull(mine.leftAt)))
+		.groupBy(group.id, group.name)
+		.orderBy(asc(group.name));
 }

@@ -1,21 +1,24 @@
 /**
- * The **read** side of expenses — what the group dashboard, the expense feed and
- * the expense detail screen render (`wiki/context/screens-cluster-b.md` §4.6,
- * §5.6, §5.9).
+ * The **read** side of expenses and settlements, from D1: what the group
+ * dashboard, the expense feed, the expense detail and the settle screen render.
  *
- * **There is nothing to read yet, and that is not a placeholder — it is the
- * truth of Cluster B.** `addExpense()` returns `persisted: false` because
- * `REQ-D.1` owns the `expense` table and `REQ-M.2` forbids jumping a cluster to
- * get it. So every function here returns the honest empty answer, and the
- * screens render their **empty** states (`REQ-B.4`) rather than fixture data
- * pretending to be a ledger.
+ * Every function is wrapped in React's `cache()`, which is per request and per
+ * argument, never shared across viewers. The dashboard and its feed section
+ * both ask for the same group's expenses, and before this that was two D1
+ * round trips per view (QA finding O-3). Now it's one.
  *
- * Cluster D replaces these bodies with Drizzle queries and changes no signature
- * and no call site — the same contract `src/lib/groups/membership.ts` sets.
+ * Voided expenses (ADR-0018 §3) are excluded here, so no caller can
+ * accidentally count one.
  */
 import "server-only";
 
-import type { Currency } from "@/lib/money";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
+import { cache } from "react";
+
+import { getDb } from "@/db";
+import { expense, expenseShare, settlement, user } from "@/db/schema";
+import { parseCurrency, type Currency } from "@/lib/money";
 
 /** One share of one expense. Minor units, integer, always summing to the total. */
 export interface RecordedShare {
@@ -23,7 +26,7 @@ export interface RecordedShare {
 	readonly shareMinorUnits: number;
 }
 
-/** An expense as the read side sees it — names resolved, money in minor units. */
+/** An expense as the read side sees it: names resolved, money in minor units. */
 export interface RecordedExpense {
 	readonly id: string;
 	readonly groupId: string;
@@ -37,33 +40,115 @@ export interface RecordedExpense {
 	readonly shares: readonly RecordedShare[];
 }
 
-/**
- * The group's expense feed, newest first.
- *
- * Empty for the whole of Cluster B. The `await` is real in Cluster D and is kept
- * here so the call sites are already async.
- */
-export async function listGroupExpenses(
-	groupId: string,
-): Promise<readonly RecordedExpense[]> {
-	await Promise.resolve();
-	void groupId;
-	return [];
+/** "A paid B", as the read side sees it (ADR-0018 §2). */
+export interface RecordedSettlement {
+	readonly id: string;
+	readonly fromUserId: string;
+	readonly fromName: string;
+	readonly toUserId: string;
+	readonly toName: string;
+	readonly amountMinorUnits: number;
+	readonly currency: Currency;
+	readonly recordedById: string;
+	/** Unix seconds. */
+	readonly createdAt: number;
 }
 
 /**
- * One expense, or `null` if it is not in this group or does not exist.
- *
- * Always `null` in Cluster B, so `/groups/[groupId]/expenses/[expenseId]`
- * renders `not-found` — which is the correct answer for an id that names
- * nothing, and the same answer Cluster D will give for someone else's expense.
+ * Loads the group's non-voided expenses (or just one), plus their shares, in one
+ * round trip. The two queries run as a single D1 batch.
  */
-export async function getExpenseInGroup(
-	groupId: string,
-	expenseId: string,
-): Promise<RecordedExpense | null> {
-	await Promise.resolve();
-	void groupId;
-	void expenseId;
-	return null;
+async function loadExpenses(groupId: string, expenseId?: string): Promise<readonly RecordedExpense[]> {
+	const db = await getDb();
+	const payer = alias(user, "payer");
+	const scope = and(
+		eq(expense.groupId, groupId),
+		isNull(expense.voidedAt),
+		expenseId === undefined ? undefined : eq(expense.id, expenseId),
+	);
+
+	const [rows, shareRows] = await db.batch([
+		db
+			.select({
+				id: expense.id,
+				groupId: expense.groupId,
+				description: expense.description,
+				amountMinorUnits: expense.amountCents,
+				currency: expense.currency,
+				spentAt: expense.spentOn,
+				paidById: expense.paidBy,
+				paidByName: payer.name,
+			})
+			.from(expense)
+			.innerJoin(payer, eq(payer.id, expense.paidBy))
+			.where(scope)
+			.orderBy(desc(expense.spentOn), desc(expense.createdAt)),
+		db
+			.select({
+				expenseId: expenseShare.expenseId,
+				userId: expenseShare.userId,
+				shareMinorUnits: expenseShare.shareCents,
+			})
+			.from(expenseShare)
+			.where(
+				inArray(
+					expenseShare.expenseId,
+					db.select({ id: expense.id }).from(expense).where(scope),
+				),
+			),
+	]);
+
+	const sharesByExpense = new Map<string, RecordedShare[]>();
+	for (const share of shareRows) {
+		const list = sharesByExpense.get(share.expenseId) ?? [];
+		list.push({ userId: share.userId, shareMinorUnits: share.shareMinorUnits });
+		sharesByExpense.set(share.expenseId, list);
+	}
+
+	return rows.map((row) => ({
+		...row,
+		currency: parseCurrency(row.currency),
+		shares: sharesByExpense.get(row.id) ?? [],
+	}));
 }
+
+/** The group's non-voided expenses, newest first. */
+export const listGroupExpenses = cache(
+	async (groupId: string): Promise<readonly RecordedExpense[]> => loadExpenses(groupId),
+);
+
+/**
+ * One expense, or `null` if it isn't in this group, doesn't exist, or was
+ * voided. For someone else's expense this is the same 404 as for nothing at all.
+ */
+export const getExpenseInGroup = cache(
+	async (groupId: string, expenseId: string): Promise<RecordedExpense | null> =>
+		(await loadExpenses(groupId, expenseId))[0] ?? null,
+);
+
+/** The group's settlements, newest first. */
+export const listGroupSettlements = cache(
+	async (groupId: string): Promise<readonly RecordedSettlement[]> => {
+		const db = await getDb();
+		const from = alias(user, "from_user");
+		const to = alias(user, "to_user");
+		const rows = await db
+			.select({
+				id: settlement.id,
+				fromUserId: settlement.fromUser,
+				fromName: from.name,
+				toUserId: settlement.toUser,
+				toName: to.name,
+				amountMinorUnits: settlement.amountCents,
+				currency: settlement.currency,
+				recordedById: settlement.recordedBy,
+				createdAt: settlement.createdAt,
+			})
+			.from(settlement)
+			.innerJoin(from, eq(from.id, settlement.fromUser))
+			.innerJoin(to, eq(to.id, settlement.toUser))
+			.where(eq(settlement.groupId, groupId))
+			.orderBy(desc(settlement.createdAt));
+		return rows.map((row) => ({ ...row, currency: parseCurrency(row.currency) }));
+	},
+);

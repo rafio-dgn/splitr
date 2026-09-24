@@ -1,42 +1,61 @@
 /**
- * Balances, derived — never stored.
+ * Balances, derived and never stored (ADR-0018, Consequences).
  *
- * `wiki/context/screens-cluster-b.md` §5.5 is explicit about why this matters:
- * the balance is **derived**, so a failure to derive it is a display failure and
- * the error boundary must never suggest the expense records are gone.
+ * `wiki/context/screens-cluster-b.md` §5.5 explains why this matters: the
+ * balance is **derived**, so a failure to derive it is a display failure, and
+ * the error boundary must never suggest the expense records are gone. KV's
+ * snapshot (`REQ-D.2`) will be a cache of this function, never a second opinion.
  *
- * Pure arithmetic over integer minor units. No `server-only` import, because
- * there is nothing server-side about it and a pure function is testable.
+ * Pure arithmetic over integer minor units. No `server-only`, no path
+ * aliases, and only structural input types, so `node --test` can import it
+ * directly (ADR-0012).
  */
-import type { RecordedExpense } from "./expense-feed";
 
-/** One member's net position. Positive = the group owes them. */
+/** One member's net position. */
 export interface MemberBalance {
 	readonly userId: string;
 	readonly name: string;
-	/** Positive: owed to this member. Negative: this member owes. Always integer. */
+	/** Positive: the group owes this member. Negative: this member owes. Always an integer. */
 	readonly netMinorUnits: number;
 }
 
+/** The parts of an expense the balance depends on. `RecordedExpense` fits it. */
+export interface ExpenseForBalance {
+	readonly paidById: string;
+	readonly amountMinorUnits: number;
+	readonly shares: readonly { readonly userId: string; readonly shareMinorUnits: number }[];
+}
+
+/** The parts of a settlement the balance depends on. `RecordedSettlement` fits it. */
+export interface SettlementForBalance {
+	readonly fromUserId: string;
+	readonly toUserId: string;
+	readonly amountMinorUnits: number;
+}
+
 /**
- * Nets every expense across the members.
+ * The ADR-0018 formula, for every member:
  *
- * Each expense credits the payer the full amount and debits each participant
- * their share. Shares are produced by `equalShares` in the shared schema, which
- * distributes the remainder penny by penny, so the column sums to exactly zero
- * and no penny evaporates (§3).
+ *     net = Σ expenses they paid − Σ their shares
+ *         + Σ settlements they paid − Σ settlements they received
+ *
+ * The caller passes only non-voided expenses (`listGroupExpenses` excludes
+ * voided ones). Because every expense's shares sum to its amount
+ * (`equalShares`) and every settlement moves one amount from one member to
+ * another, **the nets always sum to exactly zero**. That's the invariant that
+ * makes a balance believable, and the one the tests pin down.
+ *
+ * A settlement moves the payer *towards* zero: Alice at −£40 pays Bob, who is
+ * at +£40, and both land on £0.
  */
 export function deriveBalances(
 	members: readonly { id: string; name: string }[],
-	expenses: readonly RecordedExpense[],
+	expenses: readonly ExpenseForBalance[],
+	settlements: readonly SettlementForBalance[] = [],
 ): readonly MemberBalance[] {
 	const net = new Map<string, number>(members.map((m) => [m.id, 0]));
-
 	const add = (userId: string, delta: number): void => {
-		const current = net.get(userId);
-		// A member who has since left still appears in an old expense. Ignoring
-		// them here would silently unbalance the group, so they are counted.
-		net.set(userId, (current ?? 0) + delta);
+		net.set(userId, (net.get(userId) ?? 0) + delta);
 	};
 
 	for (const expense of expenses) {
@@ -44,6 +63,10 @@ export function deriveBalances(
 		for (const share of expense.shares) {
 			add(share.userId, -share.shareMinorUnits);
 		}
+	}
+	for (const payment of settlements) {
+		add(payment.fromUserId, payment.amountMinorUnits);
+		add(payment.toUserId, -payment.amountMinorUnits);
 	}
 
 	return members.map((member) => ({
@@ -53,7 +76,6 @@ export function deriveBalances(
 	}));
 }
 
-/** True when nobody owes anybody — the "Everyone's square" empty state of §5.5. */
 export function isSettled(balances: readonly MemberBalance[]): boolean {
 	return balances.every((balance) => balance.netMinorUnits === 0);
 }

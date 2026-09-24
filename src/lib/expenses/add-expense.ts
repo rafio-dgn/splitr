@@ -16,7 +16,11 @@
  */
 import "server-only";
 
+import { getDb } from "@/db";
+import { expense as expenseTable, expenseShare } from "@/db/schema";
+import { audit } from "@/lib/audit";
 import { getGroupForViewer, isMember } from "@/lib/groups/membership";
+import { newId } from "@/lib/ids";
 import {
 	equalShares,
 	parseAddExpense,
@@ -37,48 +41,24 @@ export interface ExpenseShare {
 export type AddExpenseResult =
 	| {
 			readonly status: "accepted";
+			readonly expenseId: string;
 			readonly expense: AddExpense;
 			readonly shares: readonly ExpenseShare[];
-			/**
-			 * `false` for the whole of Cluster B. There is no `expense` table until
-			 * `REQ-D.1`. Saying so in the result type is cheaper than discovering it
-			 * from a demo that appears to work.
-			 */
-			readonly persisted: false;
+			/** Always `true` from Cluster D: `accepted` is returned only after D1 confirmed the write. */
+			readonly persisted: true;
 	  }
 	| {
 			readonly status: "invalid";
 			readonly fieldErrors: FieldErrors;
 			readonly formErrors: readonly string[];
 	  }
-	| { readonly status: "not-found" };
+	| { readonly status: "not-found" }
+	/** D1 refused or was unreachable. Nothing was written: the batch is all-or-nothing. */
+	| { readonly status: "failed" };
+
 
 /**
- * Emits the `[AUDIT]` line required by `REQ-M.5` — one line, parseable JSON,
- * with actor, action, target, timestamp and outcome.
- *
- * `REQ-M.5` says the line follows a durable write. Cluster B has no durable
- * write, so `persisted` is reported honestly rather than the line being skipped:
- * the habit starts at the first mutation path, not at Cluster F.
- */
-function audit(entry: {
-	actor: string;
-	action: string;
-	target: string;
-	outcome: string;
-	persisted: boolean;
-	detail?: Record<string, string | number>;
-}): void {
-	console.log(
-		`[AUDIT] ${JSON.stringify({
-			ts: Math.floor(Date.now() / 1000),
-			...entry,
-		})}`,
-	);
-}
-
-/**
- * Validates and (from Cluster D) records an expense.
+ * Validates and records an expense.
  *
  * @param rawInput Untrusted. `unknown` because on one path it is a `FormData`
  *   readout and on the other a JSON body off an open socket. It is narrowed by
@@ -131,6 +111,11 @@ export async function addExpense(
 			"That person isn't in this group. Refresh the page and pick again.",
 		];
 	}
+	if (expense.currency !== group.currency) {
+		// ADR-0018 §4: one currency per group. It can't be a SQL CHECK,
+		// because the group's currency lives in another row.
+		fieldErrors.currency = [`This group uses ${group.currency}.`];
+	}
 	if (!expense.participantIds.every((id) => isMember(group, id))) {
 		fieldErrors.participantIds = [
 			"Someone selected isn't in this group any more. Refresh the page and try again.",
@@ -151,21 +136,56 @@ export async function addExpense(
 	// 4. The split is derived here and never accepted from the client.
 	const shares = equalShares(expense.amount, expense.participantIds);
 
-	// 5. Cluster D writes to D1 here, then emits the audit line after the write
-	//    is durable. Until then the operation is validated and reported, not
-	//    stored — see `persisted`.
+	// 5. The write. The expense and its shares go in one D1 batch, which D1 runs
+	//    as a single transaction, so there's never an expense without its
+	//    shares, which would silently unbalance the group.
+	const expenseId = newId("exp");
+	try {
+		const db = await getDb();
+		await db.batch([
+			db.insert(expenseTable).values({
+				id: expenseId,
+				groupId: group.id,
+				description: expense.description,
+				amountCents: expense.amount,
+				currency: expense.currency,
+				spentOn: expense.spentAt,
+				paidBy: expense.paidById,
+				createdBy: actor.id,
+			}),
+			db.insert(expenseShare).values(
+				shares.map((share) => ({
+					expenseId,
+					userId: share.userId,
+					shareCents: share.shareMinorUnits,
+				})),
+			),
+		]);
+	} catch (error) {
+		audit({
+			actor: actor.id,
+			action: "expense.add",
+			target: group.id,
+			outcome: `error:${String(error).slice(0, 120)}`,
+			persisted: false,
+		});
+		return { status: "failed" };
+	}
+
+	// 6. Only now, after D1 has confirmed it, does the audit line say persisted.
 	audit({
 		actor: actor.id,
 		action: "expense.add",
-		target: group.id,
-		outcome: "accepted:not-persisted-until-REQ-D.1",
-		persisted: false,
+		target: expenseId,
+		outcome: "accepted",
+		persisted: true,
 		detail: {
+			group: group.id,
 			amountMinorUnits: expense.amount,
 			currency: expense.currency,
 			participants: expense.participantIds.length,
 		},
 	});
 
-	return { status: "accepted", expense, shares, persisted: false };
+	return { status: "accepted", expenseId, expense, shares, persisted: true };
 }

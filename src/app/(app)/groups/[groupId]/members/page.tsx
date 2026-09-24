@@ -14,7 +14,7 @@ import { headers } from "next/headers";
 import { CopyLinkButton } from "@/components/copy-link-button";
 import { EmptyState, ScreenHeading } from "@/components/ui";
 import { resolveGroup } from "@/lib/groups/current-group";
-import { DEMO_INVITE_CODE, inviteUrl } from "@/lib/groups/membership";
+import { inviteUrl } from "@/lib/groups/membership";
 import { requireSession } from "@/lib/session";
 
 async function currentOrigin(): Promise<string> {
@@ -40,7 +40,7 @@ export default async function MembersPage({
 		return null; // The layout has already rendered not-found.
 	}
 
-	const link = inviteUrl(await currentOrigin(), DEMO_INVITE_CODE);
+	const link = inviteUrl(await currentOrigin(), group.inviteCode);
 	const alone = group.members.length === 1;
 
 	return (

@@ -358,12 +358,10 @@ export function AddExpenseForm({
 				{pending ? "Adding…" : "Add expense"}
 			</button>
 
-			{state.status === "accepted" ? (
-				<p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">
-					Validated — {values.description || "this expense"},{" "}
-					{formatGbp(state.expense.amount)}, split {state.shares.length} ways.
-					Nothing was stored: Splitr has no expense table until D1 arrives at
-					REQ-D.1, and this screen will not pretend otherwise.
+			{state.status === "failed" ? (
+				<p role="alert" className="text-sm text-red-600">
+					We couldn&rsquo;t save that expense. Nothing was recorded and no balance
+					changed. Try again.
 				</p>
 			) : null}
 		</form>

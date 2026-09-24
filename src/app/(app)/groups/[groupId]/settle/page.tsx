@@ -1,60 +1,91 @@
 /**
- * `/groups/[groupId]/settle` — the route reserved for `REQ-E.1`, Cluster E.
+ * `/groups/[groupId]/settle`: recording "A paid B" (`screens-cluster-b.md` §6,
+ * ADR-0018 §2).
  *
- * **Nothing is settled here.** `wiki/context/screens-cluster-b.md` §6 sketches
- * this screen in detail precisely so the refused settlement — the reason Splitr
- * exists — is not designed in a hurry later, but it also says plainly that
- * nothing in §6 is built in Cluster B. `REQ-M.2` forbids reaching into a later
- * cluster for it.
+ * A Server Component. It computes the balances and a sensible prefill, and the
+ * form ships with no data of its own to fetch.
  *
- * So this page renders the one state that is true today: with no expenses there
- * is nothing owed, and §5.12's empty state is the whole screen. There is no
- * form, no amount field and no button that pretends to record anything —
- * §4.5's rule applies: do not promise what does not exist.
+ * **The write behind this page is the naive one until E.1:** two simultaneous
+ * taps can both be accepted (see `src/lib/settlements/record-settlement.ts`).
+ * That's deliberate, and it's E.2's "before".
  */
 import { EmptyState, ScreenHeading } from "@/components/ui";
-import { deriveBalances, isSettled } from "@/lib/expenses/balances";
-import { listGroupExpenses } from "@/lib/expenses/expense-feed";
+import { isSettled } from "@/lib/expenses/balances";
+import { getGroupBalances } from "@/lib/expenses/group-balances";
 import { resolveGroup } from "@/lib/groups/current-group";
 import { formatGbp } from "@/lib/money";
 import { requireSession } from "@/lib/session";
 
-export default async function SettlePage({
-	params,
-}: PageProps<"/groups/[groupId]/settle">) {
+import { SettleForm } from "./settle-form";
+
+/** Minor units → "40.00" for the amount field. Integer arithmetic, no floats. */
+function toFieldAmount(minorUnits: number): string {
+	return `${Math.floor(minorUnits / 100)}.${String(minorUnits % 100).padStart(2, "0")}`;
+}
+
+export default async function SettlePage({ params }: PageProps<"/groups/[groupId]/settle">) {
 	const session = await requireSession();
 	const { groupId } = await params;
+	const viewerId = session.user.id;
 
-	const group = await resolveGroup(groupId, session.user.id);
+	const group = await resolveGroup(groupId, viewerId);
 	if (group === null) {
 		return null; // The layout has already rendered not-found.
 	}
 
-	const balances = deriveBalances(group.members, await listGroupExpenses(groupId));
+	const balances = await getGroupBalances(group);
+	if (isSettled(balances)) {
+		return (
+			<div className="flex flex-col gap-8">
+				<ScreenHeading eyebrow={group.name} title={`Settle up in ${group.name}`} />
+				<EmptyState title={`Nothing to settle: everyone in ${group.name} is square.`} />
+			</div>
+		);
+	}
+
+	const debtors = balances.filter((b) => b.netMinorUnits < 0).sort((a, b) => a.netMinorUnits - b.netMinorUnits);
+	const creditors = balances.filter((b) => b.netMinorUnits > 0).sort((a, b) => b.netMinorUnits - a.netMinorUnits);
+	const me = balances.find((b) => b.userId === viewerId);
+
+	// Prefill from the viewer's side, because only the payer or the recipient may
+	// record a payment (ADR-0018 §8): if I owe, I pay the biggest creditor; if I'm
+	// owed, the biggest debtor pays me.
+	const from = me !== undefined && me.netMinorUnits < 0 ? me : debtors[0];
+	const to = me !== undefined && me.netMinorUnits > 0 ? me : creditors[0];
+	const viewerIsParty = me !== undefined && me.netMinorUnits !== 0;
 
 	return (
 		<div className="flex flex-col gap-8">
 			<ScreenHeading eyebrow={group.name} title={`Settle up in ${group.name}`} />
 
-			{isSettled(balances) ? (
-				<EmptyState title={`Nothing to settle — everyone in ${group.name} is square.`} />
+			<ul className="flex flex-col gap-1 text-sm">
+				{debtors.map((b) => (
+					<li key={b.userId}>
+						{b.name} owes {formatGbp(-b.netMinorUnits)}
+					</li>
+				))}
+				{creditors.map((b) => (
+					<li key={b.userId}>
+						{b.name} is owed {formatGbp(b.netMinorUnits)}
+					</li>
+				))}
+			</ul>
+
+			{viewerIsParty && from !== undefined && to !== undefined ? (
+				<SettleForm
+					groupId={group.id}
+					groupName={group.name}
+					payers={debtors.map((b) => ({ id: b.userId, name: b.name }))}
+					recipients={creditors.map((b) => ({ id: b.userId, name: b.name }))}
+					defaultFromId={from.userId}
+					defaultToId={to.userId}
+					defaultAmount={toFieldAmount(Math.min(-from.netMinorUnits, to.netMinorUnits))}
+				/>
 			) : (
-				<div className="flex flex-col gap-4">
-					<ul className="flex flex-col gap-2 text-sm">
-						{balances
-							.filter((balance) => balance.netMinorUnits < 0)
-							.map((balance) => (
-								<li key={balance.userId}>
-									{balance.name} owes the group{" "}
-									{formatGbp(-balance.netMinorUnits)}
-								</li>
-							))}
-					</ul>
-					<p className="text-sm text-zinc-500">
-						Recording a settlement — and refusing the second one when two people
-						record the same payment — arrives with REQ-E.1.
-					</p>
-				</div>
+				<p className="text-sm text-zinc-500">
+					You&rsquo;re square, so there&rsquo;s nothing for you to record. Only the person who paid, or the person
+					who was paid, can record a settlement.
+				</p>
 			)}
 		</div>
 	);

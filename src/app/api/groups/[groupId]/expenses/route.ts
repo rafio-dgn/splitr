@@ -69,16 +69,23 @@ export async function POST(
 			// 404, not 403 — see `addExpense`.
 			return Response.json({ error: "not-found" }, { status: 404 });
 		case "accepted":
-			// 202, not 201: nothing was created. It becomes 201 when `REQ-D.1`
-			// gives this an `expense` table to write to.
+			// 201: the expense exists in D1, and its id is in the body and in
+			// `Location`. Until REQ-D.1 this was a 202 that said nothing was stored.
 			return Response.json(
 				{
 					status: "accepted",
 					persisted: result.persisted,
+					id: result.expenseId,
 					expense: result.expense,
 					shares: result.shares,
 				},
-				{ status: 202 },
+				{
+					status: 201,
+					headers: { location: `/groups/${groupId}/expenses/${result.expenseId}` },
+				},
 			);
+		case "failed":
+			// The only 5xx: the database, not the request. Nothing was written.
+			return Response.json({ error: "unavailable" }, { status: 503 });
 	}
 }

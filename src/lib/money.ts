@@ -14,6 +14,21 @@
 /** Splitr is single-currency for now (§3). The field exists so adding more is a migration. */
 export type Currency = "GBP";
 
+/**
+ * Narrows a currency read from D1 to the ones this build supports.
+ *
+ * `group.currency` is `text` in the database (ADR-0018 §4 keeps the model ready
+ * for more), but the UI and formatting know only GBP. Anything else in a row
+ * is a data-integrity fault, not user input, so it throws rather than being
+ * formatted as if it were pounds.
+ */
+export function parseCurrency(value: string): Currency {
+	if (value === "GBP") {
+		return value;
+	}
+	throw new Error(`Unsupported currency in stored data: ${value}`);
+}
+
 const GBP = new Intl.NumberFormat("en-GB", {
 	style: "currency",
 	currency: "GBP",

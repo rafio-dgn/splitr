@@ -49,50 +49,62 @@ function toMinorUnits(cleaned: string): number {
  * The first check is `fatal`, which stops zod running the transform on input it
  * has already rejected — verified against zod 4.6.5 rather than assumed.
  */
-const amountMinorUnits = z
-	.string({ error: "Enter an amount." })
-	// Thousands separators and stray spaces are a paste artefact, not an error.
-	.transform((raw) => raw.replace(/[\s, ]/g, ""))
-	.superRefine((cleaned, ctx) => {
-		const fail = (message: string): void => {
-			ctx.addIssue({ code: "custom", message, fatal: true });
-		};
+/**
+ * Money as typed by a person ("42.50") → integer minor units (4250), with the
+ * refusal messages supplied by the caller, because "an expense has to be more
+ * than £0.00" is the wrong sentence on a settlement form. One parser, so the
+ * two forms can never disagree about what a valid amount *is*.
+ */
+export function amountMinorUnitsField(messages: { zero: string; overLimit: string }) {
+	return z
+		.string({ error: "Enter an amount." })
+		// Thousands separators and stray spaces are a paste artefact, not an error.
+		.transform((raw) => raw.replace(/[\s, ]/g, ""))
+		.superRefine((cleaned, ctx) => {
+			const fail = (message: string): void => {
+				ctx.addIssue({ code: "custom", message, fatal: true });
+			};
 
-		if (cleaned === "") {
-			fail("Enter an amount.");
-			return;
-		}
-		if (cleaned.startsWith("-")) {
-			fail(
-				"Amounts can't be negative. If someone paid you back, record that as a settlement instead.",
-			);
-			return;
-		}
-		if (/^\d+\.\d{3,}$/.test(cleaned)) {
-			fail("Amounts can have at most two decimal places.");
-			return;
-		}
-		if (!/^\d{1,7}(\.\d{1,2})?$/.test(cleaned)) {
-			fail("Amounts are numbers only — like 42.50.");
-		}
-	})
-	.transform(toMinorUnits)
-	.superRefine((minorUnits, ctx) => {
-		if (minorUnits <= 0) {
-			ctx.addIssue({
-				code: "custom",
-				message: "An expense has to be more than £0.00.",
-			});
-			return;
-		}
-		if (minorUnits > MAX_AMOUNT_MINOR_UNITS) {
-			ctx.addIssue({
-				code: "custom",
-				message:
-					"That's over the £1,000,000.00 limit. Split it into separate expenses.",
-			});
-		}
-	});
+			if (cleaned === "") {
+				fail("Enter an amount.");
+				return;
+			}
+			if (cleaned.startsWith("-")) {
+				fail(
+					"Amounts can't be negative. If someone paid you back, record that as a settlement instead.",
+				);
+				return;
+			}
+			if (/^\d+\.\d{3,}$/.test(cleaned)) {
+				fail("Amounts can have at most two decimal places.");
+				return;
+			}
+			if (!/^\d{1,7}(\.\d{1,2})?$/.test(cleaned)) {
+				fail("Amounts are numbers only — like 42.50.");
+			}
+		})
+		.transform(toMinorUnits)
+		.superRefine((minorUnits, ctx) => {
+			if (minorUnits <= 0) {
+				ctx.addIssue({
+					code: "custom",
+					message: messages.zero,
+				});
+				return;
+			}
+			if (minorUnits > MAX_AMOUNT_MINOR_UNITS) {
+				ctx.addIssue({
+					code: "custom",
+					message: messages.overLimit,
+				});
+			}
+		});
+}
+
+const amountMinorUnits = amountMinorUnitsField({
+	zero: "An expense has to be more than £0.00.",
+	overLimit: "That's over the £1,000,000.00 limit. Split it into separate expenses.",
+});
 
 /** `YYYY-MM-DD`, a real calendar date, not in the future, not before 2020. */
 const spentAt = z.iso

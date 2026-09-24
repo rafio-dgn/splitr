@@ -9,13 +9,18 @@
  * the Route Handler proves something about this form.
  */
 
+import { redirect } from "next/navigation";
+
 import {
 	addExpense,
 	type AddExpenseResult,
 } from "@/lib/expenses/add-expense";
 import { requireSession } from "@/lib/session";
 
-export type AddExpenseFormState = { status: "idle" } | AddExpenseResult;
+/** What the form can be shown. `accepted` never reaches it: that's a redirect. */
+export type AddExpenseFormState =
+	| { status: "idle" }
+	| Exclude<AddExpenseResult, { status: "accepted" }>;
 
 export async function addExpenseAction(
 	_previous: AddExpenseFormState,
@@ -38,8 +43,14 @@ export async function addExpenseAction(
 		participantIds: formData.getAll("participantIds"),
 	};
 
-	return addExpense(input, {
+	const result = await addExpense(input, {
 		id: session.user.id,
 		email: session.user.email,
 	});
+	if (result.status === "accepted") {
+		// Back to the group, where the new expense is now in the feed and the
+		// balances. Outside any try/catch: `redirect()` works by throwing.
+		redirect(`/groups/${result.expense.groupId}`);
+	}
+	return result;
 }

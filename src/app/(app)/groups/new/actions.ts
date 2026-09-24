@@ -5,10 +5,15 @@
  * authenticates, reads the `FormData` and delegates. No rule lives here.
  */
 
+import { redirect } from "next/navigation";
+
 import { createGroup, type CreateGroupResult } from "@/lib/groups/create-group";
 import { requireSession } from "@/lib/session";
 
-export type CreateGroupFormState = { status: "idle" } | CreateGroupResult;
+/** What the form can be shown. `created` never reaches it: that's a redirect. */
+export type CreateGroupFormState =
+	| { status: "idle" }
+	| Exclude<CreateGroupResult, { status: "created" }>;
 
 export async function createGroupAction(
 	_previous: CreateGroupFormState,
@@ -20,8 +25,14 @@ export async function createGroupAction(
 
 	// `FormData.get` returns `string | File | null`. It is handed over as
 	// `unknown` and narrowed by the shared schema, never cast here.
-	return createGroup(
+	const result = await createGroup(
 		{ name: formData.get("name") },
 		{ id: session.user.id, email: session.user.email },
 	);
+
+	if (result.status === "created") {
+		// Outside any try/catch: `redirect()` works by throwing.
+		redirect(`/groups/${result.groupId}`);
+	}
+	return result;
 }

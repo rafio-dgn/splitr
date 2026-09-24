@@ -5,11 +5,10 @@
  * another group is indistinguishable from an id that does not exist: both are
  * `notFound()`, the same enumeration defence the group layout applies (§2.2).
  *
- * **Cluster B honesty:** `getExpenseInGroup` returns `null` for everything,
- * because no expense is stored until `REQ-D.1`. Every id therefore renders
- * not-found today. The rest of this file is the screen Cluster D switches on by
- * changing one function body — including the "No line items" empty state, which
- * is where the vision model's output will land (`REQ-D.3`/`REQ-D.6`).
+ * `getExpenseInGroup` reads D1 (D.3). A voided expense (ADR-0018 §3) is also
+ * `null` here, so it renders not-found like any other id that names nothing.
+ * The "No line items" empty state is where the vision model's confirmed
+ * output will land (`REQ-D.3`/`REQ-D.6`); until then every expense shows it.
  */
 import { notFound } from "next/navigation";
 

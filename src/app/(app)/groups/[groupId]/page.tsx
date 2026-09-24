@@ -8,7 +8,7 @@
  *   1. There is no `"use client"` here, so this component executes only on the
  *      server. React hooks are therefore not even available to it — the mistake
  *      is unavailable rather than merely avoided.
- *   2. Every read (`requireSession`, `resolveGroup`, `listGroupExpenses`) is
+ *   2. Every read (`requireSession`, `resolveGroup`, `getGroupBalances`) is
  *      `await`ed **during the render**. In the App Router an async Server
  *      Component awaits directly; `getServerSideProps` is Pages Router and does
  *      not exist here.
@@ -25,8 +25,8 @@ import { Suspense } from "react";
 
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { EmptyState } from "@/components/ui";
-import { deriveBalances, isSettled } from "@/lib/expenses/balances";
-import { listGroupExpenses } from "@/lib/expenses/expense-feed";
+import { isSettled } from "@/lib/expenses/balances";
+import { getGroupBalances } from "@/lib/expenses/group-balances";
 import { resolveGroup } from "@/lib/groups/current-group";
 import { describePosition, formatGbp } from "@/lib/money";
 import { requireSession } from "@/lib/session";
@@ -56,7 +56,7 @@ export default async function GroupDashboardPage({
 	// The balance is derived here, on the server, from the expense records.
 	// Deriving rather than storing is what §5.5's error copy depends on: a
 	// failure here loses a calculation, never a record.
-	const balances = deriveBalances(group.members, await listGroupExpenses(groupId));
+	const balances = await getGroupBalances(group);
 	const mine = balances.find((balance) => balance.userId === session.user.id);
 	const settled = isSettled(balances);
 
