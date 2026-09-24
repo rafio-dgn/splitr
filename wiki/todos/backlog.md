@@ -320,4 +320,14 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `dx` **A fresh clone needs `npx next typegen`** as well as
       `npm run cf:types`. A new route's `RouteContext<…>` type doesn't exist
       until Next generates it, which is the same class as `LayoutProps<"/">`.
+- [ ] `D.5` **Orphaned receipt photos.** A photo uploaded but never attached
+      (an abandoned form) stays in R2. It's harmless, but unbounded. Options:
+      an R2 lifecycle rule on a `pending/` prefix, or the nightly cron (E.8)
+      sweeping keys that no expense references (ADR-0020).
+- [ ] `D.5` **Local dev writes to the real `splitr-receipts` bucket**
+      (`remote: true`, ADR-0020). One local-dev photo from 2026-09-24 remains,
+      referenced by local D1 (`receipts/grp_c539…/0a05af8a….png`).
+- [ ] `D.6` **Before the vision spike, ask Raffaele** (the AI-decision rule):
+      the candidate models, the ~10 real English receipts he'll photograph,
+      whether OCR expands abbreviations, and how the draft-to-confirm UI looks.
 

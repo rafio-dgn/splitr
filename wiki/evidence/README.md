@@ -44,3 +44,11 @@ the real pasted output, and the date.
   **E.2's "before"**. Two concurrent settlements of one £40 debt, both
   accepted, and visible in the audit log. The "after" (with the DO) is owed at
   E.2.
+- [`REQ-D.2-kv-recent-descriptions.md`](./REQ-D.2-kv-recent-descriptions.md):
+  KV holds each group's recent descriptions. Miss, hit, loss-and-rebuild and
+  invalidation are shown, and production KV was written after the response
+  via `waitUntil`.
+- [`REQ-D.3-presigned-receipt-uploads.md`](./REQ-D.3-presigned-receipt-uploads.md):
+  photos go straight from the browser to R2 (from the browser's own request
+  log). A Content-Type pin that **didn't hold** until `allHeaders: true` was
+  added, and five attach-time attacks, all refused.

@@ -1178,3 +1178,92 @@ does, months later, without the original chat transcript.
   - CSRF on the JSON Route Handlers, to verify at F.
   - Worker size at 76%.
   - Raffaele re-registering.
+
+## 2026-09-24T15:00Z — D.4 / REQ-D.2: KV, with the planned value replaced
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "Commit what you did and continue." D.3 was committed as
+  `dc7fd91`/`e6df329`/`1f8c960` and pushed. Next is D.4.
+- **Inputs read:** `REQ-D.2`, including its note, and `wiki/techstack/cloudflare-data.md`'s
+  KV section. That page is EdgeLedger-derived, a known seal issue. It
+  *agreed* with the requirement ("never use it for balances"), but the
+  deciding source was the requirement's note, which was read first.
+- **Decision asked:** the plan's "balance snapshot" conflicts with the
+  requirement's note. I offered three options: recent descriptions, a
+  display-only snapshot, or a feature flag. Raffaele chose **recent
+  descriptions**. Recorded in ADR-0019.
+- **Actions:**
+  - Created the namespace and binding.
+  - Wrote the cache module (zod-validated value; a miss rebuilds from D1;
+    `waitUntil` for the put and the delete; KV errors fall through).
+  - Invalidated on expense write, and added the datalist.
+  - Verified locally (4 scenarios) and in production (KV written after the
+    response), then cleaned.
+  - Replaced eight stale "snapshot" mentions, and noted ADR-0018 rather than
+    editing it.
+- **Alternatives considered:**
+  - A write-through prepend was rejected in favour of delete, which can only
+    make the list cold, never wrong.
+  - Reading KV without zod validation was rejected: a malformed value must be
+    a miss, not data.
+- **Assumptions:** a limit of 10 and a TTL of 7 days are my choices; the
+  descriptions are distinct and case-sensitive.
+- **Verification:**
+  - `tsc` and ESLint clean; the tests pass.
+  - Local: miss → hit → loss → rebuild → write-invalidates, with the log lines
+    captured.
+  - Production: the key held `["Tesco big shop"]` after a view, and after
+    cleanup there are 0 rows and 0 keys.
+  - The README overview diagram re-renders.
+- **Open questions:** none new. The Worker is at 2,330 KiB gzipped (about 76%).
+
+## 2026-09-24T17:00Z — D.5 / REQ-D.3: presigned R2 uploads, and a signing gap found by attacking it
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:**
+  - "Commit what you did and continue." D.4 was committed.
+  - Then "how can I create an R2 key?": dashboard steps, from Cloudflare's docs.
+  - Then the secret-put command failed (run outside `splitr/`); I explained
+    it and gave `--name splitr`.
+  - Then "done".
+- **Inputs read:** R2's presigned-URL, `aws4fetch` example, CORS and API-token
+  docs; `aws4fetch`'s own source (`UNSIGNABLE_HEADERS`); `wrangler r2 bucket
+  cors set --help`.
+- **Actions:**
+  - Verified the secrets by name only, and the `.dev.vars` key lengths, never
+    the values.
+  - Declared `aws4fetch` a direct dependency (already bundled via OpenNext).
+  - Wrote ADR-0020. Bound R2 (`remote: true`) and added the vars; set and read
+    back CORS.
+  - Wrote the receipts module, the upload action, the form field and the
+    detail-page image.
+  - Ran a browser test with a full request log, locally and on production.
+  - An attack script: a wrong Content-Type (which found the bug), an 11 MB
+    upload, and five attach attacks.
+  - Cleaned production R2, D1 and KV.
+- **Alternatives considered:**
+  - `@aws-sdk/s3-request-presigner` was rejected on size.
+  - `next/image` for the receipt was rejected, because it would proxy the
+    image through the Worker.
+  - A simulated R2 binding in dev was rejected, because it would check an
+    empty bucket while the presigned URL hits real R2 (I predicted this before
+    testing).
+  - Enforcing the size on upload isn't possible with a presigned PUT, so it's
+    enforced on attach instead.
+- **Caught in my own work:**
+  - I followed Cloudflare's `aws4fetch` example, which doesn't pin the
+    Content-Type. ADR-0020 §3 was claimed and false until tested. It's fixed
+    with `allHeaders: true` and recorded in the ADR's Verification section.
+  - My first browser script looked up the expense link by text and failed.
+    That was the script, not the app.
+  - Puppeteer shows binary PUT bodies as 0 B, so I confirmed the size from R2
+    (5,080 bytes, byte-identical).
+- **Assumptions:** the 10 MB limit, the 5-minute TTL, the three image types
+  and the key format are my choices, recorded in ADR-0020.
+- **Verification:**
+  - `tsc` and ESLint clean, 11 tests pass.
+  - Production upload: 52-byte request to Splitr, PUT to R2, image rendered
+    from R2's host.
+  - The wrong-type PUT: 403 after the fix (200 before).
+  - The five attach attacks gave 400s, and the bad objects were deleted.
+  - Production is back to 0 rows and 0 keys.
+- **Open questions:** D.6 is an AI decision, so it needs Raffaele's answers
+  first; orphaned photos (backlog).

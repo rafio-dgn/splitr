@@ -41,7 +41,7 @@ is refused.
 | **Durable Objects** | Balance arbiter, one instance per group. This *is* the contested write |
 | **R2** | Receipt photographs, uploaded direct from the client via presigned URL |
 | **Workers AI** | Vision model itemises the photo; a text model categorises line items |
-| **KV** | Hot per-group balance snapshot — rebuildable from D1 |
+| **KV** | Each group's recent expense descriptions, for autofill. Never money: stale means a missing suggestion, not a wrong number ([ADR-0019](./wiki/decisions/0019-kv-holds-recent-descriptions-not-balances.md)) |
 | **Cron** | Nightly settle-up reminders and uncategorised-item backfill |
 | **Turnstile** | The public invite/join-group form |
 | **Vectorize** | Semantic search over past expenses — *"that Thai place"*, *"the thing for the kitchen"* |
@@ -70,8 +70,10 @@ like this:
    asks Llama to pick from a closed list of 11 categories. If the AI is down,
    the item stays `uncategorised` and a nightly job fills it in. Saving never
    waits on AI.
-4. **See the balance**: who owes whom, computed from expenses and settlements,
-   and served from a KV snapshot that can always be rebuilt from D1.
+4. **See the balance**: who owes whom, computed fresh from D1 on every view.
+   It's never cached in KV, because a stale balance is a wrong balance
+   ([ADR-0019](./wiki/decisions/0019-kv-holds-recent-descriptions-not-balances.md)).
+   What KV *does* hold is the group's recent descriptions, for autofill.
 5. **Settle up.** A Durable Object for the group accepts exactly one
    settlement of a debt and **refuses the duplicate**: the contested write
    above.
@@ -105,7 +107,7 @@ flowchart LR
 
     subgraph data["Data"]
         D1[("D1 · splitr<br/>users, groups, expenses,<br/>items, settlements")]
-        KV[("KV<br/>balance snapshot")]
+        KV[("KV<br/>recent descriptions")]
         R2[("R2<br/>receipt photos")]
         VEC[("Vectorize<br/>one vector per line item")]
     end
@@ -114,9 +116,9 @@ flowchart LR
 
     UI -->|"HTTPS"| APP
     APP -->|"getDb() per request"| D1
-    UI -.->|"direct PUT, presigned URL · D.5"| R2
+    UI -->|"direct PUT, presigned URL"| R2
     UI -.->|"invite link · F.2"| TS
-    APP -.->|"read snapshot · D.4"| KV
+    APP -->|"autofill, waitUntil refresh"| KV
     APP -.->|"service binding · E.6"| DO
     APP -.-> RL
     DO -.->|"validated write · E.1"| D1
@@ -127,7 +129,7 @@ flowchart LR
     CRON -.->|"backfill uncategorised · E.8"| AIW
 
     classDef planned stroke-dasharray: 5 5,color:#666
-    class TS,RL,DO,AIW,CRON,GW,KV,R2,VEC,WAI planned
+    class TS,RL,DO,AIW,CRON,GW,VEC,WAI planned
 ```
 
 | Component | What it is | Status |
@@ -137,8 +139,8 @@ flowchart LR
 | D1 `splitr` | The one relational store, reached only through `getDb()` per request ([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)) | ✅ all 10 tables, from the first migration; groups, expenses and settlements written (D.3) |
 | `GroupLedger` Durable Object | One instance per group (`idFromName(groupId)`). Validates, writes to D1, and refuses the duplicate settlement | ⏳ E.1–E.6. **Open question:** does it *own* the balance or only *arbitrate*? It gets its own ADR |
 | AI Worker | A separate Worker with no public URL and a shared-secret check. Line-item categorisation by RAG, and eventually every model call | ⏳ E.7 ([ADR-0016](./wiki/decisions/0016-ai-integration-strategy.md) §6) |
-| KV | Hot per-group balance snapshot, rebuildable from D1 | ⏳ D.4 |
-| R2 | Receipt photos, uploaded directly by the browser via presigned URL; only the key is stored | ⏳ D.5 |
+| KV `splitr-hot` | Each group's last 10 expense descriptions, for autofill. A miss or a KV error falls through to D1 ([ADR-0019](./wiki/decisions/0019-kv-holds-recent-descriptions-not-balances.md)) | ✅ D.4 |
+| R2 `splitr-receipts` | Receipt photos, uploaded **directly by the browser** via a 5-minute presigned PUT, and viewed through a presigned GET; only the key is stored ([ADR-0020](./wiki/decisions/0020-receipts-via-presigned-r2-urls.md)) | ✅ D.5 |
 | Vectorize | One `bge-base-en-v1.5` vector per line item, filtered by group | ⏳ D.7 |
 | Cron | Nightly settle-up reminders, plus a backfill of `uncategorised` items | ⏳ E.8. Which Worker hosts `scheduled()` is decided there |
 | Turnstile, rate limit, AI Gateway | Bot check on the public form; the 6th rapid settle-up gets 429; one gateway in front of every model call | ⏳ Cluster F |
@@ -352,7 +354,7 @@ TypeScript + Cloudflare learning path, across six clusters in order:
 | A | TypeScript & React fundamentals | ✅ Done |
 | B | App Router, Server Components, Server Actions, zod | 🟡 5/6. `REQ-B.6` is a spoken answer |
 | C | Workers, Wrangler, first edge LLM call | 🟡 4/5. **Live** at https://splitr.raffaele-digennaro.workers.dev. `REQ-C.5` is a spoken answer |
-| D | D1, KV, R2, Vectorize | 🟡 1/6. `REQ-D.1` is done: the schema, and groups, expenses and settlements **persist** |
+| D | D1, KV, R2, Vectorize | 🟡 3/6. D1 ✅, KV ✅ (recent descriptions), R2 ✅ (presigned receipt uploads) |
 | E | Durable Objects, Cron, service bindings, RAG | Not started |
 | F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
 

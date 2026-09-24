@@ -657,3 +657,50 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** build plan D.3 / `REQ-D.1`. The naive settlement is Raffaele's
   sequencing, E.2's "before".
 - **Decision:** [ADR-0018](./decisions/0018-splitr-domain-model.md) (implemented). No new ADR.
+
+## 2026-09-24 — REQ-D.2: KV holds recent expense descriptions, not balances
+- **Type:** added
+- **Scope:**
+  - `src/lib/expenses/recent-descriptions.ts` (new)
+  - `add-expense.ts`, the add-expense page and form, `balances.ts` (comment)
+  - `wrangler.jsonc` (the `KV` binding)
+  - `wiki/decisions/0019-…` (new), with ADR-0018's status note
+  - the evidence file, the brief, README, build plan, study guide and handover
+- **What:**
+  - Created the KV namespace `splitr-hot`. Each group's last 10 distinct
+    descriptions are cached under `recent-descriptions:v1:<groupId>` with a
+    7-day TTL, and offered through a native `<datalist>`.
+  - On a miss, it's rebuilt from D1 and refilled in `ctx.waitUntil`. A write
+    deletes the key in `waitUntil`. Any KV error falls through to D1.
+  - Proved the miss, hit, loss-and-rebuild and invalidation cases locally, and
+    the after-response write in production (then cleaned).
+  - The original "balance snapshot" plan is replaced everywhere it appeared,
+    including the README diagram (re-rendered).
+- **Why:** `REQ-D.2`. Its note says a value that's a correctness bug when
+  stale fails the requirement, and a balance is exactly that.
+- **Decision:** [ADR-0019](./decisions/0019-kv-holds-recent-descriptions-not-balances.md)
+
+## 2026-09-24 — REQ-D.3: receipt photos straight to R2 via presigned URLs
+- **Type:** added
+- **Scope:**
+  - `src/lib/receipts/receipts.ts` (new)
+  - `add-expense.ts`, `schemas/expense.ts`, `expense-feed.ts`
+  - the add-expense action and form, the expense detail page
+  - `wrangler.jsonc` (the `RECEIPTS` binding with `remote: true`, and the
+    `R2_*` vars), `r2-cors.json` (new), `package.json` (`aws4fetch`)
+  - `wiki/decisions/0020-…` (new), the evidence file, and status docs
+- **What:**
+  - A members-only Server Action signs a 5-minute PUT (`aws4fetch`, with
+    `allHeaders` so the Content-Type is really pinned) for a server-chosen,
+    group-scoped key. The browser uploads straight to R2.
+  - On save, the key is checked through the binding (this group's prefix,
+    exists, ≤10 MB, an image type). A bad object is deleted; only the key is
+    stored.
+  - The detail page shows the photo through a 5-minute presigned GET.
+  - There's a bucket CORS policy for the deployed origin and the dev ports.
+  - Found and fixed: `aws4fetch` signs only `host` by default, so a
+    `text/html` PUT was accepted.
+  - Verified in a browser locally and on production (then cleaned), with five
+    attach attacks refused.
+- **Why:** `REQ-D.3`.
+- **Decision:** [ADR-0020](./decisions/0020-receipts-via-presigned-r2-urls.md)

@@ -57,7 +57,7 @@ Eight of eight. Honest assessment of how naturally each fits:
 | **Durable Objects** | Balance arbiter, one instance per group | **Natural.** This *is* the contested write. |
 | **R2** | Receipt photographs, uploaded direct from the client via presigned URL; only the object key is persisted | **Natural.** Real user-supplied files. |
 | **Workers AI** | Vision model itemises the receipt photo; a text model categorises each line item | **Natural.** The product doesn't exist without it. |
-| **KV** | Hot per-group balance snapshot — read on every group view, rebuildable from D1 by replaying expenses and settlements | **Natural.** Genuinely a cache: losing it costs a recompute, not correctness. |
+| **KV** | Each group's recent expense descriptions, for autofill on the add-expense form. Rebuilt from D1 with one query. *(It was a balance snapshot until [ADR-0019](../decisions/0019-kv-holds-recent-descriptions-not-balances.md): a stale balance would be the correctness bug `REQ-D.2` rules out)* | **Natural.** Genuinely a cache: losing it costs a recompute, not correctness. |
 | **Cron** | Nightly sweep — outstanding-debt reminders, plus backfilling uncategorised line items | **Natural.** Recurring, and idempotent via UPSERT. |
 | **Turnstile** | The public **join-group** page: an invite link opens an unauthenticated form | **Designed for.** Splitr needs a public surface to satisfy `REQ-F.2`; the invite flow is the plausible one. Worth building deliberately rather than bolting on. |
 | **Vectorize** | Embed expense descriptions and line items; `/search` finds past expenses **by meaning** — "that Thai place", "the thing we bought for the kitchen" | **⚠️ The stretch feature.** See below. |

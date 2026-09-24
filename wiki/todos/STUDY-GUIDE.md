@@ -7,7 +7,7 @@ you need to take from each one, and what's still to be written or answered.
 
 **It's kept current.** Every session that adds an ADR, evidence file,
 deliverable or open question also updates this page (`CLAUDE.md` §3).
-*Last updated: 2026-09-24, after D.3 (writes through D1, and the race reproduced).*
+*Last updated: 2026-09-24, after D.5 (`REQ-D.3`: R2 presigned uploads).*
 
 ---
 
@@ -45,6 +45,8 @@ answer to "why?".
 | [0015](../decisions/0015-one-database-driver-d1-everywhere.md) | Why D1 locally too? | Two drivers would make every local check say nothing about the deployed database |
 | [0016](../decisions/0016-ai-integration-strategy.md) | What does the AI do? | 12 decisions **you** made: RAG categorises items, money needs a human, English only, a closed list of 11 categories, after the write, behind the AI Worker, one vector per item, group first then a seed corpus, a labelled eval |
 | [0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) | The course's Llama is dead | It was deprecated on 2026-05-30 (error 5028). We use the same weights as `-fp8`; the eval picks E.4's model |
+| [0020](../decisions/0020-receipts-via-presigned-r2-urls.md) | How do receipt photos get stored? | The browser PUTs straight to R2 with a 5-minute presigned URL; the Worker only signs, and stores the key. It's checked on attach (group prefix, exists, ≤10 MB, image type) |
+| [0019](../decisions/0019-kv-holds-recent-descriptions-not-balances.md) | What goes in KV? | Recent descriptions for autofill, **not** the balance: KV can be a minute stale, and a stale balance is a wrong balance. **Your choice**, which changed the original plan |
 | [0018](../decisions/0018-splitr-domain-model.md) | The domain model | **Your 8 answers:** equal shares (items are informational); a settlement is "A paid B", valid only if A owes and B is owed; void-and-re-add, never edit; one currency per group; one rotatable invite code; leave only when square; any member may void; only the two parties record a settlement |
 
 **Still to decide, each with its own ADR:** the vision model (by spike, D.6); whether the DO *owns* the balance or only
@@ -63,6 +65,8 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [REQ-C.3 first edge LLM call](../evidence/REQ-C.3-first-edge-llm-call.md) | Llama through a binding; the categorisation spike | "14/15 on descriptions, **2/10 on receipt shorthand**: that's why RAG" |
 | [REQ-D.1 schema and first migration](../evidence/REQ-D.1-schema-and-first-migration.md) | The generated migration is genuinely the first; the database refuses bad rows itself | "Six bad writes, six refusals, each naming the rule it broke" |
 | [D.3 writes through D1](../evidence/REQ-D.1-writes-through-d1.md) | The whole flow in two real browsers, on production; `REQ-B.4`'s empty states render; 11 tests plus a mutation check | "The fixture was built to be swapped, and no page changed its contract" |
+| [REQ-D.2 KV recent descriptions](../evidence/REQ-D.2-kv-recent-descriptions.md) | The one KV value: rebuildable, not primary, harmless if stale | "I deleted the key by hand and the page didn't notice" |
+| [REQ-D.3 presigned uploads](../evidence/REQ-D.3-presigned-receipt-uploads.md) | Photos never touch the Worker; the attach check refuses bad objects | "The only request to our server during an upload was 52 bytes" |
 | [**The double settlement, without the DO**](../evidence/REQ-E.1-double-settle-without-the-do.md) | **E.2's "before"**: two concurrent settlements of one £40 debt, both accepted | "The ledger is internally consistent and factually wrong. That's why the DO exists." **The centre of the demo** |
 
 ## 4. The spoken questions: where your material is
@@ -83,11 +87,16 @@ from; **the answers must be yours.**
 **Cluster C (`REQ-C.5`)**
 1. A Worker vs a Node server → [the modules write-up](../../docs/modules-that-wont-run-on-workers.md), ADR-0014
 2. Why `bcrypt` fails, and its replacement → the same write-up, paragraph 1 (bundles, then fails at runtime; `bcryptjs` is 59 ms vs the 10 ms CPU limit)
-3. `ctx.waitUntil`, and what breaks without it → ADR-0016 §5 (categorisation after the write). Work not wrapped in it is killed when the response returns
+3. `ctx.waitUntil`, and what breaks without it → **live in the code now:** the KV refill and the KV delete both run after the response (ADR-0019, `recent-descriptions.ts`), and production KV was written that way (D.2 evidence). ADR-0016 §5 uses it for categorisation next
 4. Secrets vs vars → C.2 evidence (`GREETING` vs `HELLO_KEY`), `wrangler.jsonc` (`BETTER_AUTH_URL` is a var, the secret isn't)
 5. Where "cold start ≈ 0" breaks down → the Worker served from `MAD` while D1 is in `WEUR`. The isolate is everywhere; the data isn't
 
-**Cluster D (`REQ-D.6`), E (`REQ-E.7`), F (`REQ-F.6`):** listed in
+**Cluster D (`REQ-D.6`)**
+1. Why does each piece of data live where it does? → money in D1 (it must be correct); recent descriptions in KV (only fast, fine a minute stale, ADR-0019); photos in R2 (big, and never through the Worker, ADR-0020)
+2. D1 transaction limits, and how you avoided them → ⏳ D.7 (embedding writes)
+3. Why doesn't the upload pass through the Worker? → ADR-0020's Context: memory, cost, attack surface. The D.3 evidence shows the 52-byte request
+
+**Cluster E (`REQ-E.7`), F (`REQ-F.6`):** listed in
 [`../requirements/clusters/`](../requirements/clusters/). Their material is built
 in those clusters.
 
@@ -129,6 +138,12 @@ these are here so you don't have to reconstruct them later.
   `Element` clash.
 - **A `var` leaked into local preview** and broke auth there too. Wrangler reads
   `.dev.vars`, not `.env`.
+- **The "pinned" Content-Type wasn't pinned.** Cloudflare's own `aws4fetch`
+  example signs only `host`, and a `text/html` PUT was accepted. It was found
+  by attacking it, and fixed with `allHeaders: true`. The attach check would
+  have caught it anyway: defence in depth, demonstrated.
+- **The plan said "KV balance snapshot", and the requirement's own note rules
+  that out.** It was caught on re-reading `REQ-D.2` at D.4, before building it.
 - **The sequential duplicate was refused, and the concurrent one wasn't.** Same
   rule, same code. The only difference is *timing*, and that's the whole case
   for a Durable Object.

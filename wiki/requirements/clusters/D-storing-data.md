@@ -30,12 +30,15 @@ Drizzle; generate the first migration with `drizzle-kit generate` and apply it.
 hot config, or a read-many cache such as the dashboard's "recent items".
 
 **Acceptance criteria:**
-- [ ] Exactly one such value lives in KV
-- [ ] It is genuinely rebuildable if lost
-- [ ] It is **not** primary data
-- [ ] You can justify why it belongs in KV rather than D1
+- [x] Exactly one such value lives in KV: each group's recent expense descriptions
+- [x] It is genuinely rebuildable if lost (deleted by hand, rebuilt on the next view)
+- [x] It is **not** primary data (derived from `expense.description`)
+- [x] You can justify why it belongs in KV rather than D1: hot, and harmless if stale
 
-**Source:** capture §7 · **Status:** Not started (unblocked — [ADR-0004](../../decisions/0004-project-is-splitr.md))
+**Source:** capture §7 · **Status:** ✅ **Done**, 2026-09-24. The planned balance
+snapshot was dropped because it fails this requirement's own note
+([ADR-0019](../../decisions/0019-kv-holds-recent-descriptions-not-balances.md)).
+Evidence: [`REQ-D.2-kv-recent-descriptions.md`](../../evidence/REQ-D.2-kv-recent-descriptions.md)
 
 **Notes:** The concepts list is pointed about this: *"stop reaching for KV by
 default"*. Choosing something that would be a correctness bug if stale fails the
@@ -49,13 +52,17 @@ requirement even if it works.
 URL, the client uploads directly, the Worker stores only the object key.
 
 **Acceptance criteria:**
-- [ ] The Worker issues a presigned URL
-- [ ] The client uploads **directly to R2** — the file never passes through the
-      Worker
-- [ ] Only the object key is persisted
-- [ ] You can explain why the upload bypasses the Worker
+- [x] The Worker issues a presigned URL (a Server Action, members only, a
+      5-minute PUT with the Content-Type pinned)
+- [x] The client uploads **directly to R2**, and the file never passes
+      through the Worker (verified from the browser's own request log)
+- [x] Only the object key is persisted (`expense.receipt_key`)
+- [x] You can explain why the upload bypasses the Worker: memory, cost and
+      attack surface (ADR-0020)
 
-**Source:** capture §7 · **Status:** Not started (unblocked — [ADR-0004](../../decisions/0004-project-is-splitr.md))
+**Source:** capture §7 · **Status:** ✅ **Done**, 2026-09-24.
+[ADR-0020](../../decisions/0020-receipts-via-presigned-r2-urls.md). Evidence:
+[`REQ-D.3-presigned-receipt-uploads.md`](../../evidence/REQ-D.3-presigned-receipt-uploads.md)
 
 **Notes:** ⚠️ This differs from EdgeLedger, which serves receipts *through* a
 Worker route. The course requires the presigned-URL pattern. Do not copy the
