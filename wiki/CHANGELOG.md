@@ -572,3 +572,29 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-C.4`. It's a written deliverable, and it stays in the repo for
   the demo.
 - **Decision:** none. `docs/` is the location the requirement itself suggests.
+
+## 2026-09-24 — REQ-C.4 cut to three paragraphs; README architecture and flows; study guide
+- **Type:** docs
+- **Scope:** `docs/modules-that-wont-run-on-workers.md`, `README.md`,
+  `wiki/todos/STUDY-GUIDE.md` (new), `CLAUDE.md` §3, `wiki/context/project-brief.md`,
+  `wiki/todos/HANDOVER.md`, `wiki/todos/backlog.md`, `wiki/todos/build-plan.md`,
+  `wiki/requirements/clusters/C-workers.md`,
+  `wiki/requirements/clusters/99-deliverables-and-certification.md`
+- **What:**
+  - The `REQ-C.4` write-up is cut to three paragraphs, as Raffaele asked
+    (566 words). `REQ-C.4` is Done.
+  - The README gains a detailed *How it works*, a system-overview diagram with
+    a component status table, and seven flow diagrams. Built parts are drawn
+    solid and planned ones dashed, with their build-plan steps. The open
+    questions (who owns the balance, where the cron runs) are labelled as open.
+  - New `STUDY-GUIDE.md` covers: the pitch, a one-line why for all 17 ADRs, the
+    evidence and what it proves, the spoken questions with where to study
+    them, the document deliverables, raw material for `REQ-X.2`, and the open
+    questions.
+  - `CLAUDE.md` §3 now requires keeping the study guide current.
+  - The brief's stale decisions table now reflects the ADRs.
+  - A new conflict is logged: search scope (current group vs all the viewer's
+    groups).
+- **Why:** Raffaele's request. `REQ-X.5` is started (`🟡`: it must be accurate
+  as shipped), and `REQ-M.4`.
+- **Decision:** none

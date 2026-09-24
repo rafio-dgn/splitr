@@ -258,6 +258,11 @@ requirement work, not new scope; they sit here only so they are not lost.
       history is one answer; normalising at OCR is another; they can be
       combined. Raise it with Raffaele at D.6, and measure it in the vision
       spike ([evidence](../evidence/REQ-C.3-first-edge-llm-call.md)).
+- [ ] `decision` **Search scope: the current group or all the viewer's groups?**
+      The brief says "across all your groups"; the build plan's D.8 says "the
+      viewer's group". Both are safe (never another user's data), but they
+      give different UX and a different Vectorize filter. Resolve at D.8 with
+      Raffaele.
 - [ ] `decision` **Tell the course owners that `REQ-C.3`'s model is dead.**
       `@cf/meta/llama-3.1-8b-instruct` has failed with `AiError 5028` since
       2026-05-30, so every learner following the brief will hit it. It's

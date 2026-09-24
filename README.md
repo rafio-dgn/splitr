@@ -51,9 +51,296 @@ need for semantic search, so it has to earn its place. It does, because receipt
 merchant strings are cryptic — `SQ *TOAST LDN` is a coffee shop, and no keyword
 search will tell you that.
 
+## How it works
+
+A group of people who share costs (a house, a trip, a dinner crowd) uses Splitr
+like this:
+
+1. **Create a group** and share its invite link. The link opens a **public
+   join page** that works without an account and is protected by Turnstile
+   (`REQ-F.2`).
+2. **Add an expense**, in one of two ways:
+   - **by hand:** description, amount, who paid, who shared it;
+   - **by snapping the receipt:** the photo uploads straight to R2, a vision
+     model itemises it, and the user **reviews and confirms** the draft. The
+     AI never writes an amount into the ledger by itself
+     ([ADR-0016](./wiki/decisions/0016-ai-integration-strategy.md) §2).
+3. **Line items are categorised automatically**, *after* the expense is saved.
+   An AI Worker retrieves how *this group* categorised similar items before and
+   asks Llama to pick from a closed list of 11 categories. If the AI is down,
+   the item stays `uncategorised` and a nightly job fills it in. Saving never
+   waits on AI.
+4. **See the balance**: who owes whom, computed from expenses and settlements,
+   and served from a KV snapshot that can always be rebuilt from D1.
+5. **Settle up.** A Durable Object for the group accepts exactly one
+   settlement of a debt and **refuses the duplicate**: the contested write
+   above.
+6. **Search past spending by meaning.** *"That Thai place"* finds
+   `KNG PRWN PHAD`, which no keyword search would.
+
 ## Architecture
 
-*Diagram to follow — see `REQ-X.5`. The topology is settled during Cluster E.*
+**Legend:** solid boxes and arrows are **built and running today**. Dashed ones
+are **planned**, with the build-plan step that delivers them. Everything runs
+on Cloudflare's free tier. There are no servers and no containers in
+production.
+
+### System overview
+
+```mermaid
+flowchart LR
+    subgraph client["Browser"]
+        UI["Splitr UI<br/>React Server Components"]
+    end
+
+    subgraph edge["Cloudflare edge"]
+        APP["<b>splitr</b> Worker<br/>Next.js 16 via OpenNext<br/>routes · Server Actions · Better Auth"]
+        TS["Turnstile<br/>public join form"]
+        RL["Rate limit<br/>settle-up route"]
+        DO["<b>GroupLedger</b> Durable Object<br/>one per group · arbiter"]
+        AIW["<b>AI Worker</b><br/>RAG categoriser · OCR · embeddings<br/>workers_dev: false · shared secret"]
+        CRON["Cron trigger<br/>nightly: reminders + backfill"]
+        GW["AI Gateway<br/>cache · logs · rate limit · spend cap"]
+    end
+
+    subgraph data["Data"]
+        D1[("D1 · splitr<br/>auth tables today<br/>+ groups, expenses, items, settlements")]
+        KV[("KV<br/>balance snapshot")]
+        R2[("R2<br/>receipt photos")]
+        VEC[("Vectorize<br/>one vector per line item")]
+    end
+
+    WAI["Workers AI<br/>Llama 3.1 8B fp8 · bge-base-en-v1.5 · vision model"]
+
+    UI -->|"HTTPS"| APP
+    APP -->|"getDb() per request"| D1
+    UI -.->|"direct PUT, presigned URL · D.5"| R2
+    UI -.->|"invite link · F.2"| TS
+    APP -.->|"read snapshot · D.4"| KV
+    APP -.->|"service binding · E.6"| DO
+    APP -.-> RL
+    DO -.->|"validated write · E.1"| D1
+    APP -.->|"service binding, after the write · E.7"| AIW
+    AIW -.->|"retrieve similar items"| VEC
+    AIW -.->|"every model call · F.5"| GW
+    GW -.-> WAI
+    CRON -.->|"backfill uncategorised · E.8"| AIW
+
+    classDef planned stroke-dasharray: 5 5,color:#666
+    class TS,RL,DO,AIW,CRON,GW,KV,R2,VEC,WAI planned
+```
+
+| Component | What it is | Status |
+|---|---|---|
+| `splitr` Worker | The whole Next.js app (App Router, Server Components, Server Actions) on the Workers runtime, via `@opennextjs/cloudflare` ([ADR-0014](./wiki/decisions/0014-opennext-as-the-deploy-adapter.md)) | ✅ live at https://splitr.raffaele-digennaro.workers.dev |
+| Better Auth | Email/password auth used as a black box: `getSession()` plus route gating in layouts ([ADR-0009](./wiki/decisions/0009-better-auth-on-local-sqlite-via-drizzle.md)) | ✅ live |
+| D1 `splitr` | The one relational store, reached only through `getDb()` per request ([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)) | ✅ auth tables · ⏳ domain tables at `REQ-D.1` |
+| `GroupLedger` Durable Object | One instance per group (`idFromName(groupId)`). Validates, writes to D1, and refuses the duplicate settlement | ⏳ E.1–E.6. **Open question:** does it *own* the balance or only *arbitrate*? It gets its own ADR |
+| AI Worker | A separate Worker with no public URL and a shared-secret check. Line-item categorisation by RAG, and eventually every model call | ⏳ E.7 ([ADR-0016](./wiki/decisions/0016-ai-integration-strategy.md) §6) |
+| KV | Hot per-group balance snapshot, rebuildable from D1 | ⏳ D.4 |
+| R2 | Receipt photos, uploaded directly by the browser via presigned URL; only the key is stored | ⏳ D.5 |
+| Vectorize | One `bge-base-en-v1.5` vector per line item, filtered by group | ⏳ D.7 |
+| Cron | Nightly settle-up reminders, plus a backfill of `uncategorised` items | ⏳ E.8. Which Worker hosts `scheduled()` is decided there |
+| Turnstile, rate limit, AI Gateway | Bot check on the public form; the 6th rapid settle-up gets 429; one gateway in front of every model call | ⏳ Cluster F |
+
+### Flow 1: a page request, as deployed (built)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Browser
+    participant CF as Cloudflare edge
+    participant W as splitr Worker (OpenNext)
+    participant BA as Better Auth
+    participant D1 as D1
+
+    U->>CF: GET /groups/grp_demo
+    alt static asset (JS, CSS, prerendered page)
+        CF-->>U: served from Workers static assets, no Worker invocation
+    else dynamic route
+        CF->>W: invoke (V8 isolate, no cold start to speak of)
+        W->>BA: getAuth() → getSession(headers)
+        BA->>D1: look up session by cookie token
+        D1-->>BA: session + user, or nothing
+        alt no session
+            W-->>U: 307 → /login (the gate is in the layout, not middleware)
+        else session
+            W->>W: membership check, once per request (ADR-0011)
+            W-->>U: streamed HTML: Server Components, no client-side data calls (REQ-B.3)
+        end
+    end
+```
+
+### Flow 2: sign-up and sign-in (built)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Browser
+    participant W as splitr Worker
+    participant BA as Better Auth
+    participant D1 as D1
+
+    U->>W: POST /api/auth/sign-up/email · Origin header
+    W->>BA: getAuth(): one instance per D1 binding, per isolate
+    BA->>BA: origin check against BETTER_AUTH_URL
+    alt Origin is not the deployed origin
+        BA-->>U: 403 INVALID_ORIGIN (a forged Origin, verified)
+    else trusted origin
+        BA->>BA: hash the password (native scrypt via the workerd export condition)
+        BA->>D1: INSERT user, account, session
+        BA-->>U: 200 + Set-Cookie (session)
+    end
+    Note over U,D1: The same check caught QA finding F-1, and again on the first deploy.<br/>curl without an Origin header hides it, so auth is verified the way a browser calls it.
+```
+
+### Flow 3: adding an expense (built; persistence arrives at D.3)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Browser form
+    actor C as curl (REQ-B.2 evidence)
+    participant SA as Server Action
+    participant RH as Route Handler<br/>POST /api/groups/:id/expenses
+    participant S as addExpense()<br/>the one validation path
+    participant D1 as D1
+
+    U->>SA: submit (the browser also validates with the same zod schema)
+    C->>RH: invalid JSON, bypassing the browser
+    SA->>S: requireSession() → addExpense(input, actor)
+    RH->>S: getSession() → addExpense(body, actor)
+    S->>S: zod parse · membership check · equal shares in integer minor units
+    S->>S: [AUDIT] {actor, action, target, outcome, persisted:false}
+    S-->>SA: accepted · invalid (field errors) · not-found
+    S-->>RH: → 201 / 400 / 404
+    S-->>D1: INSERT expense + shares (planned, D.3)
+    Note over SA,RH: ADR-0010: two thin entry points, one copy of every rule.<br/>That's why a curl is evidence about the form.
+```
+
+### Flow 4: snap the bill (planned: D.5, D.6)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Browser
+    participant W as splitr Worker
+    participant R2 as R2
+    participant AI as Vision model<br/>(app binding in D, AI Worker from E)
+
+    U->>W: I want to upload a receipt
+    W-->>U: presigned PUT URL, short expiry
+    U->>R2: PUT photo directly. The bytes never pass through the Worker (REQ-D.3)
+    U->>W: done: object key
+    W->>AI: itemise the receipt at that key
+    alt the model answers
+        AI-->>W: line items + total
+        W-->>U: a DRAFT: the user edits and confirms every amount
+    else the model fails or is unusable
+        W-->>U: the manual form, which is always available
+    end
+    U->>W: confirm → the Flow 3 write (only human-confirmed amounts reach the ledger)
+```
+
+### Flow 5: categorising line items with RAG (planned: E.7, E.8)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant W as splitr Worker
+    participant AIW as AI Worker<br/>(service binding · shared secret)
+    participant V as Vectorize
+    participant L as Llama via AI Gateway
+    participant D1 as D1
+    participant CR as Nightly cron
+
+    W->>D1: the expense is saved first. The user is already done
+    W-)AIW: ctx.waitUntil(categorise items). Fire-and-forget, never awaited by the write
+    AIW->>V: embed item (bge) → nearest items, filter groupId
+    alt too few matches for this group
+        AIW->>V: fall back to the seed corpus (written by us, never other groups' data)
+    end
+    AIW->>L: item + retrieved examples → one key from 11 categories
+    L-->>AIW: raw text
+    AIW->>AIW: validate against the closed list (zod)
+    alt a valid key
+        AIW->>D1: UPDATE item.category
+    else invalid, slow or down
+        AIW->>D1: leave it uncategorised, and record the failure (REQ-M.7)
+    end
+    CR->>AIW: nightly: backfill items still uncategorised (never touches "other")
+```
+
+The C.4 spike measured why retrieval matters: without it, the 8B model scored
+**14/15 on clean descriptions but 2/10 on real receipt shorthand**
+([evidence](./wiki/evidence/REQ-C.3-first-edge-llm-call.md)). The eval at E.7
+decides the production model, 8B vs 70B with and without RAG
+([ADR-0017](./wiki/decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md)).
+
+### Flow 6: settling up, the contested write (planned: E.1–E.3, F.1)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Alice's phone
+    actor B as Bob's phone
+    participant W as splitr Worker
+    participant DO as GroupLedger DO<br/>idFromName(groupId)
+    participant D1 as D1
+
+    par the same real-world payment, recorded twice
+        A->>W: settle £40 · Idempotency-Key k1
+    and
+        B->>W: settle £40 · Idempotency-Key k2
+    end
+    W->>W: rate limit (the 6th rapid request gets 429)
+    W->>DO: service binding (never public HTTP, REQ-M.8)
+    W->>DO: service binding
+    Note over DO: one instance per group, handling one request at a time.<br/>This serialisation is the whole point.
+    DO->>DO: k1 not seen · re-read what is owed: £40
+    DO->>D1: write the settlement
+    DO-->>W: ✅ settled, new balance £0
+    DO->>DO: k2 not seen · re-read what is owed: £0
+    DO-->>W: ❌ refused: the debt is already settled
+    W-->>A: settled
+    W-->>B: refused: "Alice's £40 is already recorded"
+    Note over A,DO: A retry of k1 replays the cached result: no second write (24h, REQ-E.2).<br/>Built failure-first: the double-settle bug is shown without the DO, then fixed with it.
+```
+
+### Flow 7: semantic search (planned: D.7, D.8)
+
+```mermaid
+flowchart LR
+    Q["query: 'that Thai place'"] --> E["embed with bge-base-en-v1.5"]
+    E --> VQ["Vectorize nearest items<br/>filter: viewer's groups only"]
+    VQ --> G["group item hits by their expense"]
+    G --> R["results: KNG PRWN PHAD · £38.50"]
+    classDef planned stroke-dasharray: 5 5,color:#666
+    class Q,E,VQ,G,R planned
+```
+
+Demonstrated against keyword search with about 10 labelled queries, not
+anecdote (ADR-0016 §9).
+
+### Local development (built)
+
+```mermaid
+flowchart LR
+    subgraph mac["Your machine"]
+        DEV["next dev :3100<br/>or Docker :3000"]
+        PRX["Wrangler platform proxy<br/>started by next.config.ts"]
+        PV["npm run preview :8787<br/>real workerd runtime"]
+        ST[("local D1<br/>.wrangler/state")]
+    end
+    DEV -->|"getCloudflareContext()"| PRX --> ST
+    PV --> ST
+    PV -. "reads .dev.vars (blank BETTER_AUTH_URL)" .- PV
+```
+
+One database driver everywhere (D1, locally too), so local checks are
+statements about the database that's actually deployed. The Docker container
+is a reproducible dev environment only. Production is V8 isolates, not
+containers ([ADR-0007](./wiki/decisions/0007-docker-for-local-development.md)).
 
 ## Status
 
@@ -63,19 +350,16 @@ TypeScript + Cloudflare learning path, across six clusters in order:
 | Cluster | Topic | State |
 |---|---|---|
 | A | TypeScript & React fundamentals | ✅ Done |
-| B | App Router, Server Components, Server Actions, zod | 🟡 4/6 — `REQ-B.4` blocked on `REQ-D.1`, `REQ-B.6` is a spoken answer |
-| C | Workers, Wrangler, first edge LLM call | 🟡 1/5. **Live** at https://splitr.raffaele-digennaro.workers.dev (`REQ-C.1`) |
+| B | App Router, Server Components, Server Actions, zod | 🟡 4/6. `REQ-B.4` is blocked on `REQ-D.1`; `REQ-B.6` is a spoken answer |
+| C | Workers, Wrangler, first edge LLM call | 🟡 4/5. **Live** at https://splitr.raffaele-digennaro.workers.dev. `REQ-C.5` is a spoken answer |
 | D | D1, KV, R2, Vectorize | Not started |
 | E | Durable Objects, Cron, service bindings, RAG | Not started |
 | F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
 
-Splitr runs on Cloudflare Workers through the OpenNext adapter
-([ADR-0014](./wiki/decisions/0014-opennext-as-the-deploy-adapter.md)). **Accounts
-persist**: sign-up and sessions are stored in D1, both deployed and locally
-([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)).
-**Groups and expenses don't persist yet**: both write paths validate and report
-"nothing was stored" rather than returning a 201 that implies otherwise. Their
-tables arrive at `REQ-D.1`.
+**Accounts persist** in D1, both deployed and locally. **Groups and expenses
+don't persist yet**: both write paths validate and report "nothing was stored"
+rather than returning a 201 that implies otherwise. Their tables arrive at
+`REQ-D.1`.
 
 ## Running locally
 
@@ -116,9 +400,12 @@ splitr/
 ├── CLAUDE.md          instructions for AI agents working in this repo
 ├── AGENTS.md          Next.js version warning (generated by `next dev`)
 ├── wiki/              the knowledge base — requirements, decisions, build plan
+├── docs/              course write-ups, e.g. [modules that won't run on Workers](./docs/modules-that-wont-run-on-workers.md) (`REQ-C.4`)
 ├── src/               the application
-│   ├── app/           App Router routes
-│   └── lib/           fetchJson and friends
+│   ├── app/           App Router routes: (auth), (app), api/, join/
+│   ├── db/            Drizzle schema + getDb(), the only file that knows the driver
+│   └── lib/           auth, session, validation schemas, services
+├── workers/           separate Workers (Cluster E: GroupLedger DO, AI Worker)
 ├── wrangler.jsonc     the Worker: bindings (D1), vars, compatibility date
 ├── open-next.config.ts  the OpenNext adapter's build config
 ├── Dockerfile.dev     dev container
@@ -130,7 +417,8 @@ every architectural decision with its rejected alternatives, a changelog, and an
 audit log of AI-assisted work. Start at [`wiki/README.md`](./wiki/README.md).
 
 The [build plan](./wiki/todos/build-plan.md) is the task-by-task route through
-the six clusters.
+the six clusters, and the **[study guide](./wiki/todos/STUDY-GUIDE.md)** lists every
+document you need to know for the demo.
 
 ## Stack
 

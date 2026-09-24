@@ -62,6 +62,11 @@ your own words** at the demo, and `REQ-X.2` requires written notes on what
 surprised you and what you'd do differently. Both are built from these files. A
 decision that lives only in a chat transcript is a lost decision.
 
+- **`wiki/todos/STUDY-GUIDE.md`**: every document Raffaele needs to know for
+  the demo. Any turn that adds or changes an ADR, an evidence file, a
+  deliverable, a spoken-question answer source, or an open question updates it
+  in the same turn. He asked for this explicitly (2026-09-24).
+
 If unsure whether something counts: log it.
 
 ## 4. ⛔ EdgeLedger is sealed until the end

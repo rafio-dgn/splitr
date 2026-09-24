@@ -83,18 +83,20 @@ true answer. The stretch feature is how it is made to pay for itself.
 
 ---
 
-## Open design decisions
+## Design decisions: where they stand
 
-Not settled here — these belong to the clusters that reach them, each with its
-own ADR:
+Each one belongs to the cluster that reaches it, with its own ADR.
 
-| Decision | Cluster | Note |
-|---|---|---|
-| Which vision model for receipt OCR | C / E | Candidates verified to exist: `@cf/meta/llama-3.2-11b-vision-instruct` (has an official Cloudflare tutorial), `@cf/llava-hf/llava-1.5-7b-hf`, and Moondream 3 (docs cite OCR + structured output explicitly; exact id needs confirming). **Scope note:** the course names only `@cf/meta/llama-3.1-8b-instruct` and `@cf/baai/bge-base-en-v1.5`, so the vision model is extra scope — accepted as inherent to Splitr. |
-| Whether the DO owns the group balance or just arbitrates settlements | E | Leaning arbitrate-only, with D1 as the source of truth, but this is the central design question of the build. |
-| Split model: equal shares, or per-item assignment | B / D | Per-item is richer and uses the OCR output better; equal-split is simpler. Affects the schema. |
-| Auth: needed at all, and which library (`REQ-B.5`) | B | Groups imply identity. Course says use a library as a black box. |
-| Deploy adapter (`REQ-C.1`) | C | OpenNext or Pages. |
+| Decision | State |
+|---|---|
+| Auth library (`REQ-B.5`) | ✅ Better Auth, [ADR-0009](../decisions/0009-better-auth-on-local-sqlite-via-drizzle.md) |
+| Deploy adapter (`REQ-C.1`) | ✅ OpenNext, [ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md) |
+| What the AI does, and its limits | ✅ [ADR-0016](../decisions/0016-ai-integration-strategy.md): RAG categorises line items; money needs a human |
+| Text model (the course's one is deprecated) | ✅ `llama-3.1-8b-instruct-fp8` for now, and the eval picks E.4's model, [ADR-0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) |
+| Vision model for receipt OCR | ⏳ D.6, **chosen by a spike** over every available model ([ADR-0016](../decisions/0016-ai-integration-strategy.md) §10). Live on 2026-09-23: `llama-3.2-11b-vision-instruct`, `llama-4-scout-17b` |
+| Split model: equal shares or per-item | ⏳ D.1. Cluster B's form uses equal shares today |
+| Does the DO own the balance, or only arbitrate? | ⏳ E.1, the central design question. Leaning towards arbitrate-only, with D1 as the source of truth |
+| Search scope: the current group, or all the viewer's groups? | ⏳ **Conflict to resolve at D.8.** This brief says "across all your groups"; the build plan says "the viewer's group". Either way, never another user's groups |
 
 ---
 

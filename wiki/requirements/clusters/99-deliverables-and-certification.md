@@ -65,11 +65,15 @@ give from memory, diagram in hand.
 ### REQ-X.5 — Architecture diagram in the README
 
 **Acceptance criteria:**
-- [ ] A diagram is in the project README
-- [ ] It shows every Cloudflare service in use and how they connect
-- [ ] It is accurate as shipped
+- [x] A diagram is in the project README: a system overview plus seven flow
+      diagrams, in Mermaid
+- [ ] It shows every Cloudflare service in use and how they connect. All
+      planned services are drawn, dashed until built
+- [ ] It is accurate as shipped. **Re-verify at `REQ-X.4`**, when nothing
+      should still be dashed
 
-**Source:** capture §10 · **Status:** Not started
+**Source:** capture §10 · **Status:** 🟡 **In progress**, drawn 2026-09-24. Every
+block was rendered with `@mermaid-js/mermaid-cli` to check the syntax.
 
 **Notes:** EdgeLedger's README opens with an ASCII diagram — a reasonable format,
 and the one place looking at the reference is unambiguously fine, since it is

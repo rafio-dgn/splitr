@@ -149,7 +149,7 @@ deliberate breakage is the requirement, not a mishap.
 | # | Task | Req |
 |---|---|---|
 | X.1 | Final deploy | `REQ-X.4` |
-| X.2 | Architecture diagram into the README | `REQ-X.5` |
+| X.2 | Architecture diagram into the README. 🟡 **Drawn early (2026-09-24)**, with built vs planned marked. Finish it by making it accurate as shipped | `REQ-X.5` |
 | X.3 | Consolidate the running notes: what surprised you, what you got wrong, what you'd do differently | `REQ-X.2` |
 | X.4 | 🔓 **Quarantine lifts.** Read EdgeLedger + `wiki/reference-edgeledger/`; write the comparison | `REQ-X.6` |
 | X.5 | Rehearse the walkthrough from memory | `REQ-X.3` |

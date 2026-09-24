@@ -1030,3 +1030,46 @@ does, months later, without the original chat transcript.
     each.
   - The local workerd timings may differ from production CPU accounting.
 - **Open questions:** Raffaele's review of the draft; then committing it.
+
+## 2026-09-24T10:00Z — README architecture and flows, study guide, REQ-C.4 cut
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "1 ok, 2 socket.io ok, 3 cut to three paragraphs. Keep
+  notes of all the documents I need to know. Describe the project in detail in
+  the README, with the architecture and diagrams of the flows."
+- **Inputs read:**
+  - `README.md`, `project-brief.md`, `add-expense.ts`, `actions.ts`, the
+    expenses route handler.
+  - Every ADR's Decision section, every spoken question (`REQ-A.5`…`F.6`),
+    and `REQ-X.5`.
+- **Actions:**
+  - Rewrote the write-up as three paragraphs.
+  - Added nine Mermaid diagrams to the README.
+  - Wrote `STUDY-GUIDE.md`, and wired it into `CLAUDE.md`, the handover and
+    memory.
+  - Updated the brief's decisions table and the requirement statuses.
+- **Alternatives considered:**
+  - A single end-state diagram was rejected: it would present unbuilt services
+    as real, which `REQ-X.5` ("accurate as shipped") and honesty both forbid.
+    Hence the built/planned legend.
+  - ASCII diagrams were rejected because GitHub renders Mermaid natively.
+  - An ER diagram was left out because the schema is undecided until D.1 (the
+    split-model ADR).
+- **Assumptions:**
+  - Flow 6's Durable Object sequence shows *arbitration* as the working
+    design, but it's explicitly labelled as an open question in the component
+    table (E.1).
+  - The `REQ-C.4` cut was approved in content before it was cut, so it's
+    marked Done. Raffaele hasn't seen the cut version yet.
+- **Verification:**
+  - All 9 diagrams were rendered with `@mermaid-js/mermaid-cli@11`. The first
+    pass had 2 failures, both from a `;` inside a label, which Mermaid treats as
+    a statement end. After fixing them all 9 render.
+  - I visually checked the overview, the contested-write and local-dev PNGs.
+  - Root `tsc` and `eslint` are unaffected (docs only).
+- **Mistake caught:** my first patch to the brief's table matched the table's
+  own `|---|` separator instead of the section's `---`, which left the old rows
+  behind. It was seen in the file-change notice and fixed immediately.
+- **Found:** the brief says search covers "all your groups", while the build
+  plan's D.8 says "the viewer's group". It's logged as a decision for Raffaele
+  and not resolved.
+- **Open questions:** the search scope; committing this work.

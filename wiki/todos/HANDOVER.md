@@ -3,6 +3,7 @@
 Written 2026-09-22 at the close of the first session; updated 2026-09-23
 mid-way through the second, after `REQ-C.1`. Read this, then
 [`build-plan.md`](./build-plan.md) and [`backlog.md`](./backlog.md).
+**Raffaele's own reading list is [`STUDY-GUIDE.md`](./STUDY-GUIDE.md). Keep it current.**
 
 ## Where we are
 
