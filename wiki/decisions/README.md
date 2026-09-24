@@ -49,3 +49,5 @@ obvious in hindsight.
 | [0016](./0016-ai-integration-strategy.md) | What the AI does in Splitr, and where it is allowed to reach | Accepted |
 | [0017](./0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) | `llama-3.1-8b-instruct-fp8` replaces the deprecated course model; the eval picks E.4's model | Accepted |
 | [0018](./0018-splitr-domain-model.md) | Splitr's domain model: equal shares, pairwise settlements, void-not-edit | Accepted |
+| [0019](./0019-kv-holds-recent-descriptions-not-balances.md) | KV holds recent expense descriptions, not a balance snapshot | Accepted |
+| [0020](./0020-receipts-via-presigned-r2-urls.md) | Receipts go straight to R2 via presigned URLs, signed with aws4fetch and verified on attach | Accepted |

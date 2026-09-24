@@ -1,6 +1,6 @@
 # ADR-0018: Splitr's domain model: equal shares, pairwise settlements, void-not-edit
 
-- **Status:** Accepted
+- **Status:** Accepted. The Consequences line about "KV's snapshot" is superseded by [ADR-0019](./0019-kv-holds-recent-descriptions-not-balances.md): KV holds recent descriptions, and balances are never cached in KV
 - **Date:** 2026-09-24
 - **Deciders:** Raffaele, in two rounds of structured questions on 2026-09-24.
   The AI proposed the options; two of his eight answers differ from its
