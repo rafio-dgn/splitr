@@ -29,6 +29,11 @@ export function CreateGroupForm() {
 	);
 	const [name, setName] = useState("");
 	const [touched, setTouched] = useState(false);
+	// §7.4 "never validate an untouched field": the field is autofocused, so a
+	// blur alone doesn't mean the person touched it. Without this, clicking
+	// "Create group" first showed the error, which moved the button mid-click
+	// and lost the click (the add-expense form had the same bug, 2026-09-25).
+	const [edited, setEdited] = useState(false);
 
 	const parsed = parseCreateGroup({ name });
 	const clientError = parsed.ok ? undefined : parsed.fieldErrors.name?.[0];
@@ -40,7 +45,7 @@ export function CreateGroupForm() {
 	const error = serverError ?? (touched ? clientError : undefined);
 
 	return (
-		<form action={formAction} className="flex flex-col gap-5">
+		<form action={formAction} className="flex flex-col gap-3">
 			<div className="flex flex-col gap-1">
 				<label htmlFor="name" className="text-sm font-medium">
 					Group name
@@ -53,15 +58,19 @@ export function CreateGroupForm() {
 					disabled={pending}
 					aria-invalid={error !== undefined}
 					aria-describedby={error !== undefined ? "name-error" : undefined}
-					onChange={(event) => setName(event.target.value)}
-					onBlur={() => setTouched(true)}
+					onChange={(event) => {
+						setEdited(true);
+						setName(event.target.value);
+					}}
+					onBlur={() => {
+						if (edited || name !== "") setTouched(true);
+					}}
 					className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
 				/>
-				{error !== undefined ? (
-					<p id="name-error" role="alert" className="text-sm text-red-600">
-						{error}
-					</p>
-				) : null}
+				{/* Always present, so an error appearing never moves the button. */}
+				<p id="name-error" role="alert" className="min-h-5 text-sm text-red-600">
+					{error}
+				</p>
 			</div>
 
 			{state.status === "invalid" && state.formErrors.length > 0 ? (
