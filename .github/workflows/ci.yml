@@ -1,0 +1,62 @@
+# The PR checks (ADR-0024, workflow 1). Every pull request, and every push to
+# main, runs everything a merge has to pass: types for both programs, lint,
+# all tests, a production build and the Worker size budget.
+#
+# It needs no Cloudflare credentials and no secrets, so it's safe on any
+# branch. The DO tests run in a local workerd (miniflare), and the size comes
+# from `wrangler deploy --dry-run`, which uploads nothing.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same PR cancels the run it replaces.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Generated, gitignored types: the bindings (both programs) and the route
+      # types. tsc fails without them.
+      - name: Generate types
+        run: |
+          npm run cf:types
+          npx next typegen
+
+      - name: Typecheck the app
+        run: npx tsc --noEmit
+      - name: Typecheck the ledger
+        run: npx tsc --noEmit -p workers/group-ledger
+      - name: Typecheck the ledger's tests
+        run: npx tsc --noEmit -p workers/group-ledger/test
+
+      - name: Lint
+        run: npx eslint
+
+      # 23 pure tests (node --test), then 6 against a real GroupLedger in workerd.
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npx opennextjs-cloudflare build
+
+      - name: Size budget
+        run: node scripts/ci/size-budget.mjs

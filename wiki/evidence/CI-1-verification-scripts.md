@@ -153,7 +153,7 @@ e2e passed
      checks just once;
    - a file set before hydration fires no `onChange`, so every navigation waits
      for the network to go quiet;
-   - Vectorize is eventually consistent, so search polls for up to 2 minutes;
+   - Vectorize is eventually consistent, so search polls for up to 5 minutes (2 proved too short once);
    - the one-shot `wrangler` calls retry, because an OAuth refresh answered 401
      once and worked seconds later.
 3. **Older local test data lives in production R2 and Vectorize.** Local dev

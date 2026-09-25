@@ -390,14 +390,16 @@ requirement work, not new scope; they sit here only so they are not lost.
       columns with the same name (for example `user.name` twice) inside
       `db.batch`.
 - [ ] `CI` **ADR-0024 rollout:** ~~(1) `scripts/verify/*` + `.nvmrc`~~
-      (built 2026-09-25, verified locally; **the production run is still to
-      do**); (2) `ci.yml`; (3) Raffaele's settings (the token, secrets,
-      `production` environment, branch protection, `workflow` scope; ~~`CLAUDE.md`
+      (built 2026-09-25, merged in PR #1, smoke passes on production);
+      ~~(2) `ci.yml`~~ (built 2026-09-25; simulated on a clean runner-like copy;
+      green on PR #2, run 36126889551, 1 min 22 s); (3) Raffaele's settings (the token, secrets,
+      `production` environment, branch protection; ~~`workflow` scope~~ confirmed by the push; ~~`CLAUDE.md`
       §6~~ amended 2026-09-25); (4) `deploy.yml`; (5) `e2e-nightly.yml`.
 - [x] `CI` **Run smoke against production.** Raffaele ran it himself
       (2026-09-25; remote D1 is blocked for the agent): all 16 checks pass and
       cleanup leaves 0 rows. The output is in the evidence file.
-- [ ] `CI` **For `ci.yml` (step 2):** npm 11.19 reports install scripts
+- [x] `CI` **For `ci.yml` (step 2):** checked: `npm ci` on a clean copy
+      installs and builds fine despite the warning. npm 11.19 reports install scripts
       "not yet covered by allowScripts" (esbuild, workerd, unrs-resolver,
       fsevents). They're pre-existing and they work locally, but check that
       `npm ci` on the runner doesn't skip one that the build needs.

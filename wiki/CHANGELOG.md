@@ -931,3 +931,28 @@ shape that triggers them. They are listed rather than ticked.
   and a byte-identical replay. Cleanup leaves 0 rows.
 - **Why:** ADR-0024 rollout step 1 asked for a hand run against production.
 - **Decision:** none
+
+## 2026-09-25 — CI rollout step 2: `ci.yml`, and a build that needs no credentials
+- **Type:** added, fixed
+- **Scope:** `.github/workflows/ci.yml`, `scripts/ci/size-budget.mjs`,
+  `next.config.ts`, `src/lib/session.ts`, `scripts/verify/e2e.mjs`
+- **What:**
+  - `ci.yml` runs on PRs and on pushes to `main`: types (app, ledger, ledger
+    tests), lint, 29 tests, the OpenNext build and the size budget (fail above
+    2,900 KiB, warn above 2,700, written to the job summary).
+  - **Fixed:** `next build` no longer runs the dev-only binding proxy, and
+    `getSession()` reads the headers before touching D1. The build had needed
+    Cloudflare credentials without anyone noticing.
+  - The E2E's search poll went from 2 to 5 minutes.
+- **Why:** ADR-0024 step 2. The fixes were found by simulating the runner (a
+  clean copy, no login).
+- **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step-2 addendum)
+
+## 2026-09-25 — `ci.yml`'s first run: green
+- **Type:** docs
+- **Scope:** `wiki/todos/{HANDOVER,backlog}.md`
+- **What:** PR #2's `ci / checks` passed on `ubuntu-latest` in 1 min 22 s
+  (run 36126889551), every step green. The push of `.github/workflows/`
+  succeeded, so the credential has the `workflow` scope.
+- **Why:** ADR-0024 step 2 asked to watch it go green.
+- **Decision:** none
