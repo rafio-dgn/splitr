@@ -389,8 +389,33 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `lesson` **D1 batch results are keyed by column name.** Never select two
       columns with the same name (for example `user.name` twice) inside
       `db.batch`.
-- [ ] `CI` **ADR-0024 rollout:** (1) `scripts/verify/*` + `.nvmrc`; (2)
-      `ci.yml`; (3) Raffaele's settings (the token, secrets, `production`
-      environment, branch protection, `workflow` scope, `CLAUDE.md` §6); (4)
-      `deploy.yml`; (5) `e2e-nightly.yml`.
+- [ ] `CI` **ADR-0024 rollout:** ~~(1) `scripts/verify/*` + `.nvmrc`~~
+      (built 2026-09-25, verified locally; **the production run is still to
+      do**); (2) `ci.yml`; (3) Raffaele's settings (the token, secrets,
+      `production` environment, branch protection, `workflow` scope; ~~`CLAUDE.md`
+      §6~~ amended 2026-09-25); (4) `deploy.yml`; (5) `e2e-nightly.yml`.
+- [x] `CI` **Run smoke against production.** Raffaele ran it himself
+      (2026-09-25; remote D1 is blocked for the agent): all 16 checks pass and
+      cleanup leaves 0 rows. The output is in the evidence file.
+- [ ] `CI` **For `ci.yml` (step 2):** npm 11.19 reports install scripts
+      "not yet covered by allowScripts" (esbuild, workerd, unrs-resolver,
+      fsevents). They're pre-existing and they work locally, but check that
+      `npm ci` on the runner doesn't skip one that the build needs.
+- [ ] `CI` **For `e2e-nightly.yml` (step 5):** confirm `channel: "chrome"`
+      finds Chrome on `ubuntu-latest`, or set `CHROME_PATH`. Upload
+      `.data/e2e-*.png` as an artefact on failure.
+- [x] `ux` **The first click below an autofocused field was lost** (found by
+      the E2E, 2026-09-25). **Fixed** in *Add an expense* and *New group*: a
+      blur on a pristine field no longer validates it, and each error line is
+      reserved. The E2E now guards it
+      ([evidence](../evidence/CI-1-verification-scripts.md)).
+- [x] `data` **Older local-dev test data in production R2 and Vectorize.**
+      Swept on Raffaele's OK, 2026-09-25.
+      `node scripts/verify/cleanup.mjs http://localhost:3100 --dry-run` lists
+      3 test users, 4 groups, 49 expenses, **71 vectors and 4 receipt photos**
+      from earlier sessions (local dev writes to the real bucket and index).
+      Running it without `--dry-run` removes them. Raffaele's call.
+- [ ] `dx` **A `wrangler dev` can drop out of the dev registry** while still
+      running (the ledger on 8791, 2026-09-25). `next dev` then answers
+      settle-up with 503 "Worker splitr-ledger not found". Restart the ledger.
 

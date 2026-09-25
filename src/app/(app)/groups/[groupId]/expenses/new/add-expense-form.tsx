@@ -102,6 +102,16 @@ export function AddExpenseForm({
 
 	const fieldRefs = useRef<Partial<Record<FieldName, HTMLElement | null>>>({});
 
+	/**
+	 * Fields the person has typed in. §7.4 says "never validate an untouched
+	 * field", and `autoFocus` makes the browser blur the description without the
+	 * person ever touching it: the first click anywhere below showed "Say what
+	 * this was for", which moved the page mid-click and lost the click (found by
+	 * the E2E, 2026-09-25). A blur now counts only once the field was edited or
+	 * holds a value. A submit still marks every field.
+	 */
+	const edited = useRef<Partial<Record<FieldName, boolean>>>({});
+
 	// One call into the shared schema; the per-field slices are read off it.
 	// Note it parses `values` — the *input* type, with `amount` still the string
 	// the user typed. The transform to integer minor units lives in the schema
@@ -205,6 +215,12 @@ export function AddExpenseForm({
 		setTouched((current) => ({ ...current, [field]: true }));
 	}
 
+	/** A blur on a text field: validates it, unless it's empty and was never typed in. */
+	function blurred(field: "description" | "amount"): void {
+		if (values[field] === "" && edited.current[field] !== true) return;
+		markTouched(field);
+	}
+
 	function focusFirstError(errors: FieldErrors): void {
 		const first = FIELD_ORDER.find((field) => errors[field] !== undefined);
 		if (first !== undefined) {
@@ -249,7 +265,7 @@ export function AddExpenseForm({
 					focusFirstError(parsed.fieldErrors);
 				}
 			}}
-			className="flex max-w-lg flex-col gap-5"
+			className="flex max-w-lg flex-col gap-3"
 		>
 			<input type="hidden" name="groupId" value={groupId} />
 			{/* Not an input the user sees — the £ prefix below *is* the currency
@@ -279,8 +295,11 @@ export function AddExpenseForm({
 							? "description-error"
 							: undefined
 					}
-					onChange={(event) => update("description", event.target.value)}
-					onBlur={() => markTouched("description")}
+					onChange={(event) => {
+						edited.current.description = true;
+						update("description", event.target.value);
+					}}
+					onBlur={() => blurred("description")}
 					className="rounded-md border border-zinc-300 px-3 py-2 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
 				/>
 				{/* Native suggestions: no JavaScript of ours, and a stale list only means a
@@ -310,8 +329,11 @@ export function AddExpenseForm({
 						aria-describedby={
 							errorFor("amount") !== undefined ? "amount-error" : undefined
 						}
-						onChange={(event) => update("amount", event.target.value)}
-						onBlur={() => markTouched("amount")}
+						onChange={(event) => {
+							edited.current.amount = true;
+							update("amount", event.target.value);
+						}}
+						onBlur={() => blurred("amount")}
 						className="flex-1 rounded-md border border-zinc-300 px-3 py-2 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
 					/>
 				</div>
@@ -587,11 +609,13 @@ function Field({
 				{label}
 			</label>
 			{children}
-			{error !== undefined ? (
-				<p id={`${id}-error`} role="alert" className="text-sm text-red-600">
-					{error}
-				</p>
-			) : null}
+			{/* The error's line is always there, empty until needed, so an error
+			    appearing never moves what's below it. A move between mousedown and
+			    mouseup loses the click (2026-09-25). The form's gap is smaller to
+			    match. */}
+			<p id={`${id}-error`} role="alert" className="min-h-5 text-sm text-red-600">
+				{error}
+			</p>
 		</div>
 	);
 }

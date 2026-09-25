@@ -67,4 +67,7 @@ the real pasted output, and the date.
   **the "after"**. The GroupLedger DO gives 201 + 409 in 5/5 production
   rounds (it was 201 + 201 before). The lock is proved necessary (a 30-way
   race fails 6/6 without it). The idempotent replay is byte-identical.
-
+- [`CI-1-verification-scripts.md`](./CI-1-verification-scripts.md): ADR-0024
+  rollout step 1 (2026-09-25). `scripts/verify/` smoke, race, E2E and cleanup,
+  their local runs, the controls tested (failed runs still clean up; vectors and
+  photos really gone), and the layout-shift bug the E2E found.

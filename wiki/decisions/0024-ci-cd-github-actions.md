@@ -153,3 +153,39 @@ check, `scripts/verify/*`, and the documentation updates.
 4. Add `deploy.yml`. The first merge deploys through CI; verify the ordering
    and smoke logs.
 5. Add `e2e-nightly.yml`.
+
+## Addendum, 2026-09-25: rollout step 1 (the scripts)
+
+Built and verified against the local stack
+([evidence](../evidence/CI-1-verification-scripts.md)). Decisions made on the
+way, each one closing off an alternative:
+
+1. **`CLAUDE.md` §6 amended (Raffaele, yes to the exact wording):** agents
+   push feature branches, Raffaele opens and merges PRs, and agents never push
+   to `main`. That settles responsibility 5 above.
+2. **The E2E drives the machine's own Chrome through `puppeteer-core`**
+   (Raffaele's choice). *Rejected:* `puppeteer`, which downloads ~150 MB of
+   Chrome on every `npm ci` in `ci.yml`, and `npx`, which is unpinned. The
+   cost: the E2E depends on an installed Chrome (`channel: "chrome"`, with
+   `CHROME_PATH` to override). GitHub's ubuntu runners ship one; confirm it at
+   step 5.
+3. **The receipt is synthetic** (Raffaele's choice): `fixtures/receipt.png`,
+   rendered by `make-receipt.mjs` and committed. *Rejected:* a real receipt
+   from `.data/` (public once committed) and skipping Read receipt (a departure
+   from the plan). The E2E **reports** a misread and corrects it, as a person
+   would. It doesn't fail on it: the model's accuracy is the vision eval's job
+   (ADR-0021), not a regression test's.
+4. **The scripts also run against `localhost`**, with D1 and KV `--local`.
+   That wasn't in the plan. It's how they were verified without touching
+   production, and it lets them run before a deploy.
+5. **Cleanup finds R2 photos through D1**, because `wrangler` can't list a
+   bucket and the plan keeps the S3 keys out of CI. The E2E also hands its
+   uploaded key to cleanup straight away, so a failure between upload and save
+   leaves nothing behind.
+6. **Cleanup deletes outside D1 first and D1 last**, so a half-finished
+   cleanup can always be found and finished by a sweep. It refuses any account
+   not ending in `@example.test`, and any test group with a real member.
+
+**Still open from step 1:** the run against production (the agent's
+permission classifier blocked remote D1 access, so Raffaele runs it or allows
+it).
