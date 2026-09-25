@@ -383,9 +383,17 @@ npm run cf:types         # bindings -> TypeScript; tsc fails without it
 npm run db:migrate:local # apply the migrations in ./drizzle to the local D1
 npx next typegen         # generate route types (RouteContext) before tsc
 npm run dev -- -p 3100
-# settle-up needs the ledger Worker running too, sharing the same local D1:
+# settle-up needs the ledger Worker, and categorisation the AI Worker, both
+# sharing the same local D1 (the AI Worker also needs workers/ai/.dev.vars with
+# AI_SHARED_SECRETS, the same value as AI_SHARED_SECRET in ./.dev.vars):
 npx wrangler dev -c workers/group-ledger/wrangler.jsonc --port 8791 --persist-to .wrangler/state
+npx wrangler dev -c workers/ai/wrangler.jsonc --port 8793 --persist-to .wrangler/state
 ```
+
+Local dev quirk: in `next dev`, a call through a service binding blocks the
+response until it returns, so saving an expense with line items takes about 1 s
+longer locally than in production (measured 2026-09-25). The deployed Worker
+doesn't do this.
 
 `next dev` reaches the local D1 through Wrangler, which `next.config.ts` starts.
 To run the real Workers runtime instead, use `npm run preview` (:8787). That

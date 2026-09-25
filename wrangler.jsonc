@@ -74,6 +74,14 @@
 			"binding": "LEDGER",
 			"service": "splitr-ledger",
 			"entrypoint": "LedgerService"
+		},
+		// The AI Worker (REQ-E.4, ADR-0025): RAG categorisation of line items,
+		// called after the save (waitUntil). Also a service binding, never public
+		// HTTP (REQ-M.8). Every call carries AI_SHARED_SECRET, a secret.
+		{
+			"binding": "AI_WORKER",
+			"service": "splitr-ai",
+			"entrypoint": "AiService"
 		}
 	],
 
@@ -131,6 +139,7 @@
 		"R2_BUCKET": "splitr-receipts"
 	}
 
-	// BETTER_AUTH_SECRET, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY are
-	// secrets: set with `wrangler secret put`, never here (CLAUDE.md §6).
+	// BETTER_AUTH_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and
+	// AI_SHARED_SECRET are secrets: set with `wrangler secret put`, never here
+	// (CLAUDE.md §6).
 }

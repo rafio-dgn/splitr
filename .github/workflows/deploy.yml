@@ -1,9 +1,10 @@
 # Deploy on merge (ADR-0024, workflow 2). A push to main (a merged PR), or a
 # manual run, deploys production in the only order Splitr works in:
 #
-#   checks → the ledger → D1 migrations → the app → wait → smoke tests
+#   checks → the ledger → the AI Worker → D1 migrations → the app → wait → smoke
 #
-# - The ledger goes first because the app's LEDGER service binding targets it.
+# - The ledger and the AI Worker go first because the app's service bindings
+#   (LEDGER, AI_WORKER) target them.
 # - Migrations go before the app, so new code never meets an older schema. They
 #   must stay backward-compatible with the app version still live, and they
 #   can't be rolled back.
@@ -93,12 +94,19 @@ jobs:
           }
           app=$(live)
           ledger=$(live -c workers/group-ledger/wrangler.jsonc)
-          echo "app=$app" >> "$GITHUB_OUTPUT"
-          echo "ledger=$ledger" >> "$GITHUB_OUTPUT"
-          echo "Live before this deploy: app \`$app\`, ledger \`$ledger\`"
+          # The AI Worker didn't exist before its first deploy: "none", not a failure.
+          ai=$(live -c workers/ai/wrangler.jsonc 2>/dev/null || echo none)
+          { echo "app=$app"; echo "ledger=$ledger"; echo "ai=$ai"; } >> "$GITHUB_OUTPUT"
+          echo "Live before this deploy: app \`$app\`, ledger \`$ledger\`, ai \`$ai\`"
 
       - name: Deploy the ledger
         run: npx wrangler deploy -c workers/group-ledger/wrangler.jsonc
+
+      # Its secret, AI_SHARED_SECRETS, is set once by hand (wrangler secret put)
+      # and survives deploys. Without it the Worker refuses every call (fails
+      # closed), and line items simply stay uncategorised.
+      - name: Deploy the AI Worker
+        run: npx wrangler deploy -c workers/ai/wrangler.jsonc
 
       - name: Apply D1 migrations
         run: npx wrangler d1 migrations apply splitr --remote
@@ -119,18 +127,22 @@ jobs:
         env:
           APP_BEFORE: ${{ steps.before.outputs.app }}
           LEDGER_BEFORE: ${{ steps.before.outputs.ledger }}
+          AI_BEFORE: ${{ steps.before.outputs.ai }}
           OUTCOME: ${{ job.status }}
         run: |
           {
             echo "### Deploy: $OUTCOME"
             echo ""
-            echo "Live before this run: app \`${APP_BEFORE:-unknown}\`, ledger \`${LEDGER_BEFORE:-unknown}\`."
+            echo "Live before this run: app \`${APP_BEFORE:-unknown}\`, ledger \`${LEDGER_BEFORE:-unknown}\`, ai \`${AI_BEFORE:-unknown}\`."
             if [ "$OUTCOME" != "success" ] && [ -n "$APP_BEFORE" ]; then
               echo ""
               echo "**To roll back** (D1 migrations aren't rolled back by this):"
               echo '```'
               echo "npx wrangler rollback $APP_BEFORE --name splitr -m \"smoke failed\""
               echo "npx wrangler rollback $LEDGER_BEFORE --name splitr-ledger -m \"smoke failed\""
+              if [ -n "$AI_BEFORE" ] && [ "$AI_BEFORE" != "none" ]; then
+                echo "npx wrangler rollback $AI_BEFORE --name splitr-ai -m \"smoke failed\""
+              fi
               echo '```'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
