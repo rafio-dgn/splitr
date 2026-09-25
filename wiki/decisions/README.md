@@ -53,3 +53,4 @@ obvious in hindsight.
 | [0020](./0020-receipts-via-presigned-r2-urls.md) | Receipts go straight to R2 via presigned URLs, signed with aws4fetch and verified on attach | Accepted |
 | [0021](./0021-receipt-reading-approach.md) | Receipt reading: two Llamas in the spike, raw + expanded lines, a "Read receipt" button | Accepted (model pending the spike) |
 | [0022](./0022-semantic-search-design.md) | Semantic search across all the viewer's groups; item and itemless-expense vectors | Accepted |
+| [0023](./0023-group-ledger-arbitrates-settlements.md) | The GroupLedger DO arbitrates settlements; D1 stays the truth | Accepted |
