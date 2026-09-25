@@ -216,9 +216,17 @@ these are here so you don't have to reconstruct them later.
   Fixing the order (request first) made `ci.yml` need no secrets at all
   (ADR-0024, step-2 addendum).
 
+- **Local dev lied about `waitUntil`.** With the AI Worker up, local saves
+  took the AI's time, as if the response waited for it. A timer showed the
+  service-binding call itself blocks under `next dev` (wrangler's proxy); in
+  workerd it doesn't. With the AI Worker *down*, saves took 60 ms. That's the
+  REQ-M.7 proof, and why it gets measured on production too.
+
 ## 7. Open questions waiting on you
 
 Kept in sync with [`backlog.md`](./backlog.md):
+
+- **Set the two AI secrets** after the step-4 merge deploys `splitr-ai` (commands in the handover).
 
 - **F-2:** demo on `next dev`, or re-word the criterion and record both logs.
 - **The `wiki/techstack/` seal leak:** move the EdgeLedger-derived parts, or accept them.

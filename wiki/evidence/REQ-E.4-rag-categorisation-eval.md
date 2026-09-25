@@ -89,3 +89,51 @@ querying the seed, and skipping the secret check, each fail a test.
 
 About 1,100 neurons per full run of the grid plus the sweep. About 4,000 in
 total today (1 + 3 runs), inside the free 10k per day.
+
+## Step 4: categorisation wired into the app (2026-09-25, local)
+
+After an expense is saved, `add-expense.ts` step 9 hands its line items to
+`splitr-ai` in `waitUntil`. Only real answers are written back, and only onto
+rows still `uncategorised`. Every outcome is one `[AUDIT]` line
+(`line_item.categorise`).
+
+**It works:** an expense saved through the API with three line items:
+
+```
+POST → 201
+[{"description":"Semi-skimmed milk, 2 pints","category":"groceries"},
+ {"description":"Bottle of house red wine","category":"drinks"},
+ {"description":"Train ticket to Brighton","category":"transport"}]
+[AUDIT] {"action":"line_item.categorise","outcome":"accepted","persisted":true,
+         "detail":{"model":"8b","ms":1077,"items":1,"categorised":1,"uncategorised":0}}
+```
+
+**`REQ-M.7`: the save survives the AI Worker being down.** It isn't running at
+all, and three saves were made with line items:
+
+```
+AI down: save 1 → 201 in 62 ms
+AI down: save 2 → 201 in 54 ms
+AI down: save 3 → 201 in 59 ms
+AI down: categories 6 s later: [{"category":"uncategorised","n":3}]
+[AUDIT] {"action":"line_item.categorise","outcome":"error:unreachable:Error: Worker \"splitr-ai\" not found…","persisted":false}
+```
+
+The items wait, `uncategorised`, for the nightly backfill (E.8). Eight unit
+tests cover every other outcome (refused, timeout, failed, invalid, a failed D1
+write, no items), and none of them throws.
+
+**A local-dev artefact, found and measured.** With the AI Worker *up*, local
+saves took 1.1–1.7 s. A temporary timer showed why:
+
+```
+[probe] RPC call returned its promise after 1622 ms
+[probe] categoriseExpense returned after 1627 ms
+```
+
+Under `next dev`, wrangler's platform proxy makes a **service-binding call
+block synchronously** until the remote side answers. In workerd an RPC call
+returns its promise at once, so `waitUntil` doesn't hold the response. The `ai`
+binding doesn't behave this way, which is why search indexing never slowed
+saves. **To confirm on production** after the deploy: compare the save latency
+with and without line items.

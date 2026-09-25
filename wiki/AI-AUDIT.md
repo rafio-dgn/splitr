@@ -1757,3 +1757,36 @@ does, months later, without the original chat transcript.
 - **Cost:** about 4,000 Workers AI neurons for the eval today.
 - **Open questions:** none blocking. Next is step 4: deploy `splitr-ai`,
   set its secret, and wire the app.
+
+## 2026-09-25T17:30Z — E.7 step 4: wiring categorisation into the app
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "merged" (PR #6), so continue with step 4.
+- **Actions:**
+  - A pure `categoriseAfterSave` with injected dependencies (8 tests), and
+    the server wiring `categorise-expense.ts`.
+  - `add-expense` step 9, the app's `AI_WORKER` binding, and the AI Worker in
+    `deploy.yml`.
+  - A local-only `AI_SHARED_SECRET` added to `./.dev.vars`.
+- **Alternatives considered:**
+  - Awaiting categorisation before responding: rejected by ADR-0016 §5.
+  - Overwriting existing labels: rejected; the write is conditional on
+    `uncategorised`.
+  - A dev-only workaround (deferring the RPC call) for the blocking proxy:
+    rejected. Tool-specific code in production for a local artefact; it's
+    documented instead.
+  - A cast for drizzle's non-empty batch tuple: replaced by destructuring.
+- **Verification:**
+  - A real local end-to-end run (the three items labelled correctly).
+  - `REQ-M.7` with the AI Worker not running: 201 in about 60 ms, items left
+    `uncategorised`, and an `error:unreachable` audit line.
+  - A timer probe located the dev-only block (reverted).
+  - `tsc` passes for all three programs, ESLint is clean, and 47 + 6 tests
+    pass.
+- **Mistake, and a lesson:** stopping `wrangler dev` "by port" left the
+  parent processes registered, so a stale AI Worker answered the first "AI
+  down" test and made it invalid. I killed this session's stale processes by
+  PID (sparing Raffaele's 09:12 ledger), and the handover now says to kill the
+  `wrangler` process.
+- **Open questions:** Raffaele sets `AI_SHARED_SECRETS` (on `splitr-ai`) and
+  `AI_SHARED_SECRET` (on the app) after the merge's deploy. Then production
+  verification.

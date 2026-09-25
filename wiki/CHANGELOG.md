@@ -1044,3 +1044,20 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-E.4`, ADR-0025 steps 2–3. Raffaele chose 8B + RAG with a 0.6
   threshold from the results.
 - **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md) (§5, and the eval's result)
+
+## 2026-09-25 — E.7 step 4: the app categorises line items after the save
+- **Type:** added
+- **Scope:** `src/lib/categorise/{after-save,categorise-expense}.ts` (+ 8 tests),
+  `src/lib/expenses/add-expense.ts` (step 9), `wrangler.jsonc` (the `AI_WORKER`
+  binding), `.github/workflows/deploy.yml` (deploys `splitr-ai`), `README.md`,
+  `wiki/todos/HANDOVER.md`
+- **What:**
+  - After the expense is durable, its line items go to `splitr-ai` in
+    `waitUntil`. Only real answers are written, onto rows still
+    `uncategorised`.
+  - Every outcome is audited, and nothing throws. A missing secret skips the
+    call.
+  - `deploy.yml` deploys the AI Worker after the ledger and before the app,
+    tolerating its absence on the first run.
+- **Why:** `REQ-E.4`, `REQ-M.7`, ADR-0025 step 4.
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md)
