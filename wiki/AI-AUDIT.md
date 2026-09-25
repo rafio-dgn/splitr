@@ -1459,3 +1459,25 @@ does, months later, without the original chat transcript.
   sessions to this file, and memory holds the two standing preferences.
 - **Open question:** whether to commit re-runnable versions of the lost
   verification scripts (offered to Raffaele).
+
+## 2026-09-25T11:30Z — The CI/CD plan
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "OK (to the verification scripts), and we need a plan for
+  CI/CD with GitHub Actions; what we're doing isn't ideal."
+- **Inputs read:** the requirements (CI/CD isn't among them), `CLAUDE.md` §6
+  (no GitHub settings; push only to `main`), and the git remote and
+  credential helper.
+- **Decisions asked:** four. Raffaele chose GitHub Actions, **production only**
+  (I had recommended staging), PRs with required checks, and smoke tests plus
+  a nightly E2E.
+- **Actions:** wrote ADR-0024 (three workflows, the size budget, the scripts,
+  the split of work, the rollout), and updated the handover, study guide,
+  backlog and changelog. **Nothing is built yet.** It's a plan, as asked.
+- **Flagged, not assumed:**
+  - The PR flow conflicts with `CLAUDE.md` §6 ("push only to `main`"), so
+    that rule is Raffaele's to amend.
+  - Pushing workflow files needs the credential's `workflow` scope.
+  - With production only, the smoke tests keep creating and deleting
+    production test data.
+  - The CI token's permission names are to be confirmed in the dashboard.
+- **Open questions:** approval to start rollout step 1; the §6 amendment.

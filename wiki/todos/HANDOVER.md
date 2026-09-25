@@ -10,7 +10,7 @@ and [`backlog.md`](./backlog.md). **Raffaele's own reading list is
 
 | | |
 |---|---|
-| Repo | [github.com/rafio-dgn/splitr](https://github.com/rafio-dgn/splitr), `main`, clean and pushed (last commit `b78ebbd`) |
+| Repo | [github.com/rafio-dgn/splitr](https://github.com/rafio-dgn/splitr), `main`, clean and pushed. Run `git log --oneline -5` for where it stands |
 | Live app | **https://splitr.raffaele-digennaro.workers.dev** (Worker `splitr`) |
 | Ledger | Worker **`splitr-ledger`**: the `GroupLedger` DO, **no public URL** (Cloudflare 1042), reached only by the service binding `LEDGER` |
 | Production data | **Empty** (0 users). Raffaele's account was dropped by the first migration (his choice), and he hasn't re-registered yet |
@@ -27,7 +27,54 @@ and [`backlog.md`](./backlog.md). **Raffaele's own reading list is
 | E | 🟡 **The contested write is done** (`REQ-E.1`/`E.2`/`E.3`/`E.5`): one winner in 5/5 production races. **Left:** E.7 (the RAG AI Worker), E.8/E.9 (the cron, run twice), and `REQ-E.7` (spoken) |
 | F | Not started (Turnstile, rate limit, audit JSON, AI Gateway, secret rotation) |
 
-## Next real work
+## ▶ Start the new session here
+
+The last session ended on 2026-09-25 with the **CI/CD plan agreed and
+committed, but nothing built** ([ADR-0024](../decisions/0024-ci-cd-github-actions.md)).
+Two questions were put to Raffaele and **not yet answered**. Ask them first:
+
+1. **Does he approve this amendment to `CLAUDE.md` §6?** (It's his rule, so
+   don't edit it without an explicit yes.)
+   > Replace *"push to `origin/main` of **this** repo"* with: *"push feature
+   > branches to `origin`; Raffaele opens and merges PRs; agents never push to
+   > `main`."*
+
+   **Until he says yes, keep the current rule: commit and push to `main` only
+   when he asks.**
+2. **Start CI rollout step 1?** That's `scripts/verify/{smoke,e2e,race,cleanup}.mjs`
+   plus `.nvmrc`, which need no GitHub settings. Step 2 (`ci.yml`) also needs
+   no secrets.
+
+**Order of work, unless he says otherwise:** CI rollout steps 1–2 → his
+settings (step 3) → `deploy.yml` → nightly E2E, then back to **E.7** (below).
+He may prefer E.7 first, so ask.
+
+### The CI/CD plan in one paragraph
+
+GitHub Actions + wrangler (his choice). **`ci.yml`** runs on every PR: types
+for both programs, lint, all 29 tests, a full build, and a **size budget**
+(fail above 2,900 KiB gzipped, warn above 2,700; it's at 2,543 now).
+**`deploy.yml`** runs on merge to `main`: the ledger → `d1 migrations apply
+--remote` → the app → wait 20 s → smoke tests (auth with `Origin`, a forged
+`Origin` refused, a 2-user settle race with one winner, an idempotent replay)
+→ cleanup that runs even on failure. **`e2e-nightly.yml`**: a two-browser run
+including Read receipt. **Production only** (his choice over staging; the
+smoke tests make and delete `@example.test` data on the live site). **PRs with
+required checks.**
+
+### What Raffaele must do in account settings (agents can't, `CLAUDE.md` §6)
+
+1. A Cloudflare API token: Workers Scripts Edit, D1 Edit, Workers KV Storage
+   Edit, Workers R2 Storage Edit, Vectorize Edit, Account Settings Read. Scoped
+   to this account; confirm the exact names in the dashboard.
+2. GitHub repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+   (`3082c7652ac1003a678a5bc45ca0054f`, an identifier and not a secret, but
+   it's kept beside the token), plus a GitHub environment `production`.
+3. Branch protection on `main`: require the `ci` checks and a PR.
+4. Make sure his Git credential has the **`workflow` scope**, or pushing
+   `.github/workflows/*` is refused. The first push will show it.
+
+## Next real work (after CI, or before it if he prefers)
 
 **E.7, the RAG AI Worker.** This is an **AI decision, so put structured
 questions to Raffaele before coding** (his standing rule, and in memory).

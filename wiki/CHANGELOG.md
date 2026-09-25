@@ -840,3 +840,35 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** Raffaele asked whether everything is documented to resume in
   another session. It wasn't, until this.
 - **Decision:** none
+
+## 2026-09-25 — CI/CD plan (ADR-0024)
+- **Type:** docs
+- **Scope:** `wiki/decisions/0024-ci-cd-github-actions.md` (new), `wiki/decisions/README.md`,
+  `wiki/todos/{HANDOVER,STUDY-GUIDE,backlog}.md`
+- **What:** Raffaele's four answers: GitHub Actions + wrangler, production
+  only, PRs with required checks, smoke tests per deploy plus a nightly E2E.
+  The plan:
+  - `ci.yml`: types, lint, 29 tests, build and a size budget (fail above
+    2,900 KiB);
+  - `deploy.yml`: ledger → D1 migrations → app → wait → smoke tests with
+    cleanup;
+  - `e2e-nightly.yml`;
+  - `scripts/verify/*` re-created in the repo.
+
+  It records the split of work (the account settings and the `CLAUDE.md` §6
+  amendment are Raffaele's) and a 5-step rollout.
+- **Why:** Raffaele's request. It's beyond the course requirements, and
+  recorded as such.
+- **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md)
+
+## 2026-09-25 — Handover: the entry point for the next session
+- **Type:** docs
+- **Scope:** `wiki/todos/HANDOVER.md`
+- **What:** Added a "▶ Start the new session here" section: the two
+  unanswered questions (approving the exact `CLAUDE.md` §6 wording for the PR
+  flow, and whether to start CI rollout step 1), the rule to keep until he
+  answers, the default order of work, a one-paragraph summary of the CI/CD
+  plan, and Raffaele's account-settings checklist. The stale "last commit"
+  hash is replaced by `git log`.
+- **Why:** Raffaele is continuing in a new session.
+- **Decision:** none

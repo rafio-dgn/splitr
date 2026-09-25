@@ -389,4 +389,8 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `lesson` **D1 batch results are keyed by column name.** Never select two
       columns with the same name (for example `user.name` twice) inside
       `db.batch`.
+- [ ] `CI` **ADR-0024 rollout:** (1) `scripts/verify/*` + `.nvmrc`; (2)
+      `ci.yml`; (3) Raffaele's settings (the token, secrets, `production`
+      environment, branch protection, `workflow` scope, `CLAUDE.md` §6); (4)
+      `deploy.yml`; (5) `e2e-nightly.yml`.
 
