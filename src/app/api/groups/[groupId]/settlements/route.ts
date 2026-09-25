@@ -30,25 +30,35 @@ export async function POST(
 	const { groupId } = await ctx.params;
 	// The URL is authoritative for `groupId`; a body field of that name is overwritten.
 	const input = typeof body === "object" && body !== null ? { ...body, groupId } : { groupId };
-	const result = await recordSettlement(input, { id: session.user.id });
+	// REQ-E.2: the key arrives as a HEADER named `idempotencyKey`. Header
+	// names are case-insensitive in HTTP, and `Headers.get` handles that.
+	const idempotencyKey = request.headers.get("idempotencyKey");
+	const { result, ledgerBody, replayed } = await recordSettlement(input, { id: session.user.id }, idempotencyKey);
 
-	switch (result.status) {
-		case "settled":
-			return Response.json(result, {
-				status: 201,
-				headers: { location: `/groups/${groupId}/settle` },
-			});
-		// A refusal is a *correct* outcome for the ledger, not a malformed request:
-		// 409 Conflict, with the reason in the body.
-		case "already-settled":
-		case "exceeds":
-		case "recipient-not-owed":
-			return Response.json(result, { status: 409 });
-		case "invalid":
-			return Response.json(result, { status: 400 });
-		case "not-found":
-			return Response.json({ error: "not-found" }, { status: 404 });
-		case "failed":
-			return Response.json({ error: "unavailable" }, { status: 503 });
+	const status = (() => {
+		switch (result.status) {
+			case "settled":
+				return 201;
+			// A refusal is a *correct* outcome for the ledger, not a malformed
+			// request: 409 Conflict, with the reason in the body.
+			case "already-settled":
+			case "exceeds":
+			case "recipient-not-owed":
+				return 409;
+			case "invalid":
+				return 400;
+			case "not-found":
+				return 404;
+			case "failed":
+				return 503;
+		}
+	})();
+
+	const headers: Record<string, string> = { "content-type": "application/json", "cache-control": "no-store" };
+	if (idempotencyKey !== null) {
+		headers["idempotency-replayed"] = String(replayed);
 	}
+	// The ledger's exact body when there is one, so a replay is byte-for-byte
+	// the original response (REQ-E.2), not a re-serialisation of it.
+	return new Response(ledgerBody ?? JSON.stringify(result.status === "not-found" ? { error: "not-found" } : result.status === "failed" ? { error: "unavailable" } : result), { status, headers });
 }

@@ -42,6 +42,7 @@ export function SettleForm({
 	defaultFromId,
 	defaultToId,
 	defaultAmount,
+	idempotencyKey,
 }: {
 	groupId: string;
 	groupName: string;
@@ -51,6 +52,8 @@ export function SettleForm({
 	defaultToId: string;
 	/** "40.00", prefilled with what's owed. */
 	defaultAmount: string;
+	/** Minted when the page rendered: this form's one intent (ADR-0023 §3, REQ-E.2). */
+	idempotencyKey: string;
 }) {
 	const [state, formAction, pending] = useActionState(recordSettlementAction, initialState);
 	const back = (
@@ -101,6 +104,7 @@ export function SettleForm({
 	return (
 		<form action={formAction} className="flex flex-col gap-4">
 			<input type="hidden" name="groupId" value={groupId} />
+			<input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 			<label className="flex flex-col gap-1 text-sm">
 				Who paid
 				<select name="fromUserId" defaultValue={defaultFromId} disabled={pending} className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900">

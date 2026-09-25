@@ -66,6 +66,17 @@
 	// through a presigned URL, so the bytes never pass through this Worker. The
 	// binding is for the server-side checks on attach, and for D.6 reading the
 	// image to itemise it.
+	// The contested-write arbiter (REQ-E.1, REQ-E.5, ADR-0023). A SERVICE
+	// BINDING, so the call never touches a public hostname or an HTTPS hop
+	// (REQ-M.8). The ledger Worker has no public URL at all.
+	"services": [
+		{
+			"binding": "LEDGER",
+			"service": "splitr-ledger",
+			"entrypoint": "LedgerService"
+		}
+	],
+
 	// Workers AI, for reading receipts with Llama 4 Scout (D.6, ADR-0021).
 	// It's temporary here: ADR-0016 §6 moves every model call behind the AI
 	// Worker at Cluster E, and this binding is removed then.

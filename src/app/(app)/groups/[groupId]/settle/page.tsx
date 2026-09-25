@@ -5,9 +5,10 @@
  * A Server Component. It computes the balances and a sensible prefill, and the
  * form ships with no data of its own to fetch.
  *
- * **The write behind this page is the naive one until E.1:** two simultaneous
- * taps can both be accepted (see `src/lib/settlements/record-settlement.ts`).
- * That's deliberate, and it's E.2's "before".
+ * The write behind it is arbitrated by the group's Durable Object (ADR-0023):
+ * of two simultaneous taps, one settles and the other is told it already has.
+ * Each render mints a fresh idempotency key, so this form's retries and
+ * double-clicks replay instead of writing twice (REQ-E.2).
  */
 import { EmptyState, ScreenHeading } from "@/components/ui";
 import { isSettled } from "@/lib/expenses/balances";
@@ -80,6 +81,7 @@ export default async function SettlePage({ params }: PageProps<"/groups/[groupId
 					defaultFromId={from.userId}
 					defaultToId={to.userId}
 					defaultAmount={toFieldAmount(Math.min(-from.netMinorUnits, to.netMinorUnits))}
+					idempotencyKey={crypto.randomUUID()}
 				/>
 			) : (
 				<p className="text-sm text-zinc-500">
