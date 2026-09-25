@@ -11,7 +11,7 @@
     "test:ledger": "vitest run --root workers/group-ledger",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf:types": "wrangler types --env-interface CloudflareEnv --include-runtime=false -c wrangler.jsonc -c workers/group-ledger/wrangler.jsonc && wrangler types -c workers/group-ledger/wrangler.jsonc workers/group-ledger/worker-configuration.d.ts",
+    "cf:types": "wrangler types --env-interface CloudflareEnv --include-runtime=false -c wrangler.jsonc -c workers/group-ledger/wrangler.jsonc -c workers/ai/wrangler.jsonc && wrangler types -c workers/group-ledger/wrangler.jsonc workers/group-ledger/worker-configuration.d.ts && wrangler types -c workers/ai/wrangler.jsonc workers/ai/worker-configuration.d.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply splitr --local",
     "db:migrate:remote": "wrangler d1 migrations apply splitr --remote",

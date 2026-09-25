@@ -49,11 +49,13 @@ jobs:
         run: npx tsc --noEmit -p workers/group-ledger
       - name: Typecheck the ledger's tests
         run: npx tsc --noEmit -p workers/group-ledger/test
+      - name: Typecheck the AI Worker
+        run: npx tsc --noEmit -p workers/ai
 
       - name: Lint
         run: npx eslint
 
-      # 23 pure tests (node --test), then 6 against a real GroupLedger in workerd.
+      # The pure tests (node --test: money, categorisation), then 6 against a real GroupLedger in workerd.
       - name: Test
         run: npm test
 
