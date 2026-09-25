@@ -48,7 +48,12 @@ ADR-0024's step-2 addendum). **Its first real run on PR #2 was green**
 (run 36126889551, 1 min 22 s, every step passed). Pushing it proved the
 credential has the `workflow` scope.
 
-**Step 4 (`deploy.yml`) is built** on branch `ci/deploy-workflow` with a PR.
+**Step 4's first run (PR #3 merged) failed safely** at its first `wrangler`
+call: nothing deployed, production unchanged, and the reason only in the log. A
+preflight with readable annotations is on branch `ci/deploy-preflight` (a PR).
+Ask Raffaele what the failed step's log says, or whether the secrets are set.
+
+**Step 4 (`deploy.yml`) was built** on branch `ci/deploy-workflow` with a PR.
 **Merging it is the first production deploy through CI**, and it needs step 3
 done first: the token, the two secrets, the `production` environment and
 branch protection. It also ships PRs #1 and #2, which aren't live yet. After

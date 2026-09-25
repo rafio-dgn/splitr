@@ -244,3 +244,17 @@ Checked before the first run:
 **The first merge is the first real run**, and it also ships PRs #1 and #2
 (the form fix and the build fix), which aren't live yet. Without the secrets,
 it stops at the first `wrangler` call, before anything changes.
+
+### Step 4, first run (2026-09-25): failed safely, and too quietly
+
+The merge of PR #3 started run 36134011199. `ci / checks` passed, then the
+deploy failed at its **first `wrangler` call** ("Record the live versions").
+Every step that changes anything was skipped, so **production is unchanged**.
+The reason is only in the job log, which the agent can't read (§6), and the
+public annotation said just "exit code 1". So a **preflight** now runs first:
+- it names an empty `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`;
+- it verifies the token (`wrangler whoami`);
+- it turns any `wrangler` refusal into an `::error::` annotation carrying
+  wrangler's own error line and `[code: …]`s (colour codes stripped).
+
+Tested locally with a bogus token and no login.
