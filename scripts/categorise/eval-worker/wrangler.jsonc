@@ -1,0 +1,13 @@
+{
+	// The categorisation eval harness (ADR-0025 §1). DEV-ONLY: run with
+	// `wrangler dev`, never deployed. It reaches `splitr-ai` through a service
+	// binding, exactly as the app will, and loads the reference vectors (seed
+	// corpus, eval histories) into the real index with their labels.
+	"name": "splitr-categorise-eval",
+	"main": "worker.mjs",
+	"compatibility_date": "2026-09-23",
+	"ai": { "binding": "AI", "remote": true },
+	"vectorize": [{ "binding": "VECTORIZE", "index_name": "splitr-search", "remote": true }],
+	"services": [{ "binding": "AI_WORKER", "service": "splitr-ai", "entrypoint": "AiService" }]
+	// AI_SHARED_SECRET comes from this folder's .dev.vars (gitignored).
+}

@@ -1,0 +1,305 @@
+{
+ "_about": "ADR-0025 §2: the seed corpus. General labelled examples, used when a group has too little history of its own. Never a user's data. Stored in Vectorize with groupId \"seed\". Keep it disjoint from eval-set.json (the eval runner checks).",
+ "items": [
+  {
+   "id": "seed_001",
+   "rawText": "TESCO SEMI SKIMMED MILK 4PT",
+   "description": "Semi-skimmed milk, 4 pints",
+   "category": "groceries"
+  },
+  {
+   "id": "seed_002",
+   "rawText": "Bananas, loose",
+   "description": "Bananas, loose",
+   "category": "groceries"
+  },
+  {
+   "id": "seed_003",
+   "rawText": "SAINSBURYS FREE RANGE EGGS 12",
+   "description": "Free-range eggs, 12",
+   "category": "groceries"
+  },
+  {
+   "id": "seed_004",
+   "rawText": "Weekly food shop",
+   "description": "Weekly food shop",
+   "category": "groceries"
+  },
+  {
+   "id": "seed_005",
+   "rawText": "LAGER 4X440ML",
+   "description": "Lager, 4 cans (supermarket)",
+   "category": "groceries"
+  },
+  {
+   "id": "seed_006",
+   "rawText": "Pizza Express dinner",
+   "description": "Pizza Express dinner",
+   "category": "eating_out"
+  },
+  {
+   "id": "seed_007",
+   "rawText": "NANDOS 1/2 CHKN PERI",
+   "description": "Nando's half chicken, peri-peri",
+   "category": "eating_out"
+  },
+  {
+   "id": "seed_008",
+   "rawText": "Uber Eats order",
+   "description": "Uber Eats order",
+   "category": "eating_out"
+  },
+  {
+   "id": "seed_009",
+   "rawText": "PRET CHSE&PKL BAG",
+   "description": "Pret cheese and pickle baguette",
+   "category": "eating_out"
+  },
+  {
+   "id": "seed_010",
+   "rawText": "Boots meal deal",
+   "description": "Boots meal deal",
+   "category": "eating_out"
+  },
+  {
+   "id": "seed_011",
+   "rawText": "Pint of lager at the pub",
+   "description": "Pint of lager at the pub",
+   "category": "drinks"
+  },
+  {
+   "id": "seed_012",
+   "rawText": "WETHERSPOON 2X IPA",
+   "description": "Two pints of IPA, Wetherspoons",
+   "category": "drinks"
+  },
+  {
+   "id": "seed_013",
+   "rawText": "Cocktails at the bar",
+   "description": "Cocktails at the bar",
+   "category": "drinks"
+  },
+  {
+   "id": "seed_014",
+   "rawText": "Round of drinks",
+   "description": "Round of drinks",
+   "category": "drinks"
+  },
+  {
+   "id": "seed_015",
+   "rawText": "GLS HOUSE RED 175ML",
+   "description": "Glass of house red wine, 175 ml",
+   "category": "drinks"
+  },
+  {
+   "id": "seed_016",
+   "rawText": "Uber to town",
+   "description": "Uber to town",
+   "category": "transport"
+  },
+  {
+   "id": "seed_017",
+   "rawText": "TFL TRAVEL CH",
+   "description": "TfL travel charge (Tube and bus)",
+   "category": "transport"
+  },
+  {
+   "id": "seed_018",
+   "rawText": "Petrol",
+   "description": "Petrol",
+   "category": "transport"
+  },
+  {
+   "id": "seed_019",
+   "rawText": "TRAINLINE LDN-BHM ADV",
+   "description": "Train ticket, London to Birmingham, advance",
+   "category": "transport"
+  },
+  {
+   "id": "seed_020",
+   "rawText": "NCP PARKING 3HRS",
+   "description": "Car park, 3 hours",
+   "category": "transport"
+  },
+  {
+   "id": "seed_021",
+   "rawText": "Airbnb for the weekend",
+   "description": "Airbnb for the weekend",
+   "category": "travel_lodging"
+  },
+  {
+   "id": "seed_022",
+   "rawText": "PREMIER INN 1NT",
+   "description": "Premier Inn, one night",
+   "category": "travel_lodging"
+  },
+  {
+   "id": "seed_023",
+   "rawText": "EASYJET LGW-BCN",
+   "description": "easyJet flight, Gatwick to Barcelona",
+   "category": "travel_lodging"
+  },
+  {
+   "id": "seed_024",
+   "rawText": "Hostel dorm beds",
+   "description": "Hostel dorm beds",
+   "category": "travel_lodging"
+  },
+  {
+   "id": "seed_025",
+   "rawText": "Washing-up liquid and sponges",
+   "description": "Washing-up liquid and sponges",
+   "category": "household"
+  },
+  {
+   "id": "seed_026",
+   "rawText": "IKEA KALLAX SHELF",
+   "description": "IKEA Kallax shelf unit",
+   "category": "household"
+  },
+  {
+   "id": "seed_027",
+   "rawText": "TOILET ROLL 9PK",
+   "description": "Toilet roll, 9 pack",
+   "category": "household"
+  },
+  {
+   "id": "seed_028",
+   "rawText": "Light bulbs",
+   "description": "Light bulbs",
+   "category": "household"
+  },
+  {
+   "id": "seed_029",
+   "rawText": "BIN BAGS 20PK",
+   "description": "Bin bags, 20 pack",
+   "category": "household"
+  },
+  {
+   "id": "seed_030",
+   "rawText": "Electricity bill",
+   "description": "Electricity bill",
+   "category": "utilities_bills"
+  },
+  {
+   "id": "seed_031",
+   "rawText": "VIRGIN MEDIA BB",
+   "description": "Virgin Media broadband",
+   "category": "utilities_bills"
+  },
+  {
+   "id": "seed_032",
+   "rawText": "COUNCIL TAX SEP",
+   "description": "Council tax, September",
+   "category": "utilities_bills"
+  },
+  {
+   "id": "seed_033",
+   "rawText": "Water bill",
+   "description": "Water bill",
+   "category": "utilities_bills"
+  },
+  {
+   "id": "seed_034",
+   "rawText": "Cinema tickets",
+   "description": "Cinema tickets",
+   "category": "entertainment"
+  },
+  {
+   "id": "seed_035",
+   "rawText": "ODEON 2X ADULT",
+   "description": "Odeon cinema, two adult tickets",
+   "category": "entertainment"
+  },
+  {
+   "id": "seed_036",
+   "rawText": "Bowling",
+   "description": "Bowling",
+   "category": "entertainment"
+  },
+  {
+   "id": "seed_037",
+   "rawText": "NETFLIX STANDARD",
+   "description": "Netflix subscription",
+   "category": "entertainment"
+  },
+  {
+   "id": "seed_038",
+   "rawText": "Concert tickets",
+   "description": "Concert tickets",
+   "category": "entertainment"
+  },
+  {
+   "id": "seed_039",
+   "rawText": "BOOTS PARACETAMOL 16",
+   "description": "Boots paracetamol, 16 tablets",
+   "category": "health_personal"
+  },
+  {
+   "id": "seed_040",
+   "rawText": "Haircut",
+   "description": "Haircut",
+   "category": "health_personal"
+  },
+  {
+   "id": "seed_041",
+   "rawText": "Gym membership",
+   "description": "Gym membership",
+   "category": "health_personal"
+  },
+  {
+   "id": "seed_042",
+   "rawText": "SUPERDRUG SHAMPOO",
+   "description": "Superdrug shampoo",
+   "category": "health_personal"
+  },
+  {
+   "id": "seed_043",
+   "rawText": "Prescription",
+   "description": "Prescription",
+   "category": "health_personal"
+  },
+  {
+   "id": "seed_044",
+   "rawText": "Birthday present for Sam",
+   "description": "Birthday present for Sam",
+   "category": "gifts"
+  },
+  {
+   "id": "seed_045",
+   "rawText": "CARD FACTORY BDAY CARD",
+   "description": "Birthday card",
+   "category": "gifts"
+  },
+  {
+   "id": "seed_046",
+   "rawText": "Flowers for mum",
+   "description": "Flowers for mum",
+   "category": "gifts"
+  },
+  {
+   "id": "seed_047",
+   "rawText": "Leaving gift collection",
+   "description": "Leaving gift collection",
+   "category": "gifts"
+  },
+  {
+   "id": "seed_048",
+   "rawText": "Bank transfer fee",
+   "description": "Bank transfer fee",
+   "category": "other"
+  },
+  {
+   "id": "seed_049",
+   "rawText": "POST OFFICE SPECIAL DEL",
+   "description": "Post Office special delivery",
+   "category": "other"
+  },
+  {
+   "id": "seed_050",
+   "rawText": "Passport photos",
+   "description": "Passport photos",
+   "category": "other"
+  }
+ ]
+}

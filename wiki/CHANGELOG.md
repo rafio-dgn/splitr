@@ -993,3 +993,54 @@ shape that triggers them. They are listed rather than ticked.
   - `deploy.yml` skips docs-only merges.
 - **Why:** ADR-0024 steps 4 and 5.
 - **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step 4 note, step-5 addendum)
+
+## 2026-09-25 — ADR-0025: the E.7 RAG Worker decisions
+- **Type:** docs
+- **Scope:** `wiki/decisions/0025-rag-worker-eval-seed-secret-fallback.md` (new), the ADR index, `wiki/todos/{STUDY-GUIDE,HANDOVER,backlog}.md`
+- **What:** Raffaele's four answers:
+  - a 3×10 eval set (clean, shorthand, group-dependent) with labels he
+    approves;
+  - a ~50-item seed corpus in the same index (`groupId "seed"`, a threshold
+    top-up);
+  - the secret as an RPC argument checked against a key list;
+  - per-call budgets with no inline retries, and search falling back to
+    keyword.
+
+  Also the order of work. The index now shows ADR-0024 as fully built.
+- **Why:** `REQ-E.4`. AI decisions are Raffaele's (standing rule).
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md)
+
+## 2026-09-25 — E.7 step 1: the seed corpus and the approved eval set
+- **Type:** added
+- **Scope:** `scripts/categorise/seed-corpus.json`, `scripts/categorise/eval-set.json`
+- **What:**
+  - 50 seed items: 3–5 per category, 23 of them UK receipt shorthand, with
+    traps (Uber vs Uber Eats, Boots meal deal vs Boots paracetamol).
+  - Two planted eval-group histories of 20 items each.
+  - 30 eval items: 10 clean, 10 shorthand (raw print only, the worst case) and
+    10 group-dependent (5 identical texts, each in two groups with opposite
+    habits).
+  - Generated with the keys checked against `src/lib/categories.ts`, and no
+    item leaking between the eval and the seed or history.
+- **Why:** ADR-0025 §1–2. **Raffaele approved all 30 labels** (2026-09-25).
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md)
+
+## 2026-09-25 — E.7 steps 2–3: the `splitr-ai` Worker and the eval (8B + RAG, 28/30)
+- **Type:** added
+- **Scope:** `workers/ai/` (new Worker), `src/lib/categorise/{contract,secret,prompt,categorise}.ts`
+  and its tests, `scripts/categorise/{eval-worker/,run-eval.mjs}`, `package.json`
+  (`cf:types`), `.github/workflows/ci.yml`, `wiki/evidence/REQ-E.4-rag-categorisation-eval.md`
+- **What:**
+  - `splitr-ai`, an RPC entrypoint `AiService.categorise(secret, request)`
+    with no public URL. It checks the secret against a key list, then embeds,
+    retrieves (group first, then a seed top-up below 0.6), resolves labels
+    (reference metadata or D1, read-only and group-checked), asks Llama, and
+    zod-validates the answer, all inside an 8 s budget.
+  - 16 unit tests, mutation-checked.
+  - A dev-only eval harness and runner. **Eval: 8B + RAG 28/30 against 23/30
+    without RAG, and 70B + RAG 26/30.**
+  - 90 reference vectors loaded into the index under reserved `groupId`s.
+  - CI type-checks the new Worker.
+- **Why:** `REQ-E.4`, ADR-0025 steps 2–3. Raffaele chose 8B + RAG with a 0.6
+  threshold from the results.
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md) (§5, and the eval's result)

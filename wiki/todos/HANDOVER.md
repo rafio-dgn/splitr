@@ -55,7 +55,22 @@ merge doesn't deploy. **Step 5** (`e2e-nightly.yml`) is on branch
 `ci/e2e-nightly` with a PR. After the merge, dispatch it once from Actions
 (it needs the default branch) and check it's green.
 
-**Next: E.7** (below). The old plan line, kept for the record: his settings (step 3) →
+**Next: E.7**, decided in [ADR-0025](../decisions/0025-rag-worker-eval-seed-secret-fallback.md)
+(2026-09-25). Step 1 is done: `scripts/categorise/{seed-corpus,eval-set}.json`, with
+**all 30 eval labels approved by Raffaele**. Steps 2–3 are done: `splitr-ai`
+(`workers/ai/`) is built and verified locally through a real service binding.
+**Eval: 8B + RAG 28/30**, and Raffaele chose 8B with a 0.6 threshold
+([evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). **Next is step
+4:**
+- deploy `splitr-ai` (add it to `deploy.yml` before the app);
+- `wrangler secret put AI_SHARED_SECRETS` on it and `AI_SHARED_SECRET` on the
+  app (**Raffaele runs these**: secrets are never in chat);
+- add the `AI_WORKER` service binding to the app;
+- categorise in `waitUntil` after the expense save.
+
+Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
+with a `.dev.vars` in `workers/ai/` and in the harness holding the same random
+secret. The old plan line, kept for the record: his settings (step 3) →
 `deploy.yml` → `e2e-nightly.yml`, then **E.7** (below). He may prefer E.7
 first, so ask.
 

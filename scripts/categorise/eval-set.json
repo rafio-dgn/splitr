@@ -1,0 +1,512 @@
+{
+ "_about": "ADR-0025 §1: the categorisation eval. 10 clean, 10 receipt shorthand (description deliberately left as the raw print: the worst case) and 10 group-dependent items (5 identical texts, each in two groups with opposite habits). Run clean and shorthand against an empty group (RAG = seed corpus only); run group items against their group's planted history. Labels drafted by the AI; approved by Raffaele (see 'approved').",
+ "approved": {
+  "by": "Raffaele",
+  "on": "2026-09-25",
+  "note": "All 30 labels approved as drafted, including s08 BREWDOG PNT PUNK → drinks."
+ },
+ "groups": {
+  "eval-flat": {
+   "about": "A flatshare. Beer is bought with the food shop; prosecco and cakes are bought as presents for flatmates; candles are for the flat.",
+   "history": [
+    {
+     "id": "evh_flat_01",
+     "rawText": "Stella 12 pack",
+     "description": "Stella 12 pack",
+     "category": "groceries"
+    },
+    {
+     "id": "evh_flat_02",
+     "rawText": "Corona 6 bottles",
+     "description": "Corona 6 bottles",
+     "category": "groceries"
+    },
+    {
+     "id": "evh_flat_03",
+     "rawText": "Beer for the fridge",
+     "description": "Beer for the fridge",
+     "category": "groceries"
+    },
+    {
+     "id": "evh_flat_04",
+     "rawText": "Prosecco for Jo's birthday",
+     "description": "Prosecco for Jo's birthday",
+     "category": "gifts"
+    },
+    {
+     "id": "evh_flat_05",
+     "rawText": "Champagne for Alex's promotion",
+     "description": "Champagne for Alex's promotion",
+     "category": "gifts"
+    },
+    {
+     "id": "evh_flat_06",
+     "rawText": "Uber home from work",
+     "description": "Uber home from work",
+     "category": "transport"
+    },
+    {
+     "id": "evh_flat_07",
+     "rawText": "Taxi to the station",
+     "description": "Taxi to the station",
+     "category": "transport"
+    },
+    {
+     "id": "evh_flat_08",
+     "rawText": "Cake for Priya's birthday",
+     "description": "Cake for Priya's birthday",
+     "category": "gifts"
+    },
+    {
+     "id": "evh_flat_09",
+     "rawText": "Cupcakes for Tom's leaving do",
+     "description": "Cupcakes for Tom's leaving do",
+     "category": "gifts"
+    },
+    {
+     "id": "evh_flat_10",
+     "rawText": "Tea lights",
+     "description": "Tea lights",
+     "category": "household"
+    },
+    {
+     "id": "evh_flat_11",
+     "rawText": "Diffuser refill",
+     "description": "Diffuser refill",
+     "category": "household"
+    },
+    {
+     "id": "evh_flat_12",
+     "rawText": "Candle holders",
+     "description": "Candle holders",
+     "category": "household"
+    },
+    {
+     "id": "evh_flat_13",
+     "rawText": "Weekly Tesco shop",
+     "description": "Weekly Tesco shop",
+     "category": "groceries"
+    },
+    {
+     "id": "evh_flat_14",
+     "rawText": "Broadband bill",
+     "description": "Broadband bill",
+     "category": "utilities_bills"
+    },
+    {
+     "id": "evh_flat_15",
+     "rawText": "Cleaning spray",
+     "description": "Cleaning spray",
+     "category": "household"
+    },
+    {
+     "id": "evh_flat_16",
+     "rawText": "Netflix",
+     "description": "Netflix",
+     "category": "entertainment"
+    },
+    {
+     "id": "evh_flat_17",
+     "rawText": "Council tax",
+     "description": "Council tax",
+     "category": "utilities_bills"
+    },
+    {
+     "id": "evh_flat_18",
+     "rawText": "Pizza night takeaway",
+     "description": "Pizza night takeaway",
+     "category": "eating_out"
+    },
+    {
+     "id": "evh_flat_19",
+     "rawText": "Toilet cleaner",
+     "description": "Toilet cleaner",
+     "category": "household"
+    },
+    {
+     "id": "evh_flat_20",
+     "rawText": "Electric top-up",
+     "description": "Electric top-up",
+     "category": "utilities_bills"
+    }
+   ]
+  },
+  "eval-trip": {
+   "about": "A holiday group. Every drink is drinks; airport transfers count as part of the travel; café treats are eating out; small things bought to take home are gifts.",
+   "history": [
+    {
+     "id": "evh_trip_01",
+     "rawText": "Beers on the beach",
+     "description": "Beers on the beach",
+     "category": "drinks"
+    },
+    {
+     "id": "evh_trip_02",
+     "rawText": "Heineken 6 pack for the villa",
+     "description": "Heineken 6 pack for the villa",
+     "category": "drinks"
+    },
+    {
+     "id": "evh_trip_03",
+     "rawText": "Lager at the airport bar",
+     "description": "Lager at the airport bar",
+     "category": "drinks"
+    },
+    {
+     "id": "evh_trip_04",
+     "rawText": "Cava at dinner",
+     "description": "Cava at dinner",
+     "category": "drinks"
+    },
+    {
+     "id": "evh_trip_05",
+     "rawText": "Bottle of wine for the villa",
+     "description": "Bottle of wine for the villa",
+     "category": "drinks"
+    },
+    {
+     "id": "evh_trip_06",
+     "rawText": "Airport transfer shuttle",
+     "description": "Airport transfer shuttle",
+     "category": "travel_lodging"
+    },
+    {
+     "id": "evh_trip_07",
+     "rawText": "Taxi from the airport to the villa",
+     "description": "Taxi from the airport to the villa",
+     "category": "travel_lodging"
+    },
+    {
+     "id": "evh_trip_08",
+     "rawText": "Coffee and cake at the café",
+     "description": "Coffee and cake at the café",
+     "category": "eating_out"
+    },
+    {
+     "id": "evh_trip_09",
+     "rawText": "Pastries at the bakery",
+     "description": "Pastries at the bakery",
+     "category": "eating_out"
+    },
+    {
+     "id": "evh_trip_10",
+     "rawText": "Souvenir fridge magnets",
+     "description": "Souvenir fridge magnets",
+     "category": "gifts"
+    },
+    {
+     "id": "evh_trip_11",
+     "rawText": "Handmade soap for mum",
+     "description": "Handmade soap for mum",
+     "category": "gifts"
+    },
+    {
+     "id": "evh_trip_12",
+     "rawText": "Postcards and keyrings",
+     "description": "Postcards and keyrings",
+     "category": "gifts"
+    },
+    {
+     "id": "evh_trip_13",
+     "rawText": "Villa booking",
+     "description": "Villa booking",
+     "category": "travel_lodging"
+    },
+    {
+     "id": "evh_trip_14",
+     "rawText": "Flights to Lisbon",
+     "description": "Flights to Lisbon",
+     "category": "travel_lodging"
+    },
+    {
+     "id": "evh_trip_15",
+     "rawText": "Tapas dinner",
+     "description": "Tapas dinner",
+     "category": "eating_out"
+    },
+    {
+     "id": "evh_trip_16",
+     "rawText": "Boat trip",
+     "description": "Boat trip",
+     "category": "entertainment"
+    },
+    {
+     "id": "evh_trip_17",
+     "rawText": "Sun cream",
+     "description": "Sun cream",
+     "category": "health_personal"
+    },
+    {
+     "id": "evh_trip_18",
+     "rawText": "Metro tickets",
+     "description": "Metro tickets",
+     "category": "transport"
+    },
+    {
+     "id": "evh_trip_19",
+     "rawText": "Museum entry",
+     "description": "Museum entry",
+     "category": "entertainment"
+    },
+    {
+     "id": "evh_trip_20",
+     "rawText": "Groceries for the villa",
+     "description": "Groceries for the villa",
+     "category": "groceries"
+    }
+   ]
+  }
+ },
+ "items": [
+  {
+   "id": "c01",
+   "set": "clean",
+   "group": null,
+   "rawText": "Sushi takeaway",
+   "description": "Sushi takeaway",
+   "expected": "eating_out"
+  },
+  {
+   "id": "c02",
+   "set": "clean",
+   "group": null,
+   "rawText": "Coach to Manchester",
+   "description": "Coach to Manchester",
+   "expected": "transport"
+  },
+  {
+   "id": "c03",
+   "set": "clean",
+   "group": null,
+   "rawText": "Oyster card top-up",
+   "description": "Oyster card top-up",
+   "expected": "transport"
+  },
+  {
+   "id": "c04",
+   "set": "clean",
+   "group": null,
+   "rawText": "Hotel in Edinburgh, two nights",
+   "description": "Hotel in Edinburgh, two nights",
+   "expected": "travel_lodging"
+  },
+  {
+   "id": "c05",
+   "set": "clean",
+   "group": null,
+   "rawText": "Gas bill",
+   "description": "Gas bill",
+   "expected": "utilities_bills"
+  },
+  {
+   "id": "c06",
+   "set": "clean",
+   "group": null,
+   "rawText": "Theatre tickets",
+   "description": "Theatre tickets",
+   "expected": "entertainment"
+  },
+  {
+   "id": "c07",
+   "set": "clean",
+   "group": null,
+   "rawText": "Dentist appointment",
+   "description": "Dentist appointment",
+   "expected": "health_personal"
+  },
+  {
+   "id": "c08",
+   "set": "clean",
+   "group": null,
+   "rawText": "Wedding present",
+   "description": "Wedding present",
+   "expected": "gifts"
+  },
+  {
+   "id": "c09",
+   "set": "clean",
+   "group": null,
+   "rawText": "Mop and bucket",
+   "description": "Mop and bucket",
+   "expected": "household"
+  },
+  {
+   "id": "c10",
+   "set": "clean",
+   "group": null,
+   "rawText": "Fruit and veg from the market",
+   "description": "Fruit and veg from the market",
+   "expected": "groceries"
+  },
+  {
+   "id": "s01",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "WTRSE ORG BRKFST TEA 80",
+   "description": "WTRSE ORG BRKFST TEA 80",
+   "expected": "groceries",
+   "meaning": "Waitrose organic breakfast tea, 80 bags"
+  },
+  {
+   "id": "s02",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "GREGGS SSG ROLL X2",
+   "description": "GREGGS SSG ROLL X2",
+   "expected": "eating_out",
+   "meaning": "Greggs sausage roll x2"
+  },
+  {
+   "id": "s03",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "SHELL UNL 95",
+   "description": "SHELL UNL 95",
+   "expected": "transport",
+   "meaning": "Shell unleaded petrol"
+  },
+  {
+   "id": "s04",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "EDF ENERGY DD",
+   "description": "EDF ENERGY DD",
+   "expected": "utilities_bills",
+   "meaning": "EDF energy direct debit"
+  },
+  {
+   "id": "s05",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "B&Q DULUX MATT 2.5L",
+   "description": "B&Q DULUX MATT 2.5L",
+   "expected": "household",
+   "meaning": "B&Q Dulux matt paint 2.5 l"
+  },
+  {
+   "id": "s06",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "VUE 3X STD",
+   "description": "VUE 3X STD",
+   "expected": "entertainment",
+   "meaning": "Vue cinema, 3 standard tickets"
+  },
+  {
+   "id": "s07",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "LLOYDS PHARM IBUPR 200",
+   "description": "LLOYDS PHARM IBUPR 200",
+   "expected": "health_personal",
+   "meaning": "Lloyds Pharmacy ibuprofen 200 mg"
+  },
+  {
+   "id": "s08",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "BREWDOG PNT PUNK",
+   "description": "BREWDOG PNT PUNK",
+   "expected": "drinks",
+   "meaning": "BrewDog bar, a pint of Punk IPA"
+  },
+  {
+   "id": "s09",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "TRAVELODGE KX 2NT",
+   "description": "TRAVELODGE KX 2NT",
+   "expected": "travel_lodging",
+   "meaning": "Travelodge King's Cross, 2 nights"
+  },
+  {
+   "id": "s10",
+   "set": "shorthand",
+   "group": null,
+   "rawText": "M&S SMKD SALMON 200G",
+   "description": "M&S SMKD SALMON 200G",
+   "expected": "groceries",
+   "meaning": "M&S smoked salmon 200 g"
+  },
+  {
+   "id": "g01",
+   "set": "group",
+   "group": "eval-flat",
+   "rawText": "Peroni 4 pack",
+   "description": "Peroni 4 pack",
+   "expected": "groceries"
+  },
+  {
+   "id": "g02",
+   "set": "group",
+   "group": "eval-trip",
+   "rawText": "Peroni 4 pack",
+   "description": "Peroni 4 pack",
+   "expected": "drinks"
+  },
+  {
+   "id": "g03",
+   "set": "group",
+   "group": "eval-flat",
+   "rawText": "Bottle of prosecco",
+   "description": "Bottle of prosecco",
+   "expected": "gifts"
+  },
+  {
+   "id": "g04",
+   "set": "group",
+   "group": "eval-trip",
+   "rawText": "Bottle of prosecco",
+   "description": "Bottle of prosecco",
+   "expected": "drinks"
+  },
+  {
+   "id": "g05",
+   "set": "group",
+   "group": "eval-flat",
+   "rawText": "Uber to the airport",
+   "description": "Uber to the airport",
+   "expected": "transport"
+  },
+  {
+   "id": "g06",
+   "set": "group",
+   "group": "eval-trip",
+   "rawText": "Uber to the airport",
+   "description": "Uber to the airport",
+   "expected": "travel_lodging"
+  },
+  {
+   "id": "g07",
+   "set": "group",
+   "group": "eval-flat",
+   "rawText": "Birthday cake",
+   "description": "Birthday cake",
+   "expected": "gifts"
+  },
+  {
+   "id": "g08",
+   "set": "group",
+   "group": "eval-trip",
+   "rawText": "Birthday cake",
+   "description": "Birthday cake",
+   "expected": "eating_out"
+  },
+  {
+   "id": "g09",
+   "set": "group",
+   "group": "eval-flat",
+   "rawText": "Scented candles",
+   "description": "Scented candles",
+   "expected": "household"
+  },
+  {
+   "id": "g10",
+   "set": "group",
+   "group": "eval-trip",
+   "rawText": "Scented candles",
+   "description": "Scented candles",
+   "expected": "gifts"
+  }
+ ]
+}

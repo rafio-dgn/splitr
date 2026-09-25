@@ -14,7 +14,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Cloudflare build output and generated types (ADR-0014, ADR-0015).
     ".open-next/**",
-    ".wrangler/**",
+    "**/.wrangler/**",
     "worker-configuration.d.ts",
     // Each Worker is its own package with its own toolchain (ADR-0006).
     "workers/**",

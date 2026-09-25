@@ -71,3 +71,7 @@ the real pasted output, and the date.
   rollout step 1 (2026-09-25). `scripts/verify/` smoke, race, E2E and cleanup,
   their local runs, the controls tested (failed runs still clean up; vectors and
   photos really gone), and the layout-shift bug the E2E found.
+- [`REQ-E.4-rag-categorisation-eval.md`](./REQ-E.4-rag-categorisation-eval.md):
+  the 2×2 eval (2026-09-25) that picked **8B + RAG (28/30)**, the threshold
+  sweep, the AI Worker refusing a wrong secret through a real service binding,
+  and the unit tests.
