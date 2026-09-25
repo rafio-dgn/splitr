@@ -109,8 +109,10 @@ State explicitly which of these you did. If you skipped one, say so and why.
   himself. If a task appears to need one of these, **stop and ask him.**
   Permitted: local `git` in the working tree (status, diff, log, add, commit),
   `clone`/`fetch`/`pull` on a repository URL **he has given you**, and
-  `push` to `origin/main` of **this** repo. **Commit and push only when he asks**
-  — never on your own initiative, and never force-push or rewrite history.
+  **push feature branches to `origin`** of **this** repo. Raffaele opens and
+  merges PRs; **agents never push to `main`** (ADR-0024, amended 2026-09-25 with
+  his approval). **Commit and push only when he asks** — never on your own
+  initiative, and never force-push or rewrite history.
 - **One capability per step** (`REQ-M.2`). Clusters run in order. Never
   parallelise them, never jump ahead.
 - **Every file you write must be reviewable** (`REQ-M.3`). Explain before
