@@ -1616,3 +1616,29 @@ does, months later, without the original chat transcript.
   seen on the PR's first run.
 - **Open questions:** whether Raffaele's credential can push
   `.github/workflows/` (the `workflow` scope). The push below shows it.
+
+## 2026-09-25T12:30Z — CI rollout step 4: `deploy.yml`
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "merged, pls continue" (after PR #2).
+- **Inputs read:** ADR-0024, wrangler 4.140's `deployments status`/`rollback`
+  help, and its source for how `d1 migrations apply` confirms when not
+  interactive (a fallback "yes" in CI).
+- **Actions:** wrote `deploy.yml`, made `ci.yml` reusable, and opened a PR on
+  branch `ci/deploy-workflow`.
+- **Alternatives considered:**
+  - Keeping `ci.yml` on push to `main` as well: rejected, because the checks
+    would run twice and wouldn't gate the deploy.
+  - Automatic rollback: kept out, as ADR-0024 decided.
+  - `cancel-in-progress: true`: rejected, because it could cut a deploy
+    between the ledger and the app.
+- **Verification:**
+  - actionlint (Docker `rhysd/actionlint`, with shellcheck) is clean.
+  - The version-recording snippet was run locally against the live Workers
+    (read-only).
+  - **Not run end to end:** it needs the repo secrets, and its first run is the
+    merge itself.
+- **Assumptions:** the token has the permissions ADR-0024 lists. Smoke's
+  setup and cleanup need D1, KV, R2 and Vectorize, beyond deploying.
+- **Open questions:** has Raffaele done step 3 (token, secrets, `production`
+  environment, branch protection)? It isn't visible to the agent, because §6
+  rules out authenticated GitHub calls.

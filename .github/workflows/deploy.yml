@@ -1,0 +1,105 @@
+# Deploy on merge (ADR-0024, workflow 2). A push to main (a merged PR), or a
+# manual run, deploys production in the only order Splitr works in:
+#
+#   checks → the ledger → D1 migrations → the app → wait → smoke tests
+#
+# - The ledger goes first because the app's LEDGER service binding targets it.
+# - Migrations go before the app, so new code never meets an older schema. They
+#   must stay backward-compatible with the app version still live, and they
+#   can't be rolled back.
+# - The smoke tests create @example.test data on production and remove it,
+#   even when they fail (scripts/verify/cleanup.mjs).
+#
+# There's no automatic rollback (a later decision, ADR-0024). If the smoke
+# tests fail, the job fails, and the summary gives the exact rollback commands
+# with the versions that were live before this run.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time, and never cancel one halfway: a half-finished deploy
+# (a new ledger with an old app) is worse than a queued one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SITE: https://splitr.raffaele-digennaro.workers.dev
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # `next build` type-checks, and the app's types include the bindings.
+      - name: Generate types
+        run: npm run cf:types
+
+      # Before anything changes: what's live now, for the rollback commands.
+      - name: Record the live versions
+        id: before
+        run: |
+          app=$(npx wrangler deployments status --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).versions[0].version_id))')
+          ledger=$(npx wrangler deployments status --json -c workers/group-ledger/wrangler.jsonc | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).versions[0].version_id))')
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "ledger=$ledger" >> "$GITHUB_OUTPUT"
+          echo "Live before this deploy: app \`$app\`, ledger \`$ledger\`"
+
+      - name: Deploy the ledger
+        run: npx wrangler deploy -c workers/group-ledger/wrangler.jsonc
+
+      - name: Apply D1 migrations
+        run: npx wrangler d1 migrations apply splitr --remote
+
+      - name: Build and deploy the app
+        run: npm run deploy
+
+      # An immediate check can reach the previous version (seen once in
+      # ADR-0022's evidence).
+      - name: Wait for the new version to be served
+        run: sleep 20
+
+      - name: Smoke tests
+        run: node scripts/verify/smoke.mjs "$SITE"
+
+      - name: Summary
+        if: always()
+        env:
+          APP_BEFORE: ${{ steps.before.outputs.app }}
+          LEDGER_BEFORE: ${{ steps.before.outputs.ledger }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          {
+            echo "### Deploy: $OUTCOME"
+            echo ""
+            echo "Live before this run: app \`${APP_BEFORE:-unknown}\`, ledger \`${LEDGER_BEFORE:-unknown}\`."
+            if [ "$OUTCOME" != "success" ] && [ -n "$APP_BEFORE" ]; then
+              echo ""
+              echo "**To roll back** (D1 migrations aren't rolled back by this):"
+              echo '```'
+              echo "npx wrangler rollback $APP_BEFORE --name splitr -m \"smoke failed\""
+              echo "npx wrangler rollback $LEDGER_BEFORE --name splitr-ledger -m \"smoke failed\""
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

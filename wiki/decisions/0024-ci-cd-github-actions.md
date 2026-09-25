@@ -216,3 +216,31 @@ with an `::error::` annotation and still writes the job summary.
 
 Actions are pinned to the current majors, `actions/checkout@v7` and
 `actions/setup-node@v7` (looked up 2026-09-25).
+
+## Addendum, 2026-09-25: rollout step 4 (`deploy.yml`)
+
+Built as planned (checks → ledger → D1 migrations → app → 20 s → smoke).
+Details decided while building it:
+
+1. **`ci.yml` is reusable (`workflow_call`) and no longer runs on pushes to
+   `main`.** `deploy.yml` calls it as its first job, so a merge runs the
+   checks once, and a failed check stops the deploy. PRs still run it
+   directly, so the required check `ci / checks` is unchanged.
+2. **The live versions are recorded before anything changes**
+   (`wrangler deployments status --json` for both Workers). If the smoke tests
+   fail, the job summary prints the two `wrangler rollback` commands with those
+   ids. Rollback stays manual, as decided above.
+3. **`cancel-in-progress: false`** for deploys: a half-finished deploy (a new
+   ledger with an old app) is worse than a queued one.
+4. **Migrations auto-confirm in CI.** Wrangler's prompt uses its
+   non-interactive fallback, "yes" (read in wrangler 4.140's source). They
+   are never rolled back, which is why they must stay backward-compatible.
+
+Checked before the first run:
+- actionlint (with shellcheck) is clean on both workflows;
+- the version-recording snippet run locally prints the live ids (app
+  `3d4f7f18…`, ledger `134160f5…`, matching the E.1 evidence).
+
+**The first merge is the first real run**, and it also ships PRs #1 and #2
+(the form fix and the build fix), which aren't live yet. Without the secrets,
+it stops at the first `wrangler` call, before anything changes.
