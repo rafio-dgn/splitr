@@ -1,6 +1,8 @@
-# The PR checks (ADR-0024, workflow 1). Every pull request, and every push to
-# main, runs everything a merge has to pass: types for both programs, lint,
-# all tests, a production build and the Worker size budget.
+# The PR checks (ADR-0024, workflow 1). Every pull request runs everything a
+# merge has to pass: types for both programs, lint, all tests, a production
+# build and the Worker size budget. On a merge to main, deploy.yml runs this
+# same workflow first (workflow_call), so the checks gate the deploy and run
+# once, not twice.
 #
 # It needs no Cloudflare credentials and no secrets, so it's safe on any
 # branch. The DO tests run in a local workerd (miniflare), and the size comes
@@ -9,13 +11,13 @@ name: ci
 
 on:
   pull_request:
-  push:
-    branches: [main]
+  workflow_call:
 
 # A newer push to the same PR cancels the run it replaces.
+# (Only for PRs. Inside deploy.yml, the deploy's own concurrency group applies.)
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

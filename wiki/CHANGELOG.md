@@ -956,3 +956,15 @@ shape that triggers them. They are listed rather than ticked.
   succeeded, so the credential has the `workflow` scope.
 - **Why:** ADR-0024 step 2 asked to watch it go green.
 - **Decision:** none
+
+## 2026-09-25 — CI rollout step 4: `deploy.yml`
+- **Type:** added, changed
+- **Scope:** `.github/workflows/deploy.yml` (new), `.github/workflows/ci.yml`
+- **What:**
+  - `deploy.yml` runs on a push to `main` and by manual dispatch: `ci.yml` →
+    ledger → `d1 migrations apply --remote` → app → wait 20 s → `smoke.mjs`.
+    One deploy at a time, never cancelled. The summary records the versions
+    that were live before, with the rollback commands if smoke fails.
+  - `ci.yml` became reusable and dropped its own push-to-`main` trigger.
+- **Why:** ADR-0024 step 4.
+- **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step-4 addendum)
