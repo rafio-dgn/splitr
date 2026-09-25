@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test \"src/**/*.test.ts\"",
+    "test": "node --test \"src/**/*.test.ts\" && npm run test:ledger",
+    "test:ledger": "vitest run --root workers/group-ledger",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf:types": "wrangler types --env-interface CloudflareEnv --include-runtime=false",
+    "cf:types": "wrangler types --env-interface CloudflareEnv --include-runtime=false -c wrangler.jsonc -c workers/group-ledger/wrangler.jsonc && wrangler types -c workers/group-ledger/wrangler.jsonc workers/group-ledger/worker-configuration.d.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply splitr --local",
     "db:migrate:remote": "wrangler d1 migrations apply splitr --remote",
@@ -29,6 +30,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.2.7",
     "@cloudflare/workers-types": "^5.20260924.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -39,6 +41,7 @@
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vitest": "~4.1.0",
     "wrangler": "^4.136.3"
   }
 }

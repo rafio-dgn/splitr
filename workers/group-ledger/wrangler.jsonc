@@ -1,0 +1,30 @@
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+
+	// The contested-write arbiter (REQ-E.1, ADR-0023). One GroupLedger Durable
+	// Object per group, reached by the app ONLY through a service binding
+	// (REQ-E.5, REQ-M.8), so there's deliberately no public URL.
+	"name": "splitr-ledger",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-09-21",
+
+	"workers_dev": false,
+	"preview_urls": false,
+	"observability": { "enabled": true },
+
+	"durable_objects": {
+		"bindings": [{ "name": "GROUP_LEDGER", "class_name": "GroupLedger" }]
+	},
+	// SQLite-backed: the Durable Object storage backend on the Workers Free plan.
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["GroupLedger"] }],
+
+	// The same D1 as the app: the ledger reads balances from it and writes the
+	// settlement to it. D1 stays the one source of truth (ADR-0023 §1).
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "splitr",
+			"database_id": "bcbbea37-10b1-44d9-a8e6-4ad0103334a8"
+		}
+	]
+}
