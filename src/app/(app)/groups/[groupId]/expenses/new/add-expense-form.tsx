@@ -28,7 +28,7 @@ import { ActionLink, EmptyState } from "@/components/ui";
 import type { GroupMember } from "@/lib/groups/membership";
 import { formatGbp } from "@/lib/money";
 import {
-	addExpenseSchema,
+	addExpenseFields,
 	equalShares,
 	parseAddExpense,
 	todayUtc,
@@ -36,7 +36,12 @@ import {
 	type FieldErrors,
 } from "@/lib/schemas/expense";
 
-import { addExpenseAction, requestReceiptUploadAction, type AddExpenseFormState } from "./actions";
+import {
+	addExpenseAction,
+	readReceiptAction,
+	requestReceiptUploadAction,
+	type AddExpenseFormState,
+} from "./actions";
 
 type FieldName = keyof AddExpenseInput;
 
@@ -56,7 +61,7 @@ const initialState: AddExpenseFormState = { status: "idle" };
  * with `.pick()`, never restated. If the amount rules change, this changes with
  * them.
  */
-const MONEY_AND_SPLIT = addExpenseSchema.pick({
+const MONEY_AND_SPLIT = addExpenseFields.pick({
 	amount: true,
 	participantIds: true,
 });
@@ -128,6 +133,39 @@ export function AddExpenseForm({
 		| { status: "attached"; key: string; name: string }
 		| { status: "failed"; message: string }
 	>({ status: "none" });
+
+	/**
+	 * The receipt draft (D.6, ADR-0021). Reading only ever *fills the form*: the
+	 * user must tick "I've checked the total" before saving, because money
+	 * needs a human (ADR-0016 §2). Items can be edited or removed; they're
+	 * informational and never change who owes what.
+	 */
+	const [reading, setReading] = useState<
+		{ status: "idle" } | { status: "reading" } | { status: "failed"; message: string }
+	>({ status: "idle" });
+	const [draftItems, setDraftItems] = useState<
+		{ rawText: string; description: string; amountMinorUnits: number }[] | null
+	>(null);
+	const [totalConfirmed, setTotalConfirmed] = useState(false);
+
+	async function readAttachedReceipt(key: string): Promise<void> {
+		setReading({ status: "reading" });
+		const outcome = await readReceiptAction(groupId, key);
+		if (!outcome.ok) {
+			// The form is left exactly as it was: typing it in is the fallback.
+			setReading({ status: "failed", message: outcome.message });
+			return;
+		}
+		const { draft } = outcome;
+		update("description", draft.merchant);
+		update(
+			"amount",
+			`${Math.floor(draft.totalMinorUnits / 100)}.${String(draft.totalMinorUnits % 100).padStart(2, "0")}`,
+		);
+		setDraftItems(draft.items.map((item) => ({ ...item })));
+		setTotalConfirmed(false);
+		setReading({ status: "idle" });
+	}
 
 	async function attachReceipt(file: File): Promise<void> {
 		setReceipt({ status: "uploading", name: file.name });
@@ -399,7 +437,7 @@ export function AddExpenseForm({
 					type="file"
 					accept="image/jpeg,image/png,image/webp"
 					capture="environment"
-					disabled={pending || receipt.status === "uploading"}
+						disabled={pending || receipt.status === "uploading" || reading.status === "reading"}
 					onChange={(event) => {
 						const file = event.target.files?.[0];
 						if (file !== undefined) {
@@ -414,7 +452,88 @@ export function AddExpenseForm({
 					{receipt.status === "attached" ? `Attached: ${receipt.name}` : null}
 					{receipt.status === "failed" ? receipt.message : null}
 				</p>
+				{receipt.status === "attached" ? (
+					<button
+						type="button"
+						disabled={pending || reading.status === "reading"}
+						onClick={() => void readAttachedReceipt(receipt.key)}
+						className="self-start rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium disabled:opacity-50 dark:border-zinc-700"
+					>
+						{reading.status === "reading" ? "Reading the receipt…" : "Read receipt"}
+					</button>
+				) : null}
+				{reading.status === "failed" ? (
+					<p role="status" className="text-sm">
+						{reading.message}
+					</p>
+				) : null}
 			</Field>
+
+			{draftItems !== null ? (
+				<section className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+					<p className="text-sm">
+						<strong>Read from the receipt.</strong> Check the description and, above all, the{" "}
+						<strong>amount</strong> against the photo. The items are for reference only; they don&rsquo;t
+						change the split.
+					</p>
+					<ul className="flex flex-col gap-2">
+						{draftItems.map((item, index) => (
+							<li key={index} className="flex flex-wrap items-center gap-2 text-sm">
+								<input
+									aria-label={`Item ${index + 1}`}
+									value={item.description}
+									onChange={(event) =>
+										setDraftItems((items) =>
+											(items ?? []).map((it, i) => (i === index ? { ...it, description: event.target.value } : it)),
+										)
+									}
+									className="flex-1 rounded-md border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+								/>
+								<span className="w-20 text-right tabular-nums">{formatGbp(item.amountMinorUnits)}</span>
+								<button
+									type="button"
+									aria-label={`Remove item ${index + 1}`}
+									onClick={() => setDraftItems((items) => (items ?? []).filter((_, i) => i !== index))}
+									className="text-zinc-500"
+								>
+									✕
+								</button>
+								{item.rawText !== item.description ? (
+									<span className="basis-full pl-1 text-xs text-zinc-500">Printed as &ldquo;{item.rawText}&rdquo;</span>
+								) : null}
+							</li>
+						))}
+					</ul>
+					<input
+						type="hidden"
+						name="lineItems"
+						value={JSON.stringify(
+							draftItems
+								.filter((item) => item.description.trim() !== "")
+								.map((item) => ({
+									rawText: item.rawText,
+									description: item.description.trim(),
+									amountMinorUnits: item.amountMinorUnits,
+								})),
+						)}
+					/>
+					<label className="flex items-center gap-2 text-sm font-medium">
+						<input
+							type="checkbox"
+							name="amountConfirmed"
+							value="yes"
+							checked={totalConfirmed}
+							onChange={(event) => setTotalConfirmed(event.target.checked)}
+						/>
+						I&rsquo;ve checked the amount against the receipt
+					</label>
+					{errorFor("amountConfirmed") !== undefined ? (
+						<p role="alert" className="text-sm text-red-600">
+							{errorFor("amountConfirmed")}
+						</p>
+					) : null}
+				</section>
+			) : null}
 
 			{/* §5.11 — a whole-form failure. The values stay in the fields: retyping
 			    an itemised expense after a failed round trip is the fastest way to
@@ -428,7 +547,14 @@ export function AddExpenseForm({
 
 			<button
 				type="submit"
-				disabled={pending || receipt.status === "uploading"}
+				disabled={
+					pending ||
+					receipt.status === "uploading" ||
+					reading.status === "reading" ||
+					// Money needs a human (ADR-0016 §2): a read draft can't be saved until
+					// its amount is confirmed. The server enforces this too.
+					(draftItems !== null && !totalConfirmed)
+				}
 				className="self-start rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
 			>
 				{pending ? "Adding…" : "Add expense"}

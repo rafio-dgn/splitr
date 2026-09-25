@@ -121,7 +121,14 @@ export function todayUtc(): string {
 	return new Date().toISOString().slice(0, 10);
 }
 
-export const addExpenseSchema = z.object({
+/**
+ * The fields, as a plain object schema. It's kept separate from the refined
+ * `addExpenseSchema` below because Zod 4 refuses `.pick()` on a schema with a
+ * refinement, and the form picks the money-and-split subset from this one.
+ * That broke the add-expense page at runtime (not at compile time) on
+ * 2026-09-24, and the browser test caught it.
+ */
+export const addExpenseFields = z.object({
 	/**
 	 * Route-derived, never typed by a user. No message is specified because none
 	 * is ever shown: a viewer who is not a member of this group gets a 404, not
@@ -173,7 +180,42 @@ export const addExpenseSchema = z.object({
 		.string()
 		.optional()
 		.transform((value) => (value === undefined || value === "" ? undefined : value)),
+
+	/**
+	 * Line items from a confirmed receipt draft (D.6, ADR-0021). They're
+	 * informational: they never change who owes what (ADR-0018 §1), so they're
+	 * not checked against the total, which often differs anyway because of
+	 * tax and rounding lines.
+	 */
+	lineItems: z
+		.array(
+			z.object({
+				rawText: z.string().trim().max(120).nullable(),
+				description: z.string().trim().min(1).max(120),
+				amountMinorUnits: z.number().int().min(0).max(MAX_AMOUNT_MINOR_UNITS),
+			}),
+		)
+		.max(60, { error: "That's too many line items for one expense." })
+		.optional(),
+
+	/**
+	 * "I've checked the amount against the receipt". It's required whenever line
+	 * items from a read receipt are submitted (see the refinement below), so the
+	 * money-needs-a-human rule (ADR-0016 §2) is enforced **here**, on the one
+	 * validation path, and not only by a disabled button that a UI bug can
+	 * break. One did, and it was caught in testing on 2026-09-24.
+	 */
+	amountConfirmed: z.literal("yes").optional(),
 });
+
+/** The full rule set: the fields plus the cross-field rules. This is what every entry point parses with. */
+export const addExpenseSchema = addExpenseFields.refine(
+	(value) => value.lineItems === undefined || value.lineItems.length === 0 || value.amountConfirmed === "yes",
+	{
+		error: "Check the amount against the receipt, then tick the box to confirm it.",
+		path: ["amountConfirmed"],
+	},
+);
 
 /**
  * What the form sends: `amount` is still the string the user typed.

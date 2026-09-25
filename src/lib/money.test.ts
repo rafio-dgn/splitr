@@ -156,3 +156,28 @@ describe("formatGbp / describePosition", () => {
 		assert.doesNotMatch(describePosition(-1).sentence, /-/);
 	});
 });
+
+describe("the read-receipt confirmation (ADR-0016 §2, enforced on the server)", () => {
+	const base = {
+		groupId: "g",
+		description: "99 Speed Mart",
+		amount: "37.45",
+		currency: "GBP",
+		spentAt: "2026-09-01",
+		paidById: "a",
+		participantIds: ["a"],
+	};
+	const items = [{ rawText: "INDOCAFE COFFEEMIX 3IN", description: "Coffee mix, 3-in-1", amountMinorUnits: 2995 }];
+
+	it("refuses line items from a read receipt unless the amount was confirmed", () => {
+		const result = parseAddExpense({ ...base, lineItems: items });
+		assert.equal(result.ok, false);
+		assert.match(String(result.ok ? "" : result.fieldErrors.amountConfirmed?.[0]), /tick the box/);
+	});
+
+	it("accepts them once confirmed, and needs no confirmation when there are no items", () => {
+		assert.equal(parseAddExpense({ ...base, lineItems: items, amountConfirmed: "yes" }).ok, true);
+		assert.equal(parseAddExpense(base).ok, true);
+	});
+});
+

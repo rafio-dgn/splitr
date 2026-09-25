@@ -13,7 +13,8 @@
 import { notFound } from "next/navigation";
 
 import { EmptyState, ScreenHeading } from "@/components/ui";
-import { getExpenseInGroup } from "@/lib/expenses/expense-feed";
+import { categoryLabel } from "@/lib/categories";
+import { getExpenseInGroup, listLineItems } from "@/lib/expenses/expense-feed";
 import { resolveGroup } from "@/lib/groups/current-group";
 import { formatGbp } from "@/lib/money";
 import { presignReceiptView } from "@/lib/receipts/receipts";
@@ -49,6 +50,8 @@ export default async function ExpenseDetailPage({
 		expense.receiptKey === null
 			? null
 			: await presignReceiptView(expense.receiptKey).catch(() => null);
+
+	const lineItems = await listLineItems(expense.id);
 
 	const nameOf = (userId: string): string =>
 		group.members.find((member) => member.id === userId)?.name ?? "Someone";
@@ -105,12 +108,31 @@ export default async function ExpenseDetailPage({
 					Line items
 				</h2>
 				<div className="mt-4">
-					{/* §5.9's empty state, and the slot Cluster D's OCR output lands in. */}
-					<EmptyState title="No line items">
-						{expense.receiptKey === null
-							? "This expense was entered by hand, so there's nothing to itemise."
-							: "Reading the items off the photo arrives with the vision model (D.6)."}
-					</EmptyState>
+					{lineItems.length > 0 ? (
+						<ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+							{lineItems.map((item) => (
+								<li key={item.id} className="flex items-baseline justify-between gap-4 py-3 text-sm">
+									<span className="flex flex-col">
+										<span>{item.description}</span>
+										{item.rawText !== null && item.rawText !== item.description ? (
+											<span className="text-xs text-zinc-500">Printed as &ldquo;{item.rawText}&rdquo;</span>
+										) : null}
+									</span>
+									<span className="flex flex-col items-end">
+										<span className="tabular-nums">{formatGbp(item.amountMinorUnits)}</span>
+										<span className="text-xs text-zinc-500">{categoryLabel(item.category)}</span>
+									</span>
+								</li>
+							))}
+						</ul>
+					) : (
+						// §5.9's empty state: an expense typed by hand, or a photo not yet read.
+						<EmptyState title="No line items">
+							{expense.receiptKey === null
+								? "This expense was entered by hand, so there's nothing to itemise."
+								: "The receipt photo is attached, but it wasn't read into items."}
+						</EmptyState>
+					)}
 				</div>
 			</section>
 		</div>

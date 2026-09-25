@@ -60,3 +60,14 @@ export const CATEGORY_LABELS = {
 	other: "Other",
 	uncategorised: "Uncategorised",
 } as const satisfies Record<Category, string>;
+
+/** Narrows a stored string to a known category, without a cast. */
+export function isCategory(value: string): value is Category {
+	return CATEGORY_KEYS.some((key) => key === value);
+}
+
+/** The label for a stored category, or the raw value if it's somehow not a known key. */
+export function categoryLabel(value: string): string {
+	return isCategory(value) ? CATEGORY_LABELS[value] : value;
+}
+

@@ -66,6 +66,22 @@
 	// through a presigned URL, so the bytes never pass through this Worker. The
 	// binding is for the server-side checks on attach, and for D.6 reading the
 	// image to itemise it.
+	// Workers AI, for reading receipts with Llama 4 Scout (D.6, ADR-0021).
+	// It's temporary here: ADR-0016 §6 moves every model call behind the AI
+	// Worker at Cluster E, and this binding is removed then.
+	"ai": { "binding": "AI" },
+
+	// Semantic search (REQ-D.4, ADR-0022): one vector per line item, plus one per
+	// itemless expense, holding ids only (the text shown comes from D1). Remote
+	// in dev, because Vectorize has no local simulation.
+	"vectorize": [
+		{
+			"binding": "VECTORIZE",
+			"index_name": "splitr-search",
+			"remote": true
+		}
+	],
+
 	"r2_buckets": [
 		{
 			"binding": "RECEIPTS",

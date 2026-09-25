@@ -17,11 +17,13 @@
 import "server-only";
 
 import { getDb } from "@/db";
-import { expense as expenseTable, expenseShare } from "@/db/schema";
+import { expense as expenseTable, expenseShare, lineItem } from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { getGroupForViewer, isMember } from "@/lib/groups/membership";
 import { newId } from "@/lib/ids";
 import { checkUploadedReceipt } from "@/lib/receipts/receipts";
+
+import { indexExpense } from "@/lib/search/index-expense";
 
 import { forgetRecentDescriptions } from "./recent-descriptions";
 import {
@@ -173,6 +175,8 @@ export async function addExpense(
 	//    as a single transaction, so there's never an expense without its
 	//    shares, which would silently unbalance the group.
 	const expenseId = newId("exp");
+	// Ids are chosen before the write, so the same ids key the search vectors.
+	const items = (expense.lineItems ?? []).map((item) => ({ ...item, id: newId("li") }));
 	try {
 		const db = await getDb();
 		await db.batch([
@@ -194,6 +198,19 @@ export async function addExpense(
 					userId: share.userId,
 					shareCents: share.shareMinorUnits,
 				})),
+			),
+			// Line items from a confirmed receipt draft, in the same batch, so the
+			// expense and its items land together or not at all. Each one starts
+			// `uncategorised` (the schema default); categorisation is E.7.
+			...items.map((item, position) =>
+				db.insert(lineItem).values({
+					id: item.id,
+					expenseId,
+					position,
+					description: item.description,
+					rawText: item.rawText,
+					amountCents: item.amountMinorUnits,
+				}),
 			),
 		]);
 	} catch (error) {
@@ -219,6 +236,7 @@ export async function addExpense(
 			amountMinorUnits: expense.amount,
 			currency: expense.currency,
 			participants: expense.participantIds.length,
+			lineItems: expense.lineItems?.length ?? 0,
 		},
 	});
 
@@ -226,6 +244,15 @@ export async function addExpense(
 	//    the response, so this save doesn't wait on KV, and a KV failure can't
 	//    fail it: the write above is already durable.
 	await forgetRecentDescriptions(group.id).catch(() => undefined);
+
+	// 8. Search vectors (REQ-D.4, ADR-0022), after the response too. A failure
+	//    here leaves the expense unsearchable, never unsaved.
+	await indexExpense({
+		id: expenseId,
+		groupId: group.id,
+		description: expense.description,
+		items: items.map((item) => ({ id: item.id, description: item.description })),
+	}).catch(() => undefined);
 
 	return { status: "accepted", expenseId, expense, shares, persisted: true };
 }

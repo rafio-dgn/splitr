@@ -12,12 +12,12 @@
  */
 import "server-only";
 
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { cache } from "react";
 
 import { getDb } from "@/db";
-import { expense, expenseShare, settlement, user } from "@/db/schema";
+import { expense, expenseShare, lineItem, settlement, user } from "@/db/schema";
 import { parseCurrency, type Currency } from "@/lib/money";
 
 /** One share of one expense. Minor units, integer, always summing to the total. */
@@ -153,5 +153,39 @@ export const listGroupSettlements = cache(
 			.where(eq(settlement.groupId, groupId))
 			.orderBy(desc(settlement.createdAt));
 		return rows.map((row) => ({ ...row, currency: parseCurrency(row.currency) }));
+	},
+);
+
+/** A receipt line, as the expense page shows it (ADR-0021). */
+export interface RecordedLineItem {
+	readonly id: string;
+	/** Plain English. */
+	readonly description: string;
+	/** As printed, or `null` for an item typed by hand. */
+	readonly rawText: string | null;
+	readonly amountMinorUnits: number;
+	/** A key from `src/lib/categories.ts`; `uncategorised` until E.7. */
+	readonly category: string;
+}
+
+/**
+ * An expense's line items, in receipt order. The caller must already have
+ * resolved the expense *in this group* (`getExpenseInGroup`), which is where
+ * the 404-not-403 rule is applied.
+ */
+export const listLineItems = cache(
+	async (expenseId: string): Promise<readonly RecordedLineItem[]> => {
+		const db = await getDb();
+		return db
+			.select({
+				id: lineItem.id,
+				description: lineItem.description,
+				rawText: lineItem.rawText,
+				amountMinorUnits: lineItem.amountCents,
+				category: lineItem.category,
+			})
+			.from(lineItem)
+			.where(eq(lineItem.expenseId, expenseId))
+			.orderBy(asc(lineItem.position));
 	},
 );
