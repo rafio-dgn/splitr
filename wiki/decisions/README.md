@@ -52,3 +52,4 @@ obvious in hindsight.
 | [0019](./0019-kv-holds-recent-descriptions-not-balances.md) | KV holds recent expense descriptions, not a balance snapshot | Accepted |
 | [0020](./0020-receipts-via-presigned-r2-urls.md) | Receipts go straight to R2 via presigned URLs, signed with aws4fetch and verified on attach | Accepted |
 | [0021](./0021-receipt-reading-approach.md) | Receipt reading: two Llamas in the spike, raw + expanded lines, a "Read receipt" button | Accepted (model pending the spike) |
+| [0022](./0022-semantic-search-design.md) | Semantic search across all the viewer's groups; item and itemless-expense vectors | Accepted |

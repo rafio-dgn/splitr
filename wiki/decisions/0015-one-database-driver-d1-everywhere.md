@@ -1,6 +1,6 @@
 # ADR-0015: One database driver: D1 everywhere, from Cluster C
 
-- **Status:** Accepted
+- **Status:** Accepted. **Defect found on 2026-09-24:** §4's `--include-runtime=false` left every binding type undefined, so they were silently `any` (hidden by `skipLibCheck`). It's fixed by `cloudflare-globals.d.ts`, which gives global aliases of the importable `@cloudflare/workers-types` and doesn't clash with the DOM. See the CHANGELOG
 - **Date:** 2026-09-23
 - **Deciders:** Raffaele (timing: "provision D1 now, auth tables only"), AI (mechanism)
 - **Requirement:** `REQ-C.1`, `REQ-B.5`, `REQ-D.1`, `REQ-M.2`
