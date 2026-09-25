@@ -947,3 +947,12 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** ADR-0024 step 2. The fixes were found by simulating the runner (a
   clean copy, no login).
 - **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step-2 addendum)
+
+## 2026-09-25 — `ci.yml`'s first run: green
+- **Type:** docs
+- **Scope:** `wiki/todos/{HANDOVER,backlog}.md`
+- **What:** PR #2's `ci / checks` passed on `ubuntu-latest` in 1 min 22 s
+  (run 36126889551), every step green. The push of `.github/workflows/`
+  succeeded, so the credential has the `workflow` scope.
+- **Why:** ADR-0024 step 2 asked to watch it go green.
+- **Decision:** none

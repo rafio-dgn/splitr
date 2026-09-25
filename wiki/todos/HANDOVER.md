@@ -44,7 +44,9 @@ found is fixed in both forms, and the E2E guards it. All of it is on a
 
 **Step 2 (`ci.yml`) is built** on branch `ci/ci-workflow` with a PR, and was
 simulated on a clean runner-like copy (it found two build defects; see
-ADR-0024's step-2 addendum). Check the PR's first real run.
+ADR-0024's step-2 addendum). **Its first real run on PR #2 was green**
+(run 36126889551, 1 min 22 s, every step passed). Pushing it proved the
+credential has the `workflow` scope.
 
 **Next:** his settings (step 3) →
 `deploy.yml` → `e2e-nightly.yml`, then **E.7** (below). He may prefer E.7
