@@ -1,0 +1,1 @@
+ALTER TABLE `line_item` ADD `raw_text` text;

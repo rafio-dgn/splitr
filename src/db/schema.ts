@@ -321,7 +321,18 @@ export const lineItem = sqliteTable(
       .references(() => expense.id, { onDelete: "restrict" }),
     /** The order the line appeared on the receipt, from 0. */
     position: integer("position").notNull(),
+    /**
+     * The line in plain English, with shorthand expanded ("Coffee mix, 3-in-1").
+     * This is what categorisation (E.7) and search (D.7) read.
+     */
     description: text("description").notNull(),
+    /**
+     * The line exactly as printed ("COFFEEMIX 3IN"), or `null` for an item
+     * typed by hand. Added by the second migration: a change nobody planned
+     * for, forced by the C.4 finding that the model reads shorthand at 2/10
+     * (ADR-0021 §2, `REQ-D.5`).
+     */
+    rawText: text("raw_text"),
     amountCents: integer("amount_cents").notNull(),
     category: text("category").notNull().default(UNCATEGORISED),
   },
