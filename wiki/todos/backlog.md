@@ -365,3 +365,28 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [x] ~~`types` All binding types were silently `any`.~~ Fixed at D.7 with
       `cloudflare-globals.d.ts` (ADR-0015 status note).
 
+## Raised in Cluster E — 2026-09-25
+
+- [ ] `size` **The Worker is at 83% of the free 3 MiB (2,543 KiB gzipped).**
+      Bisected: the cause is code, not dependencies. The settlements Route
+      Handler's new dependency graph got its own full copy of Better Auth (a
+      third 573 KiB route chunk). Fixes, in order of preference: (1) merge the
+      curl-target handlers (`…/expenses`, `…/settlements`) into one
+      `/api/groups/[groupId]/[resource]` route, which keeps the same URLs and
+      loses one copy; (2) measure `next build --webpack`, which shares chunks
+      across entries. Decide before Cluster F adds more code.
+- [ ] `E.1` **Voiding and leaving, when built, must go through the
+      GroupLedger** (ADR-0023 §2). They reduce what's owed.
+- [ ] `E.1` **The DO's idempotency entries from the production test
+      (2026-09-25)** are left for its own 24 h alarm to evict. That's the
+      cleanup mechanism, observable with `wrangler tail splitr-ledger`.
+- [ ] `dx` **Local settle-up needs two processes**: `next dev`, plus
+      `wrangler dev -c workers/group-ledger/wrangler.jsonc --persist-to .wrangler/state`
+      (the same local D1). It's in the README.
+- [ ] `lesson` **A Worker's main module may export only handlers and
+      classes.** An exported constant stopped workerd from starting, which
+      `tsc` can't catch.
+- [ ] `lesson` **D1 batch results are keyed by column name.** Never select two
+      columns with the same name (for example `user.name` twice) inside
+      `db.batch`.
+

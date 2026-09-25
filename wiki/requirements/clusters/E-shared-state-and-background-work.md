@@ -14,14 +14,14 @@ entity via `idFromName`; it validates pre-conditions, writes to D1, returns the
 result.
 
 **Acceptance criteria:**
-- [ ] One DO instance per owning entity, addressed via `idFromName`
-- [ ] It validates pre-conditions before writing
-- [ ] It writes to D1
-- [ ] It returns the result to the caller
-- [ ] It genuinely arbitrates the contested write from `REQ-P.3` — a second
+- [x] One DO instance per owning entity, addressed via `idFromName`
+- [x] It validates pre-conditions before writing
+- [x] It writes to D1
+- [x] It returns the result to the caller
+- [x] It genuinely arbitrates the contested write from `REQ-P.3` — a second
       concurrent writer is refused, not merged
 
-**Source:** capture §8 · **Status:** Not started (unblocked — [ADR-0004](../../decisions/0004-project-is-splitr.md))
+**Source:** capture §8 · **Status:** ✅ **Done**, 2026-09-25. [ADR-0023](../../decisions/0023-group-ledger-arbitrates-settlements.md); [evidence](../../evidence/REQ-E.1-group-ledger-refuses-the-double-settlement.md): one winner in 5/5 production rounds
 
 **Notes:** "One instance per **owning entity**" — the entity being contested, not
 necessarily the user. In EdgeLedger it is the user (their own balance); in
@@ -36,13 +36,13 @@ asking *what is being fought over*.
 a replay returns the cached result, never a duplicate write.
 
 **Acceptance criteria:**
-- [ ] The key arrives as a **header** named `idempotencyKey`
-- [ ] The response is cached for **24 hours**
-- [ ] A replay returns the cached result byte-for-byte
-- [ ] A replay produces **no** second write
-- [ ] Expired entries are cleaned up
+- [x] The key arrives as a **header** named `idempotencyKey`
+- [x] The response is cached for **24 hours**
+- [x] A replay returns the cached result byte-for-byte
+- [x] A replay produces **no** second write
+- [x] Expired entries are cleaned up
 
-**Source:** capture §8 · **Status:** Blocked on `REQ-E.1`
+**Source:** capture §8 · **Status:** ✅ **Done**, 2026-09-25. The header `idempotencyKey`; a byte-identical replay with no second write (on production); alarm eviction proved in workerd
 
 **Notes:** Header, not body field. 24h is specified exactly. The concepts list
 pairs this with alarms — *"idempotency keys & alarms: make retries safe; schedule
@@ -56,11 +56,11 @@ mechanism.
 **Statement:** Emit an `[AUDIT]` line on **every** mutation.
 
 **Acceptance criteria:**
-- [ ] Every mutation emits one
-- [ ] Emitted after the write is durable
-- [ ] Fields: actor, action, target, timestamp, outcome (per `REQ-F.3`)
+- [x] Every mutation emits one
+- [x] Emitted after the write is durable
+- [x] Fields: actor, action, target, timestamp, outcome (per `REQ-F.3`)
 
-**Source:** capture §8, §13 · **Status:** Not started · **See also:** `REQ-M.5`
+**Source:** capture §8, §13 · **Status:** ✅ **Done**, 2026-09-25. Every mutation (group create/join, expense add, settlement) emits `[AUDIT]` after the durable write; the settlement line now comes from the DO
 
 ---
 
@@ -89,11 +89,11 @@ rule as `REQ-M.7` — the write path must survive the AI Worker being down or sl
 not over HTTP.
 
 **Acceptance criteria:**
-- [ ] The Server Action reaches the DO worker via a service binding
-- [ ] No public hostname, no HTTPS hop
-- [ ] The DO worker sets `workers_dev: false`
+- [x] The Server Action reaches the DO worker via a service binding
+- [x] No public hostname, no HTTPS hop
+- [x] The DO worker sets `workers_dev: false`
 
-**Source:** capture §8, §13 · **Status:** Blocked on `REQ-E.1`
+**Source:** capture §8, §13 · **Status:** ✅ **Done**, 2026-09-25. Service binding `LEDGER` → `splitr-ledger#LedgerService`; `workers_dev: false` (Cloudflare 1042)
 
 ---
 

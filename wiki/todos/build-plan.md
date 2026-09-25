@@ -106,18 +106,18 @@ you hit.
 
 ## Cluster E — Shared state and background work · *the heart of it*
 
-| # | Task | Req |
-|---|---|---|
-| E.1 | `GroupLedger` Durable Object, `idFromName(groupId)`. Validates pre-conditions, writes to D1, returns the new balance. **ADR:** does the DO own the balance or only arbitrate? | `REQ-E.1` |
-| E.2 | **Refuse the second settlement.** Two concurrent settlements of the same debt → one wins, one is told it lost. 🟡 **"Before" captured on 2026-09-24:** [both accepted](../evidence/REQ-E.1-double-settle-without-the-do.md). The "after" is owed | `REQ-E.1`, `REQ-P.3` |
-| E.3 | `idempotencyKey` **header**, cached 24h in DO storage; replay returns the cached result, no second write | `REQ-E.2` |
-| E.4 | DO alarm evicts expired idempotency entries | `REQ-E.2` |
-| E.5 | `[AUDIT]` line on every mutation: actor, action, target, timestamp, outcome | `REQ-E.3`, `REQ-M.5` |
-| E.6 | Call the DO from the Server Action via **service binding**; DO worker `workers_dev: false` | `REQ-E.5` |
-| E.7 | AI Worker doing RAG **line-item categorisation**: retrieve the group's similar items (seed corpus as fallback) → Llama picks from the closed list → zod-validated. Started with `ctx.waitUntil` *after* the write. `workers_dev: false`, shared-secret check, **fallback so failure never blocks the write**. **Then move every model call behind it** (embeddings, OCR) and remove the app Worker's `ai` binding. Run the ~30-item eval, with and without RAG ([ADR-0016](../decisions/0016-ai-integration-strategy.md)) | `REQ-E.4`, `REQ-M.7` |
-| E.8 | `scheduled()` handler: nightly settle-up reminders, and a backfill of items still `uncategorised` (**never** `other`), UPSERT-on-conflict | `REQ-E.6` |
-| E.9 | **Run the cron twice; prove identical result.** Add a manual trigger | `REQ-E.6` |
-| E.10 | Answer the three cluster questions — Q1 in one sentence | `REQ-E.7` |
+| # | Task | Req | Done |
+|---|---|---|---|
+| E.1 | `GroupLedger` Durable Object, `idFromName(groupId)`. Validates pre-conditions, writes to D1, returns the new balance. **ADR:** does the DO own the balance or only arbitrate? | `REQ-E.1` | ✅ 2026-09-25. Arbitrate, D1 the truth, `blockConcurrencyWhile` ([ADR-0023](../decisions/0023-group-ledger-arbitrates-settlements.md)) |
+| E.2 | **Refuse the second settlement.** Two concurrent settlements of the same debt → one wins, one is told it lost. 🟡 **"Before" captured on 2026-09-24:** [both accepted](../evidence/REQ-E.1-double-settle-without-the-do.md). The "after" is owed | `REQ-E.1`, `REQ-P.3` | ✅ 2026-09-25. **The after: 201 + 409 in 5/5 production rounds**, against 201 + 201 before; [evidence](../evidence/REQ-E.1-group-ledger-refuses-the-double-settlement.md) |
+| E.3 | `idempotencyKey` **header**, cached 24h in DO storage; replay returns the cached result, no second write | `REQ-E.2` | ✅ 2026-09-25. Byte-identical replay, no second write, double-click safe |
+| E.4 | DO alarm evicts expired idempotency entries | `REQ-E.2` | ✅ 2026-09-25. Alarm evicts expired entries and re-arms (a workerd test) |
+| E.5 | `[AUDIT]` line on every mutation: actor, action, target, timestamp, outcome | `REQ-E.3`, `REQ-M.5` | ✅ 2026-09-25. After-write `[AUDIT]` on every mutation; the DO emits the settlement lines |
+| E.6 | Call the DO from the Server Action via **service binding**; DO worker `workers_dev: false` | `REQ-E.5` | ✅ 2026-09-25. Service binding; ledger `workers_dev: false` |
+| E.7 | AI Worker doing RAG **line-item categorisation**: retrieve the group's similar items (seed corpus as fallback) → Llama picks from the closed list → zod-validated. Started with `ctx.waitUntil` *after* the write. `workers_dev: false`, shared-secret check, **fallback so failure never blocks the write**. **Then move every model call behind it** (embeddings, OCR) and remove the app Worker's `ai` binding. Run the ~30-item eval, with and without RAG ([ADR-0016](../decisions/0016-ai-integration-strategy.md)) | `REQ-E.4`, `REQ-M.7` | ⬜ |
+| E.8 | `scheduled()` handler: nightly settle-up reminders, and a backfill of items still `uncategorised` (**never** `other`), UPSERT-on-conflict | `REQ-E.6` | ⬜ |
+| E.9 | **Run the cron twice; prove identical result.** Add a manual trigger | `REQ-E.6` | ⬜ |
+| E.10 | Answer the three cluster questions — Q1 in one sentence | `REQ-E.7` | ⬜ |
 
 **Exit:** the contested write is arbitrated and demonstrable.
 **Watch:** E.2 is the whole project. Build the *failure* case first — show the

@@ -7,7 +7,7 @@ you need to take from each one, and what's still to be written or answered.
 
 **It's kept current.** Every session that adds an ADR, evidence file,
 deliverable or open question also updates this page (`CLAUDE.md` §3).
-*Last updated: 2026-09-24, after D.7/D.8 (`REQ-D.4`: semantic search).*
+*Last updated: 2026-09-25, after E.1–E.6 (the Durable Object).*
 
 ---
 
@@ -45,6 +45,7 @@ answer to "why?".
 | [0015](../decisions/0015-one-database-driver-d1-everywhere.md) | Why D1 locally too? | Two drivers would make every local check say nothing about the deployed database |
 | [0016](../decisions/0016-ai-integration-strategy.md) | What does the AI do? | 12 decisions **you** made: RAG categorises items, money needs a human, English only, a closed list of 11 categories, after the write, behind the AI Worker, one vector per item, group first then a seed corpus, a labelled eval |
 | [0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) | The course's Llama is dead | It was deprecated on 2026-05-30 (error 5028). We use the same weights as `-fp8`; the eval picks E.4's model |
+| [0023](../decisions/0023-group-ledger-arbitrates-settlements.md) | **The Durable Object** | **Your answers:** it *arbitrates* (D1 stays the truth); settlements go through it now, voids and leaving when built; the idempotency key is minted when the form renders; the "before" is recorded and the "after" shown live. Mechanism: `blockConcurrencyWhile`, because a DO admits the next request while it awaits D1 |
 | [0022](../decisions/0022-semantic-search-design.md) | How does search work? | **Your answers:** across all your groups; item vectors **plus** one per hand-typed expense; each reads "item, at merchant", never the raw shorthand. Vectorize holds ids only, and D1 re-checks every hit |
 | [0021](../decisions/0021-receipt-reading-approach.md) | How are receipts read? | **Your answers:** two Llamas compared; each line stored raw *and* expanded (a new column, which is `REQ-D.5`); a "Read receipt" button; you confirm the total; test receipts are yours plus SROIE (CC-BY-4.0). You accepted Meta's Llama 3.2 licence. **Model: Llama 4 Scout** (your choice): 5/6 totals against 4/6, valid JSON 12/12 against 9/12, JSON mode, twice as fast, twice the neurons |
 | [0020](../decisions/0020-receipts-via-presigned-r2-urls.md) | How do receipt photos get stored? | The browser PUTs straight to R2 with a 5-minute presigned URL; the Worker only signs, and stores the key. It's checked on attach (group prefix, exists, ≤10 MB, image type) |
@@ -72,6 +73,7 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [D.6 vision spike and receipt reading](../evidence/D.6-vision-spike.md) | Scout chosen on evidence; "Read receipt" works in production; the confirm gate is enforced on the server | "The AI suggests, the human confirms the money, and I proved a UI bug can't skip that" |
 | [REQ-D.5 schema change](../evidence/REQ-D.5-unanticipated-schema-change.md) | `raw_text` added by a second migration, with the first untouched | "A test result forced it: 2/10 on receipt shorthand" |
 | [REQ-D.4 semantic search](../evidence/REQ-D.4-semantic-search.md) | Search by meaning 11/11, keyword 1/11 (3/11 any-word) | "'The thing for the kitchen': keyword says Bangkok Street *Kitchen*, meaning says IKEA" |
+| [**The double settlement, WITH the DO**](../evidence/REQ-E.1-group-ledger-refuses-the-double-settlement.md) | **The "after"**: 201 + 409 in 5/5 production rounds (£200 for five £40 debts, against £280 before); the lock is proved necessary | "Same race, same code path, one change: the arbiter. **The centre of the demo**" |
 | [**The double settlement, without the DO**](../evidence/REQ-E.1-double-settle-without-the-do.md) | **E.2's "before"**: two concurrent settlements of one £40 debt, both accepted | "The ledger is internally consistent and factually wrong. That's why the DO exists." **The centre of the demo** |
 
 ## 4. The spoken questions: where your material is
@@ -101,7 +103,12 @@ from; **the answers must be yours.**
 2. D1 transaction limits, and how you avoided them → writes use `db.batch` (one transaction, all or nothing); embeddings go to Vectorize, not D1, so the predicted D.7 bite never came. ⚠️ Still to check: D1's per-query bound-parameter limit on a large multi-row insert (backlog)
 3. Why doesn't the upload pass through the Worker? → ADR-0020's Context: memory, cost, attack surface. The D.3 evidence shows the 52-byte request
 
-**Cluster E (`REQ-E.7`), F (`REQ-F.6`):** listed in
+**Cluster E (`REQ-E.7`)**
+1. **In one sentence:** *"Splitr's Durable Object prevents the same debt being settled twice when two group members record the same payment at the same moment."*
+2. What happens if the AI or service Worker is slow or down? → the ledger down means the settle form says "we couldn't record that, nothing was saved" (a 503), and nothing is half-written. The AI Worker's answer comes at E.7
+3. Why is it safe to run the scheduled task twice? → ⏳ E.8/E.9
+
+**Cluster F (`REQ-F.6`):** listed in
 [`../requirements/clusters/`](../requirements/clusters/). Their material is built
 in those clusters.
 
@@ -143,6 +150,15 @@ these are here so you don't have to reconstruct them later.
   `Element` clash.
 - **A `var` leaked into local preview** and broke auth there too. Wrangler reads
   `.dev.vars`, not `.env`.
+- **A Durable Object is not automatically a lock.** It admits the next
+  request while it awaits D1, so the check and the write needed
+  `blockConcurrencyWhile`. Without it, a 2-way race failed only ~1 run in 12,
+  and a 30-way race failed 6/6. That's why the test is 30-way.
+- **The loser was told the wrong winner**, because two joined columns were
+  both called `name`, and D1's batch results are keyed by column name.
+- **Every new Route Handler can carry its own copy of Better Auth** (~190 KiB
+  gzipped). The Worker went from 76% to 83% of the free limit; bisected to
+  that cause.
 - **Every Cloudflare binding was silently `any` for two clusters.** A
   declaration file plus `skipLibCheck` hid the missing type names. A
   one-line probe (`const x: number = env.DB`) exposed it. Now they're real

@@ -794,3 +794,34 @@ shape that triggers them. They are listed rather than ticked.
   - Fixed a `LIKE` escape that needed an explicit `ESCAPE` clause.
 - **Why:** `REQ-D.4`; the coding standard (no `any`).
 - **Decision:** [ADR-0022](./decisions/0022-semantic-search-design.md)
+
+## 2026-09-25 — Cluster E core: the GroupLedger Durable Object (REQ-E.1/E.2/E.3/E.5)
+- **Type:** added
+- **Scope:**
+  - `workers/group-ledger/` (new): the Worker `splitr-ledger`, the
+    `GroupLedger` DO, `LedgerService` RPC, and its workerd tests
+  - `src/lib/settlements/{ledger-contract,record-settlement}.ts`,
+    `src/lib/expenses/balance-inputs.ts` (new)
+  - the settle action, page, form and Route Handler
+  - `wrangler.jsonc` (the `LEDGER` service binding),
+    `cloudflare-workers-module.d.ts` (new), `package.json` (`test:ledger`, the
+    vitest plugin)
+  - `wiki/decisions/0023-…` (new), and the evidence files and status docs
+- **What:**
+  - Raffaele's four answers: arbitrate (D1 the truth); settlements through
+    the DO now, voids and leaving when built; the key minted when the form
+    renders; the before recorded, the after live.
+  - The DO runs read → `checkSettlement` → insert in `blockConcurrencyWhile`,
+    with the idempotency lookup inside it. The 24 h cache holds the exact body
+    plus a typed decision (no `JSON.parse`). The alarm evicts and re-arms.
+  - The app reaches it only through a typed service binding, and the ledger
+    has `workers_dev: false`.
+  - Production: one winner in 5/5 rounds (£200, against £280 before), and a
+    byte-identical replay.
+  - workerd tests (6): the 30-way race fails 6/6 without the lock.
+  - Fixed: an exported constant broke workerd; a duplicate `name` column
+    misnamed the winner.
+  - The Worker size jump (to 83%) was bisected to a third Better Auth route
+    chunk, and logged.
+- **Why:** `REQ-E.1`, `E.2`, `E.3`, `E.5`, `REQ-P.3`, `REQ-M.8`.
+- **Decision:** [ADR-0023](./decisions/0023-group-ledger-arbitrates-settlements.md)

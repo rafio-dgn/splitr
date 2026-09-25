@@ -100,7 +100,7 @@ flowchart LR
         APP["<b>splitr</b> Worker<br/>Next.js 16 via OpenNext<br/>routes · Server Actions · Better Auth"]
         TS["Turnstile<br/>public join form"]
         RL["Rate limit<br/>settle-up route"]
-        DO["<b>GroupLedger</b> Durable Object<br/>one per group · arbiter"]
+        DO["<b>GroupLedger</b> Durable Object<br/>splitr-ledger · one per group · arbiter"]
         AIW["<b>AI Worker</b><br/>RAG categoriser · OCR · embeddings<br/>workers_dev: false · shared secret"]
         CRON["Cron trigger<br/>nightly: reminders + backfill"]
         GW["AI Gateway<br/>cache · logs · rate limit · spend cap"]
@@ -120,9 +120,9 @@ flowchart LR
     UI -->|"direct PUT, presigned URL"| R2
     UI -.->|"invite link · F.2"| TS
     APP -->|"autofill, waitUntil refresh"| KV
-    APP -.->|"service binding · E.6"| DO
+    APP -->|"service binding (RPC), settle"| DO
     APP -.-> RL
-    DO -.->|"validated write · E.1"| D1
+    DO -->|"one critical section: read, check, write"| D1
     APP -.->|"service binding, after the write · E.7"| AIW
     AIW -.->|"retrieve similar items · E.7"| VEC
     APP -->|"search by meaning, ids only"| VEC
@@ -132,7 +132,7 @@ flowchart LR
     CRON -.->|"backfill uncategorised · E.8"| AIW
 
     classDef planned stroke-dasharray: 5 5,color:#666
-    class TS,RL,DO,AIW,CRON,GW planned
+    class TS,RL,AIW,CRON,GW planned
 ```
 
 | Component | What it is | Status |
@@ -140,7 +140,7 @@ flowchart LR
 | `splitr` Worker | The whole Next.js app (App Router, Server Components, Server Actions) on the Workers runtime, via `@opennextjs/cloudflare` ([ADR-0014](./wiki/decisions/0014-opennext-as-the-deploy-adapter.md)) | ✅ live at https://splitr.raffaele-digennaro.workers.dev |
 | Better Auth | Email/password auth used as a black box: `getSession()` plus route gating in layouts ([ADR-0009](./wiki/decisions/0009-better-auth-on-local-sqlite-via-drizzle.md)) | ✅ live |
 | D1 `splitr` | The one relational store, reached only through `getDb()` per request ([ADR-0015](./wiki/decisions/0015-one-database-driver-d1-everywhere.md)) | ✅ all 10 tables, from the first migration; groups, expenses and settlements written (D.3) |
-| `GroupLedger` Durable Object | One instance per group (`idFromName(groupId)`). Validates, writes to D1, and refuses the duplicate settlement | ⏳ E.1–E.6. **Open question:** does it *own* the balance or only *arbitrate*? It gets its own ADR |
+| `GroupLedger` Durable Object | In Worker `splitr-ledger` (no public URL), reached by service binding. One per group (`idFromName`). **Arbitrates**: it reads the balances from D1, checks, and writes, all in one `blockConcurrencyWhile` critical section, plus a 24 h idempotency cache and alarm cleanup ([ADR-0023](./wiki/decisions/0023-group-ledger-arbitrates-settlements.md)) | ✅ E.1–E.6: one winner in 5/5 production rounds |
 | AI Worker | A separate Worker with no public URL and a shared-secret check. Line-item categorisation by RAG, and eventually every model call | ⏳ E.7 ([ADR-0016](./wiki/decisions/0016-ai-integration-strategy.md) §6) |
 | KV `splitr-hot` | Each group's last 10 expense descriptions, for autofill. A miss or a KV error falls through to D1 ([ADR-0019](./wiki/decisions/0019-kv-holds-recent-descriptions-not-balances.md)) | ✅ D.4 |
 | R2 `splitr-receipts` | Receipt photos, uploaded **directly by the browser** via a 5-minute presigned PUT, and viewed through a presigned GET; only the key is stored ([ADR-0020](./wiki/decisions/0020-receipts-via-presigned-r2-urls.md)) | ✅ D.5 |
@@ -359,15 +359,14 @@ TypeScript + Cloudflare learning path, across six clusters in order:
 | B | App Router, Server Components, Server Actions, zod | 🟡 5/6. `REQ-B.6` is a spoken answer |
 | C | Workers, Wrangler, first edge LLM call | 🟡 4/5. **Live** at https://splitr.raffaele-digennaro.workers.dev. `REQ-C.5` is a spoken answer |
 | D | D1, KV, R2, Vectorize | 🟡 5/6. D1, KV, R2, Vectorize, the schema change and receipt reading are all ✅. `REQ-D.6` is a spoken answer |
-| E | Durable Objects, Cron, service bindings, RAG | Not started |
+| E | Durable Objects, Cron, service bindings, RAG | 🟡 The contested write is **done**: the DO refuses the double settlement (`REQ-E.1`/`E.2`/`E.3`/`E.5`). Next: the RAG AI Worker, then the cron |
 | F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
 
-**Everything persists in D1**: accounts, groups, memberships, expenses and
-settlements. **One known, deliberate gap:** until the Durable Object arrives
-(E.1), two people settling the same debt *at the same moment* can both
-succeed. It's reproduced and documented in
-[the "before" evidence](./wiki/evidence/REQ-E.1-double-settle-without-the-do.md);
-fixing it is the heart of Cluster E.
+**Everything persists in D1**, and **the contested write is closed.** Two
+people settling the same debt at the same moment used to both succeed
+([before](./wiki/evidence/REQ-E.1-double-settle-without-the-do.md)). Now the
+group's Durable Object accepts exactly one and tells the other who got there
+first ([after](./wiki/evidence/REQ-E.1-group-ledger-refuses-the-double-settlement.md)).
 
 ## Running locally
 
@@ -384,6 +383,8 @@ npm run cf:types         # bindings -> TypeScript; tsc fails without it
 npm run db:migrate:local # apply the migrations in ./drizzle to the local D1
 npx next typegen         # generate route types (RouteContext) before tsc
 npm run dev -- -p 3100
+# settle-up needs the ledger Worker running too, sharing the same local D1:
+npx wrangler dev -c workers/group-ledger/wrangler.jsonc --port 8791 --persist-to .wrangler/state
 ```
 
 `next dev` reaches the local D1 through Wrangler, which `next.config.ts` starts.
@@ -419,7 +420,8 @@ splitr/
 │   ├── app/           App Router routes: (auth), (app), api/, join/
 │   ├── db/            Drizzle schema + getDb(), the only file that knows the driver
 │   └── lib/           auth, session, validation schemas, services
-├── workers/           separate Workers (Cluster E: GroupLedger DO, AI Worker)
+├── workers/
+│   └── group-ledger/  splitr-ledger: the GroupLedger Durable Object (no public URL) + its workerd tests
 ├── wrangler.jsonc     the Worker: bindings (D1), vars, compatibility date
 ├── open-next.config.ts  the OpenNext adapter's build config
 ├── Dockerfile.dev     dev container

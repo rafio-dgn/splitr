@@ -1395,3 +1395,48 @@ does, months later, without the original chat transcript.
   - The index went from 28 to 0; production is back to 0 rows and 0 keys.
 - **Open questions:** Cluster E starts with the E.1 decision (Raffaele's);
   checking D1's bound-parameter limit (backlog).
+
+## 2026-09-25T10:00Z — Cluster E core: the GroupLedger Durable Object
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "yes, let's do it": commit D.5–D.8 (done, `2759b12`..`cab658f`),
+  then the E.1 questions and the build.
+- **Inputs read:**
+  - `REQ-E.1`, `E.2`, `E.3`, `E.5`.
+  - The workers-types entries (`DurableObject`, `WorkerEntrypoint`,
+    `blockConcurrencyWhile`, the Vectorize and DO types).
+  - The `@cloudflare/vitest-plugin` type declarations (`runInDurableObject`,
+    `runDurableObjectAlarm`, `applyD1Migrations`, `readD1Migrations`).
+- **Decisions asked:** four (own or arbitrate, which writes, the key's
+  origin, the demo). All matched the recommendations. Recorded in ADR-0023.
+- **Actions:**
+  - Wrote the contract, the shared balance loader, the ledger Worker (DO plus
+    RPC entrypoint), the typed service binding (and a module shim for the
+    app's program), the `LedgerEnv` drift guard (mutation-checked), and
+    `recordSettlement` through RPC.
+  - The key is minted when the form renders.
+  - workerd tests; local and production races, and idempotency.
+  - A bisect of the size jump in a git worktree.
+  - Cleaned production D1 and the index.
+- **Caught in my own work:**
+  1. `JSON.parse` of the body was an unchecked cast via `any`. The DO now
+     returns a typed decision as well as the body.
+  2. An exported constant broke workerd's startup.
+  3. The loser was told the wrong winner: duplicate `name` columns in a D1
+     batch. I first guessed a timestamp tie and added a `rowid` tie-break,
+     which didn't fix it, and then found the real cause by querying D1
+     directly.
+  4. The 2-way race test couldn't detect the lock's removal; it's now
+     30-way, and proved 6/6.
+  5. The cookies were lost because the scratchpad was cleared overnight, and
+     the first local race got 401s. I re-signed-in before concluding
+     anything.
+  6. The zsh word-splitting in `delete-vectors`.
+- **Verification:**
+  - `tsc` for the app and the ledger, ESLint.
+  - 23 pure tests plus 6 workerd tests.
+  - Production: 5/5 rounds with one winner, correctly named; a byte-identical
+    replay; the ledger public URL gives 1042; `[AUDIT]` lines from the DO in
+    `wrangler tail`.
+  - Production is back to 0 rows; the index is back to 0.
+- **Open questions:** E.7 (the RAG AI Worker) is an AI decision, so it goes
+  to Raffaele first. The size fix (backlog).

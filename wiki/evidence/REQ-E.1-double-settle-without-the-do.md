@@ -7,8 +7,9 @@ course's own framing: *"Build the failure case first: show the double-settle
 bug without the DO, then fix it with one."*
 
 This half was captured early, at D.3, because the naive settlement path is what
-D.3 built (Raffaele's sequencing, 2026-09-24). **The "after" half is still owed
-at E.2.**
+D.3 built (Raffaele's sequencing, 2026-09-24). **The "after" is
+[`REQ-E.1-group-ledger-refuses-the-double-settlement.md`](./REQ-E.1-group-ledger-refuses-the-double-settlement.md)
+(2026-09-25): 201 + 409 in 5/5 production rounds.**
 
 ---
 

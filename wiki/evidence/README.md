@@ -42,8 +42,7 @@ the real pasted output, and the date.
   `[AUDIT]` lines show `persisted: true`; 11 tests pass, plus a mutation check.
 - [`REQ-E.1-double-settle-without-the-do.md`](./REQ-E.1-double-settle-without-the-do.md):
   **E.2's "before"**. Two concurrent settlements of one £40 debt, both
-  accepted, and visible in the audit log. The "after" (with the DO) is owed at
-  E.2.
+  accepted, and visible in the audit log.
 - [`REQ-D.2-kv-recent-descriptions.md`](./REQ-D.2-kv-recent-descriptions.md):
   KV holds each group's recent descriptions. Miss, hit, loss-and-rebuild and
   invalidation are shown, and production KV was written after the response
@@ -64,3 +63,8 @@ the real pasted output, and the date.
 - [`REQ-D.4-semantic-search.md`](./REQ-D.4-semantic-search.md): search by
   meaning 11/11 against keyword 1/11 (3/11 with any-word matching) on 11
   labelled queries; indexing on save in production; 45–90 s to searchable.
+- [`REQ-E.1-group-ledger-refuses-the-double-settlement.md`](./REQ-E.1-group-ledger-refuses-the-double-settlement.md):
+  **the "after"**. The GroupLedger DO gives 201 + 409 in 5/5 production
+  rounds (it was 201 + 201 before). The lock is proved necessary (a 30-way
+  race fails 6/6 without it). The idempotent replay is byte-identical.
+
