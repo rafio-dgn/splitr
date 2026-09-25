@@ -159,7 +159,10 @@ try {
 	// save (waitUntil) and Vectorize is eventually consistent, so poll.
 	const query = "croissant";
 	let found = false;
-	for (let attempt = 0; attempt < 12 && !found; attempt++) {
+	// Up to 5 minutes: usually seconds, but on 2026-09-25 it took over 2
+	// (the vector was indexed; Vectorize hadn't made it queryable yet). A slow
+	// index shouldn't fail the nightly run; one that never answers should.
+	for (let attempt = 0; attempt < 30 && !found; attempt++) {
 		if (attempt > 0) await new Promise((r) => setTimeout(r, 10_000));
 		await open(alice, `${baseUrl}/search?q=${query}`);
 		// Wait until the page has answered (the mode links show on hits and on
