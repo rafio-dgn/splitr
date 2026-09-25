@@ -1642,3 +1642,25 @@ does, months later, without the original chat transcript.
 - **Open questions:** has Raffaele done step 3 (token, secrets, `production`
   environment, branch protection)? It isn't visible to the agent, because §6
   rules out authenticated GitHub calls.
+
+## 2026-09-25T13:00Z — The first deploy run failed safely; a preflight added
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "just merged" (PR #3).
+- **Actions:**
+  - Watched run 36134011199 through the public API: `ci / checks` green, then
+    the deploy failed at "Record the live versions", with every mutating step
+    skipped.
+  - The annotations gave only "exit code 1", and the log needs authentication
+    (§6).
+  - Added a preflight and readable `::error::` annotations; PR on
+    `ci/deploy-preflight`.
+- **Verification:**
+  - The new steps were run locally in bash, with the real login (they print
+    the live ids) and with a bogus token and an empty `HOME` (a readable
+    `[code: 6003]` annotation).
+  - actionlint is clean.
+- **Assumptions:** the most likely cause is missing secrets or a token
+  without Workers Scripts access. **Unconfirmed**: only the log, or the next
+  run's annotation, shows it.
+- **Open questions:** Raffaele: were the secrets set before the merge? What
+  does the failed step's log say?

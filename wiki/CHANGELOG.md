@@ -968,3 +968,15 @@ shape that triggers them. They are listed rather than ticked.
   - `ci.yml` became reusable and dropped its own push-to-`main` trigger.
 - **Why:** ADR-0024 step 4.
 - **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step-4 addendum)
+
+## 2026-09-25 — deploy.yml: a credentials preflight with readable errors
+- **Type:** changed
+- **Scope:** `.github/workflows/deploy.yml`
+- **What:** A "Check the deploy credentials" step (both secrets present, the
+  token accepted by `wrangler whoami`). Wrangler failures in the preflight and
+  in "Record the live versions" now surface as `::error::` annotations carrying
+  wrangler's error codes.
+- **Why:** The first deploy run (36134011199) failed at its first `wrangler`
+  call, with nothing changed, but only "exit code 1" was visible outside the
+  log.
+- **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step-4 first-run note)

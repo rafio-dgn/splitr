@@ -56,12 +56,37 @@ jobs:
       - name: Generate types
         run: npm run cf:types
 
+      # Fail first, and say why, in an annotation. The first run (2026-09-25)
+      # failed here with only "exit code 1" visible outside the log.
+      - name: Check the deploy credentials
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is empty. Add both as repository (or production environment) secrets."
+            exit 1
+          fi
+          # wrangler's error line and its "[code: …]" lines, without colour codes.
+          why() { sed 's/\x1b\[[0-9;]*m//g' | grep -E '✘|\[code: ' | head -3 | tr -s ' \n' ' '; }
+          if ! out=$(npx wrangler whoami 2>&1); then
+            echo "::error::The Cloudflare token was refused: $(echo "$out" | why)"
+            exit 1
+          fi
+          echo "$out" | grep -iE "account|token" || true
+
       # Before anything changes: what's live now, for the rollback commands.
       - name: Record the live versions
         id: before
         run: |
-          app=$(npx wrangler deployments status --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).versions[0].version_id))')
-          ledger=$(npx wrangler deployments status --json -c workers/group-ledger/wrangler.jsonc | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).versions[0].version_id))')
+          why() { sed 's/\x1b\[[0-9;]*m//g' | grep -E '✘|\[code: ' | head -3 | tr -s ' \n' ' '; }
+          live() {
+            local out
+            if ! out=$(npx wrangler deployments status --json "$@" 2>&1); then
+              echo "::error::wrangler deployments status $* failed (does the token have Workers Scripts access?): $(echo "$out" | why)" >&2
+              return 1
+            fi
+            echo "$out" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s.slice(s.indexOf("{"))).versions[0].version_id))'
+          }
+          app=$(live)
+          ledger=$(live -c workers/group-ledger/wrangler.jsonc)
           echo "app=$app" >> "$GITHUB_OUTPUT"
           echo "ledger=$ledger" >> "$GITHUB_OUTPUT"
           echo "Live before this deploy: app \`$app\`, ledger \`$ledger\`"
