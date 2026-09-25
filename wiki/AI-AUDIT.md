@@ -1440,3 +1440,22 @@ does, months later, without the original chat transcript.
   - Production is back to 0 rows; the index is back to 0.
 - **Open questions:** E.7 (the RAG AI Worker) is an AI decision, so it goes
   to Raffaele first. The size fix (backlog).
+
+## 2026-09-25T11:00Z — Commit Cluster E, and a handover audit for a new session
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "Commit first, then tell me: if I move to another
+  session, do we have everything documented to start from the same point?"
+- **Actions:**
+  - Committed and pushed `a0e2910`..`b78ebbd`.
+  - Read `HANDOVER.md` *as a new session would*, rather than asserting it was
+    fine. Found its body stale in six places, and missing the fresh-machine
+    setup, the two-process dev, the resource and secret names, and the
+    real-cloud side-effects of local dev.
+  - Found that the verification scripts had lived in the scratchpad and were
+    deleted overnight.
+  - Rewrote the handover.
+- **Verification:** the counts were checked against the repo (36 commits, 23
+  ADRs, 15 evidence files, 3 Worker secrets). `CLAUDE.md` §2 points new
+  sessions to this file, and memory holds the two standing preferences.
+- **Open question:** whether to commit re-runnable versions of the lost
+  verification scripts (offered to Raffaele).

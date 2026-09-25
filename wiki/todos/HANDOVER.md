@@ -1,130 +1,159 @@
-# Handover — start here in a new session
+# Handover: start here in a new session
 
-Written 2026-09-22 at the close of the first session; updated 2026-09-23
-mid-way through the second, after `REQ-C.1`. Read this, then
-[`build-plan.md`](./build-plan.md) and [`backlog.md`](./backlog.md).
-**Raffaele's own reading list is [`STUDY-GUIDE.md`](./STUDY-GUIDE.md). Keep it current.**
+**Rewritten 2026-09-25**, after the Cluster E core (the GroupLedger Durable
+Object). It replaces the incremental version from 2026-09-22/23, which had
+gone stale in its body. Read this, then [`build-plan.md`](./build-plan.md)
+and [`backlog.md`](./backlog.md). **Raffaele's own reading list is
+[`STUDY-GUIDE.md`](./STUDY-GUIDE.md).** Keep both current (`CLAUDE.md` §3).
 
 ## Where we are
 
 | | |
 |---|---|
-| Repo | [github.com/rafio-dgn/splitr](https://github.com/rafio-dgn/splitr). **Cluster C work is uncommitted**; the last commit is `18b7c24` |
-| Live | **https://splitr.raffaele-digennaro.workers.dev** (Worker `splitr`, D1 `splitr`, WEUR) |
-| Cluster A | ✅ Done |
-| Cluster B | 🟡 5/6: `REQ-B.4` ✅ since D.3; only `REQ-B.6` (spoken) remains |
-| Cluster C | 🟡 4/5: only `REQ-C.5`, the spoken questions, remains |
-| Cluster D | 🟡 `REQ-D.1` ✅ incl. D.3: groups, joining, expenses and settlements persist. **Settlement is naive by design**: the double-settle race is real and documented until E.1. `REQ-D.2` ✅ (KV: recent descriptions, ADR-0019) · `REQ-D.3` ✅ (R2 presigned uploads, ADR-0020). D.6 ✅ **"Read receipt"** with Llama 4 Scout (Raffaele's choice; the total confirmed and enforced on the server) · `REQ-D.5` ✅ (`raw_text`, migration `0001`). `REQ-D.4` ✅ search by meaning (11/11 against 3/11), all groups (ADR-0022). **Cluster D's code is done**; `REQ-D.6` is spoken |
-| Cluster E | 🟡 **The contested write is done** (ADR-0023): the GroupLedger DO in `splitr-ledger` refuses the double settlement, one winner in 5/5 production rounds; idempotency and the alarm work. Next is **E.7, the RAG AI Worker**: an AI decision, so ask Raffaele first |
+| Repo | [github.com/rafio-dgn/splitr](https://github.com/rafio-dgn/splitr), `main`, clean and pushed (last commit `b78ebbd`) |
+| Live app | **https://splitr.raffaele-digennaro.workers.dev** (Worker `splitr`) |
+| Ledger | Worker **`splitr-ledger`**: the `GroupLedger` DO, **no public URL** (Cloudflare 1042), reached only by the service binding `LEDGER` |
+| Production data | **Empty** (0 users). Raffaele's account was dropped by the first migration (his choice), and he hasn't re-registered yet |
+| Cloudflare resources | D1 `splitr` (WEUR) · KV `splitr-hot` · R2 `splitr-receipts` (CORS from `r2-cors.json`) · Vectorize `splitr-search` (768 dimensions, cosine, a `groupId` metadata index) · Workers AI |
+| Worker secrets | `BETTER_AUTH_SECRET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (names only; they're set on `splitr`) |
+| Tests | `npm test`: 23 pure (`node --test`) plus 6 real-DO tests in workerd (`@cloudflare/vitest-plugin`) |
 
-Splitr runs on Workers via OpenNext ([ADR-0014](../decisions/0014-opennext-as-the-deploy-adapter.md)).
-**Accounts persist in D1**, locally and deployed. `better-sqlite3` is gone
-([ADR-0015](../decisions/0015-one-database-driver-d1-everywhere.md)). Groups and
-expenses still don't persist; both write paths honestly report "nothing was
-stored". Group membership is a fixture (`grp_demo`). Real tables are `REQ-D.1`.
-
-```bash
-docker compose up -d          # http://localhost:3000
-npm run dev -- -p 3100        # or natively, any port
-```
-
-## Do these first, in this order
-
-1. **Restart Claude Code** if you have not since 2026-09-22. The six agents in
-   `.claude/agents/` only register on a fresh start (the skills already work).
-   Then `claude --agent tech-lead`, or `@frontend` / `@backend` / `@qa-test`.
-2. ~~`wrangler login`~~ ✅ done.
-3. **Answer `REQ-A.5` and `REQ-B.6`** — six questions, spoken, unaided. Notes in
-   [`cluster-a-questions.md`](./cluster-a-questions.md). These are graded at the
-   demo (`REQ-X.8`) and cannot be delegated.
-
-## Open decisions — Raffaele's, not an agent's
-
-**F-2, and it is the one that could embarrass you live.** `REQ-B.3`'s "0 fetch,
-0 xhr" evidence was captured on `next dev`, which disables `<Link>` prefetch. A
-**production build shows 9 fetch requests** on the same page. They are navigation
-prefetches, not the page fetching its own data — the substance holds, and curl
-still returns every word the page renders. But the criterion is about what the
-Network tab shows.
-
-Choose one: demo on `next dev` and explain why, or re-word the criterion and
-record both logs. Evidence: `wiki/evidence/REQ-B-cluster-verification.md`.
-
-## Cluster B's two loose ends
-
-- **`REQ-B.4` is `In progress`**, deliberately downgraded. Four of thirteen empty
-  states are coded but have **never rendered** — unreachable until `REQ-D.1`
-  gives us real tables. QA's verdict, which I accepted: *"compiled is not has"*.
-  Revisit at `REQ-D.1`.
-- **`REQ-B.6`** — the three spoken questions.
-
-## Known defects, logged not fixed
-
-In `backlog.md` under *Cluster B QA findings*:
-
-- **O-1** — a missing group returns **HTTP 200**, not 404. `notFound()` fires
-  after the streaming shell is flushed, so `curl -f` sees success.
-- **O-2** — the auth gate drops the return path; spec wants
-  `/login?next=<path>`, nothing implements it.
-- **O-3** — the most interesting. `listGroupExpenses` is read twice per render,
-  neither `cache()`d (two D1 queries per view from Cluster D), and because the
-  page's read runs first, **a real feed failure can never reach the
-  `SectionErrorBoundary`** — the page-level boundary always wins. That boundary
-  cannot catch the failure it was added for.
-
-## Two lessons this session paid for
-
-**Verify in the medium the requirement names.** `REQ-B.5` was marked Done on curl
-evidence while browser authentication was completely broken — curl sends no
-`Origin` header, so Better Auth's check never fired. Three agents and two
-verification passes missed it; a fourth, briefed adversarially, found it in
-minutes.
-
-**Brief QA to attack, not to confirm.** The agent that found it was told to *try
-to prove the others wrong* and forbidden from fixing what it found. Both halves
-of that mattered — a QA agent that silently repairs things destroys the signal.
-
-## Standing constraints
-
-- **EdgeLedger is sealed** until `REQ-X.6`. Do not read
-  `../typescript-cloudflare-project/` or `wiki/reference-edgeledger/`.
-  ([ADR-0003](../decisions/0003-edgeledger-is-comparison-not-template.md))
-- **No GitHub changes** — no `gh`, PRs, issues, settings. Commit and push only
-  when Raffaele asks. (`CLAUDE.md` §6)
-- **One capability per step**, clusters in order (`REQ-M.2`).
-- **Docker is dev-only.** Workers are V8 isolates; `wrangler deploy` ships code,
-  not an image. Never present the container as deployment
-  ([ADR-0007](../decisions/0007-docker-for-local-development.md)).
+| Cluster | State |
+|---|---|
+| A | ✅ code. `REQ-A.5` is spoken, Raffaele's |
+| B | ✅ code. `REQ-B.6` is spoken |
+| C | ✅ code. `REQ-C.5` is spoken |
+| D | ✅ code: D1, KV (recent descriptions), R2 (presigned receipts), "Read receipt" (Llama 4 Scout), the `raw_text` migration, semantic search. `REQ-D.6` is spoken |
+| E | 🟡 **The contested write is done** (`REQ-E.1`/`E.2`/`E.3`/`E.5`): one winner in 5/5 production races. **Left:** E.7 (the RAG AI Worker), E.8/E.9 (the cron, run twice), and `REQ-E.7` (spoken) |
+| F | Not started (Turnstile, rate limit, audit JSON, AI Gateway, secret rotation) |
 
 ## Next real work
 
-The rest of Cluster C is written, not coded:
+**E.7, the RAG AI Worker.** This is an **AI decision, so put structured
+questions to Raffaele before coding** (his standing rule, and in memory).
+Already decided: ADR-0016 (RAG categorises line items; group first, then a
+seed corpus; after the write via `waitUntil`; every model call moves behind
+the AI Worker at E, and the app loses its `ai` binding) and ADR-0017 (the eval
+picks 8B-fp8 against 70B, with and without RAG, and records neurons as well).
+Still to ask: the eval set (about 30 labelled items), the seed corpus, the
+shared-secret mechanism, and the timeout and fallback.
 
-- **C.6, `REQ-C.4`:** three modules *from Raffaele's own past projects* that
-  won't run on Workers, each with one paragraph on why and an edge-friendly
-  replacement. It must be **his** projects, so ask him which ones; an agent
-  can't know them.
-- **C.7, `REQ-C.5`:** five spoken questions. The evidence files now hold
-  concrete material for Q2 (`timingSafeEqual` as a Workers-only Web Crypto
-  API), Q4 (the `GREETING` var vs the `HELLO_KEY` secret) and Q5 (served from
-  `MAD`, data in `WEUR`).
+Then E.8/E.9 (the cron: reminders, the `uncategorised` backfill, and
+re-embedding missed expenses), then Cluster F.
 
-## New since 2026-09-23 — read before touching the deploy
+## Running it locally (a fresh clone or a fresh machine)
 
-- **Local setup changed.** A fresh clone needs `npm run cf:types` (or `tsc`
-  fails) and `npm run db:local` (the auth tables). `npm run preview` also needs
-  a `.dev.vars` with a blank `BETTER_AUTH_URL=`, or every sign-in returns 403.
-  See `.env.example`.
-- **Worker is at ~69% of the free plan's 3 MiB gzipped limit** before Cluster D.
-  Watch it on every deploy.
-- **F-1 recurred on the first deploy**, as `403 INVALID_ORIGIN` on a new host,
-  and was caught because the probe sent an `Origin` header. That's lesson one
-  above working as intended. It's captured in
-  [`../evidence/REQ-C.1-deployed.md`](../evidence/REQ-C.1-deployed.md).
-- **A decision for Raffaele:** `wiki/techstack/` contains EdgeLedger-derived
-  specifics, a possible leak in the seal. It's in `backlog.md` under
-  *Raised in Cluster C*.
-- **AI is decided with Raffaele, not by an agent.** ADR-0016 records twelve
-  answers from three rounds of questions, ADR-0017 records the model
-  substitution, and the C.4 spike raised a new question: should OCR expand
-  receipt abbreviations? Ask him; don't settle it in code.
+**Files that aren't in git and must exist:**
+- `.env`: copy `.env.example` and set `BETTER_AUTH_SECRET` (any 32+ random
+  characters locally).
+- `.dev.vars`: `NEXTJS_ENV=development`, a **blank** `BETTER_AUTH_URL=`, and
+  `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` (the R2 token Raffaele created:
+  Object Read & Write, `splitr-receipts` only). Without the blank
+  `BETTER_AUTH_URL`, local preview answers every sign-in with 403.
+- A logged-in Wrangler (`npx wrangler whoami`). The OAuth login is per
+  machine.
+
+**First time:**
+```bash
+npm install
+npm run cf:types           # bindings -> TS (the app and the ledger); tsc fails without it
+npx next typegen           # route types (RouteContext)
+npm run db:migrate:local   # drizzle/0000 + 0001 into the local D1
+```
+
+**Every time (two processes: settle-up needs the ledger):**
+```bash
+npx wrangler dev -c workers/group-ledger/wrangler.jsonc --port 8791 --persist-to .wrangler/state
+npm run dev -- -p 3100
+```
+
+**Local dev writes to REAL cloud resources in three places:** R2 and
+Vectorize are `remote: true` (they have no useful local simulation), and
+Workers AI is always remote. Test data therefore lands in the production
+bucket and index. **Clean it up after testing** (see "How things were
+verified").
+
+**Deploying:** `npx wrangler deploy -c workers/group-ledger/wrangler.jsonc`
+**first**, then `npm run deploy`. **Wait about 20 s after a deploy before
+verifying it**: an immediate test can hit the previous version (it happened
+once, ADR-0022's evidence).
+
+## Decisions Raffaele owes (and nobody else can make)
+
+- **Spoken answers:** `REQ-A.5`, `B.6`, `C.5`, `D.6`, and later `E.7` and
+  `F.6`. The study guide lists where his material is.
+- **Re-register on the live site.**
+- **3–5 English receipts** in `.data/receipts/mine/`, to confirm the Scout
+  choice on real paper.
+- **F-2:** the `REQ-B.3` "0 fetch" evidence was taken on `next dev`, and a
+  production build shows prefetches. Demo on `next dev`, or re-record on the
+  deployed URL.
+- **The EdgeLedger seal leak:** `wiki/techstack/` and `wiki/context/glossary.md`
+  contain EdgeLedger-derived details. Move them or accept them.
+- **The Worker size (83% of 3 MiB):** a third copy of Better Auth, bundled for
+  the settlements Route Handler. The fix options are in the backlog; decide
+  before Cluster F.
+- **Tell the course owners** that `REQ-C.3`'s model is dead (error 5028)?
+
+## How things were verified, and what to re-create
+
+Every result is in [`../evidence/`](../evidence/), with the exact commands
+and the pasted output. **One gap to know about:** the ad-hoc verification
+scripts (the two-browser Puppeteer E2E, the concurrent-settlement race, the
+search eval runner, the R2 attack script) lived in the session scratchpad
+**and were deleted overnight**. The *results* are in the evidence files, but
+the scripts aren't in the repo. What *is* in the repo and re-runnable:
+
+- `npm test`: the money invariants, plus the DO invariants against a real DO
+  (the 30-way race, replay, the alarm).
+- `scripts/vision-spike/`: the vision-model eval (a dev-only Worker plus
+  `run.mjs`).
+
+The patterns, for re-creating the others:
+
+- **Two users without a browser:**
+  `curl -c jar -X POST $URL/api/auth/sign-up/email -H 'Origin: $URL' -d '{…}'`
+  (**always send `Origin`**; that's lesson one below).
+- **The race:** two backgrounded curls to `POST /api/groups/:id/settlements`
+  with each user's cookie jar, then `wait`.
+- **Browser E2E:** Puppeteer was available in the npx cache left by
+  `@mermaid-js/mermaid-cli`. Use two `browser.createBrowserContext()`, one per
+  person.
+- **Cleanup:**
+  - production D1 rows by group id and `email LIKE '%@example.test'`;
+  - KV `recent-descriptions:v1:<groupId>`;
+  - R2 by listing `receipts/<groupId>/` over the S3 API (D1 doesn't know about
+    orphaned photos);
+  - Vectorize by `wrangler vectorize list-vectors`, then `delete-vectors`
+    (pass the ids as **separate** arguments; zsh doesn't word-split).
+
+## Lessons this project paid for (keep them)
+
+1. **Verify in the medium the requirement names.** curl without `Origin` hid
+   broken browser auth (F-1), which came back on the first deploy and was
+   caught *because* the probe sent `Origin`.
+2. **Brief QA to attack, not to confirm.**
+3. **Test the control, not just the feature.** The "confirm the amount" gate
+   had silently landed on the wrong element, and so had the brief's table: an
+   edit replaced the first of two identical strings. Scripted edits now assert
+   the text is unique. Money rules are also enforced on the server.
+4. **A mutation check tells you whether a test guards anything.** The 2-way
+   race test passed *without* the DO's lock; only 30-way fails 6/6 without it.
+5. **Docs are claims too.** They were wrong about JSON mode, about the pinned
+   Content-Type, and about the deprecated model. Real calls were the only
+   reliable source.
+6. **`skipLibCheck` can hide `any`.** Every binding was untyped for two
+   clusters, found by the one-line probe `const x: number = env.DB`.
+
+## Standing constraints
+
+- **EdgeLedger is sealed** until `REQ-X.6`
+  ([ADR-0003](../decisions/0003-edgeledger-is-comparison-not-template.md)).
+- **No GitHub changes.** Commit and push only when Raffaele asks (`CLAUDE.md` §6).
+- **AI decisions are Raffaele's**, via structured questions first.
+- **One capability per step**, clusters in order (`REQ-M.2`).
+- **Secrets only via `wrangler secret put`.** Never in a file, a log, or this chat.
+- **Docker is dev-only**
+  ([ADR-0007](../decisions/0007-docker-for-local-development.md)). Note that
+  the container runs only `next dev`, not the ledger, so settle-up there needs
+  the ledger started separately.

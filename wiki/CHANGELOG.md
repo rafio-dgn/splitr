@@ -825,3 +825,18 @@ shape that triggers them. They are listed rather than ticked.
     chunk, and logged.
 - **Why:** `REQ-E.1`, `E.2`, `E.3`, `E.5`, `REQ-P.3`, `REQ-M.8`.
 - **Decision:** [ADR-0023](./decisions/0023-group-ledger-arbitrates-settlements.md)
+
+## 2026-09-25 — Handover rewritten for a new session
+- **Type:** docs
+- **Scope:** `wiki/todos/HANDOVER.md`
+- **What:** Rewrote it from the real current state. The body still claimed
+  uncommitted Cluster C work, non-persisting expenses, a membership fixture,
+  REQ-B.4 open, "next is C.6", ~69% size and a removed `db:local` script.
+  Added the Cloudflare resources and secret names, the files a fresh machine
+  must recreate, the two-process local dev, that local dev writes to real
+  R2/Vectorize/AI, deploy order and the wait after a deploy, Raffaele's owed
+  decisions, and the lost verification scripts, with the patterns to recreate
+  them and the cleanup recipe.
+- **Why:** Raffaele asked whether everything is documented to resume in
+  another session. It wasn't, until this.
+- **Decision:** none
