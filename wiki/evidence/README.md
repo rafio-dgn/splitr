@@ -52,7 +52,15 @@ the real pasted output, and the date.
   photos go straight from the browser to R2 (from the browser's own request
   log). A Content-Type pin that **didn't hold** until `allHeaders: true` was
   added, and five attach-time attacks, all refused.
-- [`D.6-vision-spike.md`](./D.6-vision-spike.md) (**interim**): Llama 4 Scout
+- [`D.6-vision-spike.md`](./D.6-vision-spike.md): Llama 4 Scout
   against Llama 3.2 Vision on six SROIE receipts, with two prompts. Scout gets
   5/6 totals and valid JSON 12/12; Llama 3.2 drops to Markdown on a longer
   prompt. Raffaele's receipts are still to come.
+  **Built:** "Read receipt" works in production, and the confirm gate is
+  enforced on the server after the browser test caught it not gating.
+- [`REQ-D.5-unanticipated-schema-change.md`](./REQ-D.5-unanticipated-schema-change.md):
+  `line_item.raw_text`, forced by the C.4 shorthand finding and ADR-0021. A
+  second migration, the first one untouched.
+- [`REQ-D.4-semantic-search.md`](./REQ-D.4-semantic-search.md): search by
+  meaning 11/11 against keyword 1/11 (3/11 with any-word matching) on 11
+  labelled queries; indexing on save in production; 45–90 s to searchable.

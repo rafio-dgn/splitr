@@ -77,8 +77,9 @@ like this:
 5. **Settle up.** A Durable Object for the group accepts exactly one
    settlement of a debt and **refuses the duplicate**: the contested write
    above.
-6. **Search past spending by meaning.** *"That Thai place"* finds
-   `KNG PRWN PHAD`, which no keyword search would.
+6. **Search past spending by meaning, across all your groups.** *"Getting to
+   the flight"* finds *Taxi to the airport*, and *"painkillers"* finds the
+   *Boots* receipt. That's 11/11 on labelled queries, against 3/11 by keyword.
 
 ## Architecture
 
@@ -109,10 +110,10 @@ flowchart LR
         D1[("D1 · splitr<br/>users, groups, expenses,<br/>items, settlements")]
         KV[("KV<br/>recent descriptions")]
         R2[("R2<br/>receipt photos")]
-        VEC[("Vectorize<br/>one vector per line item")]
+        VEC[("Vectorize<br/>per item + per itemless expense")]
     end
 
-    WAI["Workers AI<br/>Llama 3.1 8B fp8 · bge-base-en-v1.5 · vision model"]
+    WAI["Workers AI<br/>Llama 4 Scout (receipts) · Llama 3.1 8B fp8 · bge-base-en-v1.5"]
 
     UI -->|"HTTPS"| APP
     APP -->|"getDb() per request"| D1
@@ -123,13 +124,15 @@ flowchart LR
     APP -.-> RL
     DO -.->|"validated write · E.1"| D1
     APP -.->|"service binding, after the write · E.7"| AIW
-    AIW -.->|"retrieve similar items"| VEC
+    AIW -.->|"retrieve similar items · E.7"| VEC
+    APP -->|"search by meaning, ids only"| VEC
     AIW -.->|"every model call · F.5"| GW
     GW -.-> WAI
+    APP -->|"Read receipt: Llama 4 Scout (moves behind the AI Worker at E)"| WAI
     CRON -.->|"backfill uncategorised · E.8"| AIW
 
     classDef planned stroke-dasharray: 5 5,color:#666
-    class TS,RL,DO,AIW,CRON,GW,VEC,WAI planned
+    class TS,RL,DO,AIW,CRON,GW planned
 ```
 
 | Component | What it is | Status |
@@ -141,7 +144,8 @@ flowchart LR
 | AI Worker | A separate Worker with no public URL and a shared-secret check. Line-item categorisation by RAG, and eventually every model call | ⏳ E.7 ([ADR-0016](./wiki/decisions/0016-ai-integration-strategy.md) §6) |
 | KV `splitr-hot` | Each group's last 10 expense descriptions, for autofill. A miss or a KV error falls through to D1 ([ADR-0019](./wiki/decisions/0019-kv-holds-recent-descriptions-not-balances.md)) | ✅ D.4 |
 | R2 `splitr-receipts` | Receipt photos, uploaded **directly by the browser** via a 5-minute presigned PUT, and viewed through a presigned GET; only the key is stored ([ADR-0020](./wiki/decisions/0020-receipts-via-presigned-r2-urls.md)) | ✅ D.5 |
-| Vectorize | One `bge-base-en-v1.5` vector per line item, filtered by group | ⏳ D.7 |
+| Workers AI | **Receipt reading** with Llama 4 Scout in JSON mode: a draft whose total the user must confirm (enforced on the server) ([ADR-0021](./wiki/decisions/0021-receipt-reading-approach.md)) | ✅ D.6 (called from the app until E moves it behind the AI Worker) |
+| Vectorize `splitr-search` | One `bge-base-en-v1.5` vector per line item ("item, at merchant") and one per itemless expense; ids only; searched across all your groups, and every hit re-checked in D1 ([ADR-0022](./wiki/decisions/0022-semantic-search-design.md)) | ✅ D.7/D.8: 11/11 by meaning against 3/11 by keyword |
 | Cron | Nightly settle-up reminders, plus a backfill of `uncategorised` items | ⏳ E.8. Which Worker hosts `scheduled()` is decided there |
 | Turnstile, rate limit, AI Gateway | Bot check on the public form; the 6th rapid settle-up gets 429; one gateway in front of every model call | ⏳ Cluster F |
 
@@ -354,7 +358,7 @@ TypeScript + Cloudflare learning path, across six clusters in order:
 | A | TypeScript & React fundamentals | ✅ Done |
 | B | App Router, Server Components, Server Actions, zod | 🟡 5/6. `REQ-B.6` is a spoken answer |
 | C | Workers, Wrangler, first edge LLM call | 🟡 4/5. **Live** at https://splitr.raffaele-digennaro.workers.dev. `REQ-C.5` is a spoken answer |
-| D | D1, KV, R2, Vectorize | 🟡 3/6. D1 ✅, KV ✅ (recent descriptions), R2 ✅ (presigned receipt uploads) |
+| D | D1, KV, R2, Vectorize | 🟡 5/6. D1, KV, R2, Vectorize, the schema change and receipt reading are all ✅. `REQ-D.6` is a spoken answer |
 | E | Durable Objects, Cron, service bindings, RAG | Not started |
 | F | Turnstile, rate limiting, AI Gateway, secret rotation | Not started |
 

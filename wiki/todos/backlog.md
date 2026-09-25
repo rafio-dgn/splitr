@@ -336,4 +336,32 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `D.6` **Receipt-size check:** SROIE's 4961×7016 scan was read fine by
       both models (16.6 s on Llama 3.2). Re-check with real phone photos
       before deciding whether resizing (the Images binding) is needed.
+- [ ] `D.6` **Receipt items are imperfect by design, and that's accepted.** On
+      the restaurant scan, Scout found 3 of 4 items and merged unpriced add-ons
+      into one description. Items don't affect the split, and the total is
+      confirmed by a human. Revisit the prompt only if the eval (E.7) shows
+      that categorisation suffers.
+- [ ] `D.6` **The orphaned-photo case is real** (production test, 2026-09-24):
+      a photo that's read but never attached leaves an object that no D1 row
+      references. It was found by listing the R2 prefix through the S3 API.
+      Candidates: the E.8 sweep, or an R2 lifecycle rule.
+- [ ] `lesson` **Replace only unique text.** Twice today an edit hit the first
+      of two identical strings. Scripted edits now assert that the text
+      appears exactly once.
+- [x] ~~`decision` Search scope: current group or all groups?~~ **All the
+      viewer's groups** (Raffaele, ADR-0022).
+- [ ] `REQ-D.6` **Check D1's bound-parameter limit per query.** `expense_share`
+      is inserted as one multi-row statement at 3 parameters per participant,
+      so a very large group could exceed D1's per-query limit. Measure it
+      before claiming "we avoided D1's limits" at the demo.
+- [ ] `D.7` **Voiding (when it's built) must delete the expense's vectors**:
+      the item ids, or the expense id if it has no items.
+- [ ] `D.7` **Backfill for unindexed expenses.** Indexing is best-effort after
+      the save; the first production test showed an expense can be missed
+      (most likely the deploy race). E.8's nightly job should re-embed
+      expenses with no vector.
+- [ ] `ops` **After `deploy`, wait for it to settle before verifying.** An
+      immediate test can hit the previous version.
+- [x] ~~`types` All binding types were silently `any`.~~ Fixed at D.7 with
+      `cloudflare-globals.d.ts` (ADR-0015 status note).
 

@@ -1,6 +1,6 @@
 # D.6: the vision-model spike (in progress)
 
-**Date:** 2026-09-24 · **Decision:** [ADR-0021](../decisions/0021-receipt-reading-approach.md) · **Status:** 🟡 **interim**. SROIE's six are done; Raffaele's 3–5 English receipts are still to come
+**Date:** 2026-09-24 · **Decision:** [ADR-0021](../decisions/0021-receipt-reading-approach.md) · **Status:** ✅ spike done on SROIE, **model chosen: Llama 4 Scout** (Raffaele), **built into the app**. Raffaele's own receipts are still owed as confirmation
 **Harness:** `scripts/vision-spike/` (a dev-only Worker plus `run.mjs`; re-run with `npx wrangler dev --port 8796` and `node run.mjs`)
 
 ---
@@ -70,3 +70,49 @@ and Scout sometimes gave the whole line with its prices.
    and items labelled together.
 2. Re-run v1 and v2 on all receipts, plus **Scout with JSON mode**.
 3. Raffaele chooses the model; it's recorded in ADR-0021 (or a successor).
+
+---
+
+## In the app: "Read receipt" (2026-09-24, deployed version `7d800ed8`)
+
+Scout with **JSON mode**, prompt v1, a 30-second timeout, and the answer
+narrowed by `toReceiptDraft()` (7 unit tests). A real browser, locally and on
+**production**:
+
+```
+✔ unreadable photo → "We couldn't read the total on that photo. Enter the expense yourself…" (1816 ms)
+  form untouched? description = "typed by hand", amount = ""
+✔ read in 2800 ms → description "99 Speed Mart", amount "37.45", 2 items
+  printed as: "0857 INDO CAFE COFFEE MIX 3IN" · "407 CADBURY CHOCOLATE HAZEL"
+✔ save blocked until the total is confirmed? true
+✔ after ticking "I've checked the amount": save enabled? true
+✔ saved
+```
+
+What production D1 stored: the expense at **3745** (the rounded total, correct),
+and two `line_item` rows, each with `description`, **`raw_text`** (the printed
+original) and `amount_cents`. Locally, the 4961×7016 restaurant scan read
+correctly in 7.2 s: total 38.35, merchant "Lemon Tree Restaurant", and 3 of 4
+items (it missed *Green Apple Juice*, and merged the unpriced add-ons into one
+description).
+
+### Two bugs found by the browser test, not by `tsc` or the unit tests
+
+1. **The confirm gate didn't gate.** The "can't save until the amount is
+   confirmed" rule landed on the *file input*, not the submit button: the
+   same string appeared twice, and my edit changed the first one. The
+   browser test showed the button enabled before ticking. **Fix:** the right
+   element, *and* the rule is now **enforced on the server**, in
+   `addExpenseSchema`. Line items without `amountConfirmed` get a 400 (a
+   curl that bypasses the UI was refused), with 2 new unit tests. A UI bug
+   can no longer remove the money-needs-a-human rule.
+2. **That server rule broke the page at runtime.** Zod 4 refuses `.pick()`
+   on a refined schema, and the form picks a subset. `tsc` passed, and the
+   page rendered an error. **Fix:** a plain `addExpenseFields` object for
+   `.pick()`, with `addExpenseSchema` as its refinement.
+
+Production test data was deleted, including an **orphaned photo** (uploaded and
+read, never attached), which was found by listing the group's R2 prefix
+through the S3 API, since D1 had no record of it. So the orphan case in the
+backlog is real.
+

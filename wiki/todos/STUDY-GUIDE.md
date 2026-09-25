@@ -7,7 +7,7 @@ you need to take from each one, and what's still to be written or answered.
 
 **It's kept current.** Every session that adds an ADR, evidence file,
 deliverable or open question also updates this page (`CLAUDE.md` §3).
-*Last updated: 2026-09-24, after D.5 (`REQ-D.3`: R2 presigned uploads).*
+*Last updated: 2026-09-24, after D.7/D.8 (`REQ-D.4`: semantic search).*
 
 ---
 
@@ -45,6 +45,7 @@ answer to "why?".
 | [0015](../decisions/0015-one-database-driver-d1-everywhere.md) | Why D1 locally too? | Two drivers would make every local check say nothing about the deployed database |
 | [0016](../decisions/0016-ai-integration-strategy.md) | What does the AI do? | 12 decisions **you** made: RAG categorises items, money needs a human, English only, a closed list of 11 categories, after the write, behind the AI Worker, one vector per item, group first then a seed corpus, a labelled eval |
 | [0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) | The course's Llama is dead | It was deprecated on 2026-05-30 (error 5028). We use the same weights as `-fp8`; the eval picks E.4's model |
+| [0022](../decisions/0022-semantic-search-design.md) | How does search work? | **Your answers:** across all your groups; item vectors **plus** one per hand-typed expense; each reads "item, at merchant", never the raw shorthand. Vectorize holds ids only, and D1 re-checks every hit |
 | [0021](../decisions/0021-receipt-reading-approach.md) | How are receipts read? | **Your answers:** two Llamas compared; each line stored raw *and* expanded (a new column, which is `REQ-D.5`); a "Read receipt" button; you confirm the total; test receipts are yours plus SROIE (CC-BY-4.0). You accepted Meta's Llama 3.2 licence. **Model: Llama 4 Scout** (your choice): 5/6 totals against 4/6, valid JSON 12/12 against 9/12, JSON mode, twice as fast, twice the neurons |
 | [0020](../decisions/0020-receipts-via-presigned-r2-urls.md) | How do receipt photos get stored? | The browser PUTs straight to R2 with a 5-minute presigned URL; the Worker only signs, and stores the key. It's checked on attach (group prefix, exists, ≤10 MB, image type) |
 | [0019](../decisions/0019-kv-holds-recent-descriptions-not-balances.md) | What goes in KV? | Recent descriptions for autofill, **not** the balance: KV can be a minute stale, and a stale balance is a wrong balance. **Your choice**, which changed the original plan |
@@ -68,6 +69,9 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [D.3 writes through D1](../evidence/REQ-D.1-writes-through-d1.md) | The whole flow in two real browsers, on production; `REQ-B.4`'s empty states render; 11 tests plus a mutation check | "The fixture was built to be swapped, and no page changed its contract" |
 | [REQ-D.2 KV recent descriptions](../evidence/REQ-D.2-kv-recent-descriptions.md) | The one KV value: rebuildable, not primary, harmless if stale | "I deleted the key by hand and the page didn't notice" |
 | [REQ-D.3 presigned uploads](../evidence/REQ-D.3-presigned-receipt-uploads.md) | Photos never touch the Worker; the attach check refuses bad objects | "The only request to our server during an upload was 52 bytes" |
+| [D.6 vision spike and receipt reading](../evidence/D.6-vision-spike.md) | Scout chosen on evidence; "Read receipt" works in production; the confirm gate is enforced on the server | "The AI suggests, the human confirms the money, and I proved a UI bug can't skip that" |
+| [REQ-D.5 schema change](../evidence/REQ-D.5-unanticipated-schema-change.md) | `raw_text` added by a second migration, with the first untouched | "A test result forced it: 2/10 on receipt shorthand" |
+| [REQ-D.4 semantic search](../evidence/REQ-D.4-semantic-search.md) | Search by meaning 11/11, keyword 1/11 (3/11 any-word) | "'The thing for the kitchen': keyword says Bangkok Street *Kitchen*, meaning says IKEA" |
 | [**The double settlement, without the DO**](../evidence/REQ-E.1-double-settle-without-the-do.md) | **E.2's "before"**: two concurrent settlements of one £40 debt, both accepted | "The ledger is internally consistent and factually wrong. That's why the DO exists." **The centre of the demo** |
 
 ## 4. The spoken questions: where your material is
@@ -93,8 +97,8 @@ from; **the answers must be yours.**
 5. Where "cold start ≈ 0" breaks down → the Worker served from `MAD` while D1 is in `WEUR`. The isolate is everywhere; the data isn't
 
 **Cluster D (`REQ-D.6`)**
-1. Why does each piece of data live where it does? → money in D1 (it must be correct); recent descriptions in KV (only fast, fine a minute stale, ADR-0019); photos in R2 (big, and never through the Worker, ADR-0020)
-2. D1 transaction limits, and how you avoided them → ⏳ D.7 (embedding writes)
+1. Why does each piece of data live where it does? → money in D1 (it must be correct); recent descriptions in KV (only fast, fine a minute stale, ADR-0019); photos in R2 (big, and never through the Worker, ADR-0020); meaning in Vectorize (nearest-neighbour search, ids only, with D1 the truth, ADR-0022)
+2. D1 transaction limits, and how you avoided them → writes use `db.batch` (one transaction, all or nothing); embeddings go to Vectorize, not D1, so the predicted D.7 bite never came. ⚠️ Still to check: D1's per-query bound-parameter limit on a large multi-row insert (backlog)
 3. Why doesn't the upload pass through the Worker? → ADR-0020's Context: memory, cost, attack surface. The D.3 evidence shows the 52-byte request
 
 **Cluster E (`REQ-E.7`), F (`REQ-F.6`):** listed in
@@ -139,6 +143,20 @@ these are here so you don't have to reconstruct them later.
   `Element` clash.
 - **A `var` leaked into local preview** and broke auth there too. Wrangler reads
   `.dev.vars`, not `.env`.
+- **Every Cloudflare binding was silently `any` for two clusters.** A
+  declaration file plus `skipLibCheck` hid the missing type names. A
+  one-line probe (`const x: number = env.DB`) exposed it. Now they're real
+  types, and all the existing code happened to be correct.
+- **A just-saved expense takes 45–90 s to become searchable**, because
+  Vectorize writes are asynchronous.
+- **Verifying straight after a deploy can hit the old version.** The first
+  production search test missed for exactly that (most likely) reason.
+- **"Money needs a human" was silently broken once.** The "confirm the
+  amount" gate landed on the wrong element. The browser test caught it, and
+  the rule is now enforced on the server as well, not only by a button.
+- **Twice today, an edit changed the first match of a string that appeared
+  twice** (the gate, and earlier the brief's table). The lesson: check that
+  the text you're replacing is unique before you replace it.
 - **A better prompt made the smaller model worse.** Llama 3.2 went from 12/12 to
   9/12 valid JSON when the prompt got longer; it wrote a Markdown report
   instead. And a "tax summary" line fooled *both* models, even when told

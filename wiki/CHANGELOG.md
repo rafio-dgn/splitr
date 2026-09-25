@@ -736,3 +736,61 @@ shape that triggers them. They are listed rather than ticked.
   corrected GLM pricing claim.
 - **Why:** ADR-0016 §10.
 - **Decision:** [ADR-0021](./decisions/0021-receipt-reading-approach.md)
+
+## 2026-09-24 — D.6 "Read receipt" with Llama 4 Scout; REQ-D.5 schema change
+- **Type:** added
+- **Scope:**
+  - `src/db/schema.ts` and `drizzle/0001_line_item_raw_text.sql` (new)
+  - `src/lib/receipts/{draft,read-receipt}.ts` (new) and `draft.test.ts` (new)
+  - `src/lib/schemas/expense.ts`, `add-expense.ts`, `expense-feed.ts`,
+    `categories.ts`, `money.test.ts`
+  - the add-expense action and form, the expense detail page
+  - `wrangler.jsonc` (the `ai` binding), `README.md`, the evidence files and
+    status docs
+- **What:**
+  - **`REQ-D.5`:** added `line_item.raw_text` in a second generated migration,
+    applied locally and remotely, with the first migration untouched.
+  - **Reading:** a members-only "Read receipt" action checks the photo, reads
+    it through the binding, and calls Scout in JSON mode with a 30-second
+    timeout. It narrows the answer into a draft; no total means no draft.
+  - **The draft screen:** it fills the description and amount and shows
+    editable items with their printed original. Saving is blocked until "I've
+    checked the amount" is ticked.
+  - **The server enforces the confirmation** (`amountConfirmed`, required when
+    line items are sent). Line items are saved in the same batch, and the
+    expense page lists them.
+  - Two bugs were caught by the browser test and fixed: the gate had landed on
+    the wrong element, and `.pick()` fails on a refined schema. There are 9
+    new unit tests (20 total).
+  - Verified locally and on production (then cleaned, including an orphaned
+    photo found by listing R2).
+- **Why:** build plan D.6/D.9, `REQ-D.5`, ADR-0021.
+- **Decision:** [ADR-0021](./decisions/0021-receipt-reading-approach.md)
+
+## 2026-09-24 — REQ-D.4: semantic search across all groups; binding types made real
+- **Type:** added / fixed
+- **Scope:**
+  - `src/lib/search/{vector-text,index-expense,search}.ts` (new) and
+    `vector-text.test.ts` (new)
+  - `add-expense.ts`, `src/app/(app)/search/page.tsx`
+  - `wrangler.jsonc` (the `VECTORIZE` binding, remote), `cloudflare-globals.d.ts`
+    (new), `package.json` (`@cloudflare/workers-types`)
+  - `wiki/decisions/0022-…` (new), ADR-0015's status note, the evidence file
+    and status docs
+- **What:**
+  - Created `splitr-search` (768 dimensions, cosine) and a `groupId`
+    metadata index, confirmed before any insert.
+  - Each saved expense is embedded after the save in `waitUntil`: an item
+    vector ("item, at merchant"), or one for an itemless expense. Metadata is
+    ids only.
+  - `/search` embeds the query, filters by the viewer's current groups with
+    `$in` (capped at 50 for the 2 KB filter limit), and re-checks every hit
+    in D1. `mode=keyword` gives the comparison.
+  - Labelled queries: meaning 11/11, keyword 1/11 (3/11 any-word). Verified in
+    production; the index is back to 0.
+  - **Fixed:** every Cloudflare binding type had been silently `any` since
+    ADR-0015. They're now real types via global aliases of the importable
+    workers-types.
+  - Fixed a `LIKE` escape that needed an explicit `ESCAPE` clause.
+- **Why:** `REQ-D.4`; the coding standard (no `any`).
+- **Decision:** [ADR-0022](./decisions/0022-semantic-search-design.md)

@@ -1307,3 +1307,91 @@ does, months later, without the original chat transcript.
     tokens).
 - **Open questions:** Raffaele's receipts; his check of the 14 item labels;
   the model choice.
+
+## 2026-09-24T22:00Z — D.6 build: Read receipt, and REQ-D.5
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:**
+  - "Before proceeding, tell me the cost": I gave the Workers AI pricing and
+    the neurons used so far.
+  - "Pros and cons for all models, and your choice": all six compared; I
+    recommended Scout.
+  - "Keep it; what's next?", then "yes": commit and build.
+- **Actions:**
+  - Recorded the Scout choice, and committed and pushed `fb96e8a..7ee7c99`.
+  - Added the column and migration `0001`, applied locally and remotely.
+  - Added the `ai` binding, the draft parser (with tests), the reader (JSON
+    mode, timeout), the action, the draft UI and the confirm gate; line items
+    are saved in the batch, and the expense page lists them.
+  - Browser tests locally and on production, a curl bypass test, and cleanup.
+- **Caught in my own work:**
+  1. The confirm gate landed on the *file input*, because my edit replaced the
+     first of two identical strings. The browser test showed save enabled
+     before confirming. I fixed it, and moved enforcement to the server as
+     well.
+  2. The server refinement broke the page at runtime (Zod 4's `.pick()` on a
+     refined schema), and `tsc` couldn't see it. Fixed by splitting
+     `addExpenseFields` from `addExpenseSchema`.
+  3. A browser-test selector (`::-p-text`) clicked the wrong element, and
+     looked like a server hang for 150 s. I isolated it before blaming the
+     app.
+  4. I'd said the printed text shows under each item, but it was
+     screen-reader only. Made visible.
+  5. I'd earlier called GLM-5.3-flash "expensive". Its published price is
+     lower than Scout's, and I corrected that before the choice.
+- **Alternatives considered:**
+  - Prompt v2 was rejected for production (no gain for Scout).
+  - An auto-read on upload was rejected (Raffaele chose the button).
+  - A UI-only gate was rejected after bug 1, because it wasn't enough on its
+    own.
+- **Verification:**
+  - 20/20 tests.
+  - Production: read in 2.8 s with total 37.45, 2 items stored with
+    `raw_text`; the gate is enforced; the failure path leaves the form
+    untouched.
+  - A curl without confirmation got 400, and with it 201.
+  - Production is back to 0 rows and 0 R2 objects for the test group.
+- **Open questions:** Raffaele's own receipts (confirming the choice); D.7 is
+  next.
+
+## 2026-09-24T23:30Z — D.7/D.8 / REQ-D.4: semantic search, and the binding types that were `any`
+- **Agent:** Claude Opus 5.5 (1M context), tech lead in the main session
+- **Prompt intent:** "all groups" (search scope). Then two more questions I
+  asked: itemless expenses get a vector; the vector text is item + merchant.
+- **Inputs read:**
+  - The Vectorize docs: metadata filtering (`$in`, the 2,048-byte limit,
+    indexes before insert), limits, pricing.
+  - `screens-cluster-b.md` §5.13.
+  - The importable `@cloudflare/workers-types` entry and Vectorize v2 typings.
+- **Actions:**
+  - Wrote ADR-0022.
+  - Created the index, then the metadata index. I waited for confirmation
+    before any insert, because vectors inserted earlier can't be filtered.
+  - Bound the index (remote), and wrote the pure `vectorSpecs` (tested),
+    index-on-save and search (meaning and keyword).
+  - Built `/search` with §5.13's empty states.
+  - Seeded 16 expenses through the Route Handler, ran 11 labelled queries both
+    ways, then a fairer any-word keyword baseline.
+  - Deployed; diagnosed a production miss with `wrangler tail`; re-verified;
+    cleaned the index and D1.
+- **Defect found in earlier work:** every binding type was `any`. ADR-0015's
+  `--include-runtime=false` left the names undefined, and `skipLibCheck`
+  hid it. Found with a `const x: number = env.DB` probe. Fixed with
+  `cloudflare-globals.d.ts`. All existing code typechecked against the real
+  types.
+- **Caught in my own work:**
+  - The `LIKE` escaping was a no-op without `ESCAPE`; fixed before use.
+  - ADR-0022 said "most recently joined 50"; the code uses the first 50 by
+    name. I corrected the ADR to match the code.
+  - I kept the keyword baseline from being a straw man by adding the any-word
+    variant (3/11, not 1/11).
+- **Assumptions:** `topK` 20, cosine, the seed data and queries (mine, with
+  the bias risk stated), and top 3 as the scoring rule.
+- **Verification:**
+  - 23/23 tests.
+  - 25 vectors, exactly as expected; meaning 11/11 against keyword 1/11 and
+    3/11.
+  - Production: the tail showed "indexed", and search for "groceries" found
+    "Tesco big shop".
+  - The index went from 28 to 0; production is back to 0 rows and 0 keys.
+- **Open questions:** Cluster E starts with the E.1 decision (Raffaele's);
+  checking D1's bound-parameter limit (backlog).

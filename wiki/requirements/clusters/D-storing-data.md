@@ -77,12 +77,14 @@ upsert the vectors into **Vectorize**, and ship a `/search` route that finds
 records by meaning.
 
 **Acceptance criteria:**
-- [ ] Each record is embedded with `@cf/baai/bge-base-en-v1.5`
-- [ ] Vectors upserted into a Vectorize index
-- [ ] A `/search` route exists
-- [ ] It returns results by **meaning**, demonstrably not keyword match
+- [x] Each record is embedded with `@cf/baai/bge-base-en-v1.5` (one vector per line item, plus one per itemless expense)
+- [x] Vectors upserted into a Vectorize index (`splitr-search`)
+- [x] A `/search` route exists (across all the viewer's groups)
+- [x] It returns results by **meaning**, demonstrably not keyword match: 11/11 against 3/11
 
-**Source:** capture §7 · **Status:** Not started (unblocked — [ADR-0004](../../decisions/0004-project-is-splitr.md))
+**Source:** capture §7 · **Status:** ✅ **Done**, 2026-09-24.
+[ADR-0022](../../decisions/0022-semantic-search-design.md). Evidence:
+[`REQ-D.4-semantic-search.md`](../../evidence/REQ-D.4-semantic-search.md)
 
 **Notes:** ⚠️ EdgeLedger has Vectorize **switched off**. This is required here.
 It is also the foundation for `REQ-E.4` (RAG) — the retrieval half of that
@@ -96,12 +98,14 @@ requirement is this index.
 generate the migration, apply it, update the affected code paths.
 
 **Acceptance criteria:**
-- [ ] A column is added after the initial schema was settled
-- [ ] A new migration is generated and applied
-- [ ] Every affected code path is updated
-- [ ] The original migration is **not** edited
+- [x] A column is added after the initial schema was settled: `line_item.raw_text`
+- [x] A new migration is generated and applied: `0001_line_item_raw_text.sql`, local and remote
+- [x] Every affected code path is updated: schema, validation, write, read, display
+- [x] The original migration is **not** edited (its diff is empty)
 
-**Source:** capture §7 · **Status:** Blocked on `REQ-D.1`
+**Source:** capture §7 · **Status:** ✅ **Done**, 2026-09-24. The need arose naturally
+(the C.4 shorthand finding plus ADR-0021 §2). Evidence:
+[`REQ-D.5-unanticipated-schema-change.md`](../../evidence/REQ-D.5-unanticipated-schema-change.md)
 
 **Notes:** The exercise is migration discipline under change. Let the need arise
 naturally rather than staging a fake one.
