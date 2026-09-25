@@ -922,3 +922,12 @@ shape that triggers them. They are listed rather than ticked.
   by earlier sessions. A dry run afterwards: `nothing to remove`.
 - **Why:** Raffaele's OK. Local dev writes to the real bucket and index.
 - **Decision:** none
+
+## 2026-09-25 — Evidence: smoke passes on production
+- **Type:** docs
+- **Scope:** `wiki/evidence/CI-1-verification-scripts.md`, `wiki/todos/{backlog,STUDY-GUIDE,HANDOVER}.md`
+- **What:** Added Raffaele's production run of `smoke.mjs`: 16/16 checks pass,
+  including one winner in the concurrent settle, the forged `Origin` refused,
+  and a byte-identical replay. Cleanup leaves 0 rows.
+- **Why:** ADR-0024 rollout step 1 asked for a hand run against production.
+- **Decision:** none

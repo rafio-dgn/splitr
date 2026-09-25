@@ -395,8 +395,8 @@ requirement work, not new scope; they sit here only so they are not lost.
       `production` environment, branch protection, `workflow` scope; ~~`CLAUDE.md`
       §6~~ amended 2026-09-25); (4) `deploy.yml`; (5) `e2e-nightly.yml`.
 - [x] `CI` **Run smoke against production.** Raffaele ran it himself
-      (2026-09-25; remote D1 is blocked for the agent). Paste its output into
-      the evidence file.
+      (2026-09-25; remote D1 is blocked for the agent): all 16 checks pass and
+      cleanup leaves 0 rows. The output is in the evidence file.
 - [ ] `CI` **For `ci.yml` (step 2):** npm 11.19 reports install scripts
       "not yet covered by allowScripts" (esbuild, workerd, unrs-resolver,
       fsevents). They're pre-existing and they work locally, but check that

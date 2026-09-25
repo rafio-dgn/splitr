@@ -1567,3 +1567,16 @@ does, months later, without the original chat transcript.
 - **Open questions:** Raffaele's production smoke output, for the evidence
   file. Creating this PR was done at his request. `CLAUDE.md` §6 still says
   he opens PRs, and it's unchanged unless he says so.
+
+## 2026-09-25T11:20Z — Recorded the production smoke run
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Raffaele pasted his `smoke.mjs` output against production.
+- **Actions:** Pasted it verbatim into the evidence file, updated the
+  backlog, study guide, handover and changelog, and pushed a commit to the
+  open PR's branch.
+- **Assumptions:** The paste ends at cleanup, without the final
+  `smoke passed` line. Every check shown passed and cleanup finished, which
+  is what exit 0 requires, but the exit code itself wasn't seen.
+- **Verification:** none beyond reading the output; the agent can't reach
+  production D1.
+- **Open questions:** none new.

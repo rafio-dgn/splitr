@@ -36,8 +36,8 @@ to `main`). **CI rollout step 1 is built and verified locally**
 `scripts/verify/{smoke,race,e2e,cleanup}.mjs`, `.nvmrc`, `puppeteer-core`
 and a synthetic receipt fixture.
 
-Since then (same day): Raffaele **ran smoke against production** himself
-(paste its output into the evidence file), OK'd the sweep of old local test
+Since then (same day): Raffaele **ran smoke against production** himself:
+16/16 checks pass, and cleanup leaves 0 rows (the output is in the evidence file), OK'd the sweep of old local test
 data (done), and asked for **no UI issues**. The layout-shift bug the E2E
 found is fixed in both forms, and the E2E guards it. All of it is on a
 **feature branch with a PR to `main`**, which he asked for; he merges.

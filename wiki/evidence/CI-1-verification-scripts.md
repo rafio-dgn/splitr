@@ -20,12 +20,43 @@
 All take the site as their first argument. A `localhost` target switches D1 and
 KV to `--local`, and R2 and Vectorize stay remote, as they are in `next dev`.
 
-## Verified against: the local stack (production: run by Raffaele)
+## Verified against production (run by Raffaele, 2026-09-25)
 
-`next dev -p 3100` plus the ledger on `wrangler dev`. **Production:** the
-permission classifier blocked `wrangler d1 execute --remote` from the agent
-session, so Raffaele ran `smoke.mjs` against the live site himself
-(2026-09-25). He reported it done, but **its output isn't pasted here yet.**
+The permission classifier blocked `wrangler d1 execute --remote` from the
+agent session, so Raffaele ran it from his machine. His pasted output (it ends
+at cleanup; the paste didn't include the final `smoke passed` line):
+
+```
+$ node scripts/verify/smoke.mjs https://splitr.raffaele-digennaro.workers.dev
+smoke smoke-mugtg2g2-c4f495 → https://splitr.raffaele-digennaro.workers.dev
+  ✔ landing page → 200
+  ✔ signed-out /groups → 307 to /login
+  ✔ sign-up with a forged Origin → 403
+  ✔ …and no user row was written
+  ✔ sign-up alice.smoke-mugtg2g2-c4f495@example.test → 200
+  ✔ sign-up bob.smoke-mugtg2g2-c4f495@example.test → 200
+  · group grp_012d25197daf4f72b4e938343126ba60 (direct D1 insert)
+  ✔ expense "Smoke dinner" £80.00 → 201
+  ✔ concurrent settle → exactly one 201 and one 409
+  ✔ the loser is told "Alice Smoke recorded it"
+  ✔ D1 holds one £40 settlement
+  ✔ expense "Smoke taxi" £20.00 → 201
+  ✔ first request → 201, replayed=false
+  ✔ same key again → 201, replayed=true
+  ✔ the replay's body is byte-identical
+  ✔ D1 gained exactly one row
+cleanup: 2 user(s), 1 group(s), 2 expense(s), 2 vector id(s), 0 receipt(s)
+cleanup: done, D1 re-checked (0 rows left)
+```
+
+So the contested write, the origin check and idempotency hold on the live
+site, through the same script CI's `deploy.yml` will run, and it left
+production as it found it. `race.mjs` and `e2e.mjs` haven't been run against
+production yet.
+
+## Verified against: the local stack
+
+`next dev -p 3100` plus the ledger on `wrangler dev`.
 
 ```
 $ node scripts/verify/smoke.mjs http://localhost:3100

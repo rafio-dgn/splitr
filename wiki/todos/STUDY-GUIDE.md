@@ -77,7 +77,7 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [**The double settlement, WITH the DO**](../evidence/REQ-E.1-group-ledger-refuses-the-double-settlement.md) | **The "after"**: 201 + 409 in 5/5 production rounds (£200 for five £40 debts, against £280 before); the lock is proved necessary | "Same race, same code path, one change: the arbiter. **The centre of the demo**" |
 | [**The double settlement, without the DO**](../evidence/REQ-E.1-double-settle-without-the-do.md) | **E.2's "before"**: two concurrent settlements of one £40 debt, both accepted | "The ledger is internally consistent and factually wrong. That's why the DO exists." **The centre of the demo** |
 
-| [CI step 1: the verification scripts](../evidence/CI-1-verification-scripts.md) | smoke, race, E2E and cleanup are back in the repo and pass (locally; the production run is pending) | "`race.mjs` is the demo's live 'after'. `--keep` leaves the group so I can show it in a browser" |
+| [CI step 1: the verification scripts](../evidence/CI-1-verification-scripts.md) | smoke, race, E2E and cleanup are back in the repo; all pass locally, and **smoke passes on production** (your run) | "`race.mjs` is the demo's live 'after'. `--keep` leaves the group so I can show it in a browser" |
 
 ## 4. The spoken questions: where your material is
 
@@ -219,5 +219,4 @@ Kept in sync with [`backlog.md`](./backlog.md):
 - **The seal leak also covers `wiki/context/glossary.md`** (EdgeLedger's domain terms).
 - **D.6: photograph 3–5 English receipts** into `splitr/.data/receipts/mine/`. Then you choose the vision model from the spike.
 - **CI/CD setup (ADR-0024):** the Cloudflare API token, the GitHub secrets, the `production` environment, branch protection and the `workflow` scope. (§6 is amended, 2026-09-25.)
-- **Paste your production smoke output** into the [CI step 1 evidence](../evidence/CI-1-verification-scripts.md), so the file shows the live run too.
 - **Spoken answers:** `REQ-A.5`, `REQ-B.6`, `REQ-C.5`.
