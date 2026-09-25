@@ -1024,3 +1024,23 @@ shape that triggers them. They are listed rather than ticked.
     item leaking between the eval and the seed or history.
 - **Why:** ADR-0025 §1–2. **Raffaele approved all 30 labels** (2026-09-25).
 - **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md)
+
+## 2026-09-25 — E.7 steps 2–3: the `splitr-ai` Worker and the eval (8B + RAG, 28/30)
+- **Type:** added
+- **Scope:** `workers/ai/` (new Worker), `src/lib/categorise/{contract,secret,prompt,categorise}.ts`
+  and its tests, `scripts/categorise/{eval-worker/,run-eval.mjs}`, `package.json`
+  (`cf:types`), `.github/workflows/ci.yml`, `wiki/evidence/REQ-E.4-rag-categorisation-eval.md`
+- **What:**
+  - `splitr-ai`, an RPC entrypoint `AiService.categorise(secret, request)`
+    with no public URL. It checks the secret against a key list, then embeds,
+    retrieves (group first, then a seed top-up below 0.6), resolves labels
+    (reference metadata or D1, read-only and group-checked), asks Llama, and
+    zod-validates the answer, all inside an 8 s budget.
+  - 16 unit tests, mutation-checked.
+  - A dev-only eval harness and runner. **Eval: 8B + RAG 28/30 against 23/30
+    without RAG, and 70B + RAG 26/30.**
+  - 90 reference vectors loaded into the index under reserved `groupId`s.
+  - CI type-checks the new Worker.
+- **Why:** `REQ-E.4`, ADR-0025 steps 2–3. Raffaele chose 8B + RAG with a 0.6
+  threshold from the results.
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md) (§5, and the eval's result)

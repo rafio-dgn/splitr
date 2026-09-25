@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-25
 - **Deciders:** Raffaele, in structured questions on 2026-09-25. The AI proposed
-  the options and recommended; he chose the recommendation on all four.
+  the options and recommended; he chose the recommendation on all five.
 - **Requirement:** `REQ-E.4`, `REQ-M.7`, `REQ-M.8` (and it prepares `REQ-F.5`)
 - **Builds on:** [ADR-0016](./0016-ai-integration-strategy.md) (RAG categorises
   line items; group first, then a seed corpus; after the write; every model
@@ -89,6 +89,24 @@ clean descriptions and 2/10 on receipt shorthand**, at a median of 426 ms and
   (more neurons and latency for a label the cron fixes anyway), and no search
   fallback (an error where a worse answer is available).
 
+### 5. The retrieved neighbours' text and category come from D1
+
+Asked separately on 2026-09-25, once it was clear that the search vectors
+hold ids only (ADR-0022).
+
+- **Real users' vectors stay ids-only**, so ADR-0022 is unchanged. The AI
+  Worker gets a **D1 binding and only reads with it**: the neighbours'
+  description and category, never `uncategorised`. **The app writes the
+  result**, as it writes everything else. D1 stays the single truth, so a
+  corrected category is used the next time.
+- **Reference vectors** (the seed corpus and the eval groups) have no D1 rows.
+  They carry `text` and `category` in their own metadata, under reserved
+  `groupId`s (`seed`, `eval-flat`, `eval-trip`), which no search can reach,
+  because search filters on the viewer's `grp_…` ids.
+- *Rejected:* text and category in every vector's metadata. It's least
+  privilege and one hop, but it duplicates user text into Vectorize and goes
+  stale when a category changes.
+
 ## Order of work
 
 1. The seed corpus and the eval set (**Raffaele approves the labels**).
@@ -98,6 +116,16 @@ clean descriptions and 2/10 on receipt shorthand**, at a median of 426 ms and
 4. Wire categorisation into the app (after the write).
 5. Move embeddings and OCR behind the AI Worker, and remove the app's `ai`
    binding (ADR-0016 §6).
+
+## The eval's result (2026-09-25): 8B + RAG, threshold 0.6
+
+The 2×2 eval over 3 runs gave: 8B no RAG 23/30; **8B + RAG 28/30** (group
+habits 8/10); 70B no RAG 24.7/30; 70B + RAG 26/30 (group habits 6/10). The
+threshold sweep: 0.5 and 0.6 both 8/10, 0.7 gave 6/10 and 0.8 gave 5/10.
+**Raffaele chose 8B + RAG with a 0.6 threshold** (structured question). The
+70B's lower score on group habits is the notable finding: the bigger model
+follows the group less. Full output:
+[the evidence](../evidence/REQ-E.4-rag-categorisation-eval.md).
 
 ## Consequences
 
@@ -112,6 +140,9 @@ clean descriptions and 2/10 on receipt shorthand**, at a median of 426 ms and
 
 ## Verification
 
-None yet: this is a decision record. The eval evidence will verify decisions 1
+Decisions 1 and 2 are verified by the eval (above). Decision 3: a wrong secret
+was refused through the real binding, and there are unit tests for the list
+and for failing closed. Decision 4: unit tests for the timeout and failure
+paths, and 0 timeouts in 400 real calls. When this was written: The eval evidence will verify decisions 1
 and 2, and the E.7 tests (a wrong secret refused, an empty list refusing
 everything, each timeout falling back) will verify 3 and 4.

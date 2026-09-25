@@ -1718,3 +1718,42 @@ does, months later, without the original chat transcript.
 - **Verification:** the generator's assertions: 11 keys, counts
   (50/40/30), and no leakage.
 - **Open questions:** none on the labels.
+
+## 2026-09-25T16:30Z — E.7: the AI Worker built, the eval run, the model chosen
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "approved" (labels), then continue E.7.
+- **Decisions asked:**
+  1. Where the neighbours' labels come from: **D1 lookup** (ADR-0025 §5).
+  2. The production model: **8B + RAG**.
+  3. The threshold: **0.6**.
+
+  Each was asked with a recommendation and the eval's numbers.
+- **Inputs read:** the ledger Worker (the pattern), `vector-text.ts`
+  (ids-only metadata), the generated runtime types (both model ids exist),
+  and the C.3/D.6 evidence for how neurons are measured (`usage.neurons`).
+- **Actions:**
+  - Pure logic in `src/lib/categorise/`, the Worker wiring in `workers/ai/`,
+    and a dev-only harness.
+  - Loaded 90 reference vectors (seed plus the eval histories) into the
+    production index under `seed`, `eval-flat` and `eval-trip`.
+  - Ran the eval: 1 run, then 3 runs, then the sweep.
+- **Alternatives considered:**
+  - A cast on the model id: rejected (coding standards); each id is called
+    literally.
+  - Batching all items into one call per cell: rejected, because per-item
+    calls measure per-item latency.
+  - Loading reference vectors through a production RPC method: rejected, to
+    keep the production surface to one method; the dev-only harness loads them.
+- **Found:**
+  - Wrangler types the Vectorize binding as `VectorizeIndex`; `env-check.ts`
+    caught the mismatch.
+  - Vectorize took about 3 minutes to make new vectors queryable.
+  - 70B follows the group's habits less than 8B.
+- **Verification:**
+  - 16 unit tests, with 2 mutations each caught.
+  - `tsc` passes for the app and `workers/ai`, and ESLint is clean.
+  - Eval output is in the evidence file.
+  - A wrong secret is refused through the real binding, and plain HTTP gets 404.
+- **Cost:** about 4,000 Workers AI neurons for the eval today.
+- **Open questions:** none blocking. Next is step 4: deploy `splitr-ai`,
+  set its secret, and wire the app.

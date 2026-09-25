@@ -76,7 +76,14 @@ Vectorize, generate with Llama grounded in your own data.
 - [ ] A shared-secret check on every request
 - [ ] A fallback so its failure **never blocks the primary write**
 
-**Source:** capture §8 · **Status:** Blocked on `REQ-D.4`
+**Source:** capture §8 · **Status:** 🟡 In progress (2026-09-25). `splitr-ai`
+retrieves (Vectorize, group first, then the seed), generates with Llama 3.1 8B
+grounded in the retrieved items, has `workers_dev: false`, and checks the
+shared secret on every call. Verified locally through a real service binding,
+with an eval of 28/30 against 23/30 without RAG
+([evidence](../../evidence/REQ-E.4-rag-categorisation-eval.md)). **Left:** the
+first deploy, and the app wiring with its write-path fallback (ADR-0025 steps
+4–5).
 
 **Notes:** Four sub-requirements in one bullet. The fallback clause is the same
 rule as `REQ-M.7` — the write path must survive the AI Worker being down or slow.
