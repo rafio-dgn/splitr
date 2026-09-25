@@ -206,6 +206,13 @@ these are here so you don't have to reconstruct them later.
   pre-hydration clicks, and eventually consistent search each failed a run
   before the app did. A browser test has to wait for what a person waits for.
 
+- **The build had been connecting to Cloudflare, and nobody knew.** Simulating
+  CI with no login showed that `next build` started the dev bindings proxy, and
+  pre-rendered signed-in pages through D1, because the session code opened the
+  database before reading the request. On a laptop, credentials hid both.
+  Fixing the order (request first) made `ci.yml` need no secrets at all
+  (ADR-0024, step-2 addendum).
+
 ## 7. Open questions waiting on you
 
 Kept in sync with [`backlog.md`](./backlog.md):

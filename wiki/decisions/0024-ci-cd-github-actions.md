@@ -189,3 +189,30 @@ way, each one closing off an alternative:
 **Still open from step 1:** the run against production (the agent's
 permission classifier blocked remote D1 access, so Raffaele runs it or allows
 it).
+
+## Addendum, 2026-09-25: rollout step 2 (`ci.yml`)
+
+Before the first push, `ci.yml` was simulated on a clean copy of the repo
+(tracked files only), with `HOME` pointed at an empty directory: no
+`.env`, no `.dev.vars` and no wrangler login, as on a runner. Two defects
+surfaced. They never showed on a laptop, because a laptop has credentials:
+
+1. **`next build` ran `initOpenNextCloudflareForDev()`**, which sat at module
+   scope in `next.config.ts`. With R2, Vectorize and AI as remote bindings,
+   that opened a remote Cloudflare session, which fails with no token. The
+   config is now a function of the phase (the pattern Next 16 documents), and
+   the init runs only for `PHASE_DEVELOPMENT_SERVER`.
+2. **The build pre-rendered signed-in pages through D1.** `getSession()`
+   opened D1 *before* reading the request headers, and reading them is what
+   tells Next.js a render is per-request. So every build connected to
+   Cloudflare to try pre-rendering `/groups`, then gave up. The order is
+   swapped: headers first. The route table is unchanged (every `(app)` page
+   was already dynamic), and so is the size (2,543 KiB).
+
+**Consequence, decided here:** `ci.yml` needs **no Cloudflare credentials at
+all**, as this ADR intended. Only `deploy.yml` will hold the token. The size
+gate was mutation-checked: with the budget lowered to 2,000 KiB, it exits 1
+with an `::error::` annotation and still writes the job summary.
+
+Actions are pinned to the current majors, `actions/checkout@v7` and
+`actions/setup-node@v7` (looked up 2026-09-25).

@@ -1580,3 +1580,39 @@ does, months later, without the original chat transcript.
 - **Verification:** none beyond reading the output; the agent can't reach
   production D1.
 - **Open questions:** none new.
+
+## 2026-09-25T12:00Z — CI rollout step 2: `ci.yml`
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "merged, go on" (after PR #1).
+- **Inputs read:** ADR-0024, `package.json`, the ledger's tsconfigs, the
+  adapter's `initOpenNextCloudflareForDev` source, the Next 16
+  `next.config.js` docs (the phase function), `session.ts`/`auth.ts`, and
+  the current action releases (public API, unauthenticated; `gh api` is ruled
+  out by §6).
+- **Actions:**
+  - wrote `ci.yml` and `scripts/ci/size-budget.mjs`;
+  - made `next.config.ts` a phase function;
+  - reordered `getSession()`;
+  - widened the E2E search poll;
+  - new branch `ci/ci-workflow`, pushed with a PR, as with PR #1.
+- **Alternatives considered:**
+  - Giving `ci.yml` the Cloudflare token so the build could connect:
+    rejected, because the build shouldn't need it and the ADR keeps `ci.yml`
+    credential-free.
+  - `export const dynamic = "force-dynamic"` on the `(app)` layout: rejected,
+    because it treats the symptom; the real defect was touching D1 before the
+    request.
+  - An env check (`NODE_ENV`) around the init: rejected in favour of Next's
+    documented phase constant.
+- **Verification:**
+  - A strict simulation (`set -euo pipefail`, a clean copy, an empty `HOME`)
+    ran every workflow step: all passed.
+  - The size gate was mutation-checked (fails at a 2,000 KiB budget).
+  - `next dev` still has its bindings: local smoke passes, and so does the E2E
+    (its first run hit the 2-minute search window with the receipt already
+    indexed; after widening to 5 minutes it passed in 47 s).
+  - `tsc` and ESLint are clean.
+- **Assumptions:** `ubuntu-latest` behaves like the simulation. It will be
+  seen on the PR's first run.
+- **Open questions:** whether Raffaele's credential can push
+  `.github/workflows/` (the `workflow` scope). The push below shows it.
