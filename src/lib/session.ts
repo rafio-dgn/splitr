@@ -25,10 +25,16 @@ export type AppSession = NonNullable<
  * (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/headers.md`).
  */
 export async function getSession(): Promise<AppSession | null> {
+	// The request FIRST. Reading it is what tells Next.js this render is
+	// per-request, so `next build` stops pre-rendering here, before anything
+	// touches D1. In the other order the build opened a Cloudflare session to
+	// pre-render signed-in pages (and CI, with no credentials, couldn't build:
+	// found simulating `ci.yml`, 2026-09-25).
+	const requestHeaders = await headers();
 	// `getAuth()` rather than a module-scope `auth`: the instance is built around
 	// a D1 binding, which only exists once a request is in flight (ADR-0015).
 	const auth = await getAuth();
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await auth.api.getSession({ headers: requestHeaders });
 	return session ?? null;
 }
 
