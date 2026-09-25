@@ -1689,3 +1689,32 @@ does, months later, without the original chat transcript.
   `puppeteer-core` with `channel: "chrome"`. The "Chrome on the runner" step
   shows the version, and the first dispatch shows the rest.
 - **Open questions:** none new.
+
+## 2026-09-25T15:00Z — E.7 decisions (ADR-0025)
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "What's your idea for the open decisions?", then "deal,
+  continue".
+- **Inputs read:** ADR-0016, ADR-0017, `REQ-E.4`, `REQ-F.5`, the C.3 and D.6
+  spike numbers, and build-plan E.7.
+- **Decisions asked:** four structured questions, each with a recommendation
+  and alternatives. Raffaele chose the recommendation on all four.
+- **Actions:** wrote ADR-0025, and updated the index, study guide, handover
+  and backlog. **No code yet.**
+- **Assumptions:** the budgets (8/5/3/30 s) are starting values. The eval and
+  the E.7 tests may adjust them, and any change is recorded.
+- **Open questions:** Raffaele's approval of the eval labels, which is next.
+
+## 2026-09-25T15:20Z — E.7 step 1: seed corpus and eval set drafted; labels approved
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Draft the data for ADR-0025. Raffaele: "approved".
+- **Actions:** Generated both JSON files with a script that checks the
+  category keys and leakage, then presented all 30 eval labels plus the two
+  groups' habits for review.
+- **Assumptions (flagged at review):**
+  - shorthand items show the model only the raw print (the worst case);
+  - s08 → drinks;
+  - "Uber to the airport" in the flat matches the seed default, so only its
+    trip twin truly needs RAG.
+- **Verification:** the generator's assertions: 11 keys, counts
+  (50/40/30), and no leakage.
+- **Open questions:** none on the labels.

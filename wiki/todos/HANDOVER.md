@@ -55,7 +55,9 @@ merge doesn't deploy. **Step 5** (`e2e-nightly.yml`) is on branch
 `ci/e2e-nightly` with a PR. After the merge, dispatch it once from Actions
 (it needs the default branch) and check it's green.
 
-**Next: E.7** (below). The old plan line, kept for the record: his settings (step 3) →
+**Next: E.7**, decided in [ADR-0025](../decisions/0025-rag-worker-eval-seed-secret-fallback.md)
+(2026-09-25). Step 1 is done: `scripts/categorise/{seed-corpus,eval-set}.json`, with
+**all 30 eval labels approved by Raffaele**. Next is step 2, the AI Worker. The old plan line, kept for the record: his settings (step 3) →
 `deploy.yml` → `e2e-nightly.yml`, then **E.7** (below). He may prefer E.7
 first, so ask.
 

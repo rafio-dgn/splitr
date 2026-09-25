@@ -54,4 +54,5 @@ obvious in hindsight.
 | [0021](./0021-receipt-reading-approach.md) | Receipt reading: two Llamas in the spike, raw + expanded lines, a "Read receipt" button | Accepted (model pending the spike) |
 | [0022](./0022-semantic-search-design.md) | Semantic search across all the viewer's groups; item and itemless-expense vectors | Accepted |
 | [0023](./0023-group-ledger-arbitrates-settlements.md) | The GroupLedger DO arbitrates settlements; D1 stays the truth | Accepted |
-| [0024](./0024-ci-cd-github-actions.md) | CI/CD with GitHub Actions: PR checks, deploy on merge, smoke tests on production | Accepted (plan); step 1 built |
+| [0024](./0024-ci-cd-github-actions.md) | CI/CD with GitHub Actions: PR checks, deploy on merge, smoke tests on production | Accepted; all 5 rollout steps built, deploys live |
+| [0025](./0025-rag-worker-eval-seed-secret-fallback.md) | The RAG AI Worker: a 3×10 eval set you label, a ~50-item seed corpus in the same index, an RPC secret checked against a list, per-call budgets with no inline retries | Accepted |

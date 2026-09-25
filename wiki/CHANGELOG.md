@@ -993,3 +993,34 @@ shape that triggers them. They are listed rather than ticked.
   - `deploy.yml` skips docs-only merges.
 - **Why:** ADR-0024 steps 4 and 5.
 - **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step 4 note, step-5 addendum)
+
+## 2026-09-25 — ADR-0025: the E.7 RAG Worker decisions
+- **Type:** docs
+- **Scope:** `wiki/decisions/0025-rag-worker-eval-seed-secret-fallback.md` (new), the ADR index, `wiki/todos/{STUDY-GUIDE,HANDOVER,backlog}.md`
+- **What:** Raffaele's four answers:
+  - a 3×10 eval set (clean, shorthand, group-dependent) with labels he
+    approves;
+  - a ~50-item seed corpus in the same index (`groupId "seed"`, a threshold
+    top-up);
+  - the secret as an RPC argument checked against a key list;
+  - per-call budgets with no inline retries, and search falling back to
+    keyword.
+
+  Also the order of work. The index now shows ADR-0024 as fully built.
+- **Why:** `REQ-E.4`. AI decisions are Raffaele's (standing rule).
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md)
+
+## 2026-09-25 — E.7 step 1: the seed corpus and the approved eval set
+- **Type:** added
+- **Scope:** `scripts/categorise/seed-corpus.json`, `scripts/categorise/eval-set.json`
+- **What:**
+  - 50 seed items: 3–5 per category, 23 of them UK receipt shorthand, with
+    traps (Uber vs Uber Eats, Boots meal deal vs Boots paracetamol).
+  - Two planted eval-group histories of 20 items each.
+  - 30 eval items: 10 clean, 10 shorthand (raw print only, the worst case) and
+    10 group-dependent (5 identical texts, each in two groups with opposite
+    habits).
+  - Generated with the keys checked against `src/lib/categories.ts`, and no
+    item leaking between the eval and the seed or history.
+- **Why:** ADR-0025 §1–2. **Raffaele approved all 30 labels** (2026-09-25).
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md)
