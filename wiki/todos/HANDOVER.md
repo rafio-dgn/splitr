@@ -29,25 +29,22 @@ and [`backlog.md`](./backlog.md). **Raffaele's own reading list is
 
 ## ▶ Start the new session here
 
-The last session ended on 2026-09-25 with the **CI/CD plan agreed and
-committed, but nothing built** ([ADR-0024](../decisions/0024-ci-cd-github-actions.md)).
-Two questions were put to Raffaele and **not yet answered**. Ask them first:
+**Updated 2026-09-25 (second session).** Raffaele said yes to the `CLAUDE.md`
+§6 amendment (agents push **feature branches**; he merges; agents never push
+to `main`). **CI rollout step 1 is built and verified locally**
+([evidence](../evidence/CI-1-verification-scripts.md), ADR-0024 addendum):
+`scripts/verify/{smoke,race,e2e,cleanup}.mjs`, `.nvmrc`, `puppeteer-core`
+and a synthetic receipt fixture.
 
-1. **Does he approve this amendment to `CLAUDE.md` §6?** (It's his rule, so
-   don't edit it without an explicit yes.)
-   > Replace *"push to `origin/main` of **this** repo"* with: *"push feature
-   > branches to `origin`; Raffaele opens and merges PRs; agents never push to
-   > `main`."*
+Since then (same day): Raffaele **ran smoke against production** himself
+(paste its output into the evidence file), OK'd the sweep of old local test
+data (done), and asked for **no UI issues**. The layout-shift bug the E2E
+found is fixed in both forms, and the E2E guards it. All of it is on a
+**feature branch with a PR to `main`**, which he asked for; he merges.
 
-   **Until he says yes, keep the current rule: commit and push to `main` only
-   when he asks.**
-2. **Start CI rollout step 1?** That's `scripts/verify/{smoke,e2e,race,cleanup}.mjs`
-   plus `.nvmrc`, which need no GitHub settings. Step 2 (`ci.yml`) also needs
-   no secrets.
-
-**Order of work, unless he says otherwise:** CI rollout steps 1–2 → his
-settings (step 3) → `deploy.yml` → nightly E2E, then back to **E.7** (below).
-He may prefer E.7 first, so ask.
+**Next:** CI step 2 (`ci.yml`, no secrets needed) → his settings (step 3) →
+`deploy.yml` → `e2e-nightly.yml`, then **E.7** (below). He may prefer E.7
+first, so ask.
 
 ### The CI/CD plan in one paragraph
 
@@ -145,18 +142,17 @@ once, ADR-0022's evidence).
 ## How things were verified, and what to re-create
 
 Every result is in [`../evidence/`](../evidence/), with the exact commands
-and the pasted output. **One gap to know about:** the ad-hoc verification
-scripts (the two-browser Puppeteer E2E, the concurrent-settlement race, the
-search eval runner, the R2 attack script) lived in the session scratchpad
-**and were deleted overnight**. The *results* are in the evidence files, but
-the scripts aren't in the repo. What *is* in the repo and re-runnable:
+and the pasted output. The ad-hoc scripts that were lost from the scratchpad are **back in the
+repo** as `scripts/verify/` (2026-09-25): run any of them with the site as
+the first argument, `localhost` or production. What else is re-runnable:
 
 - `npm test`: the money invariants, plus the DO invariants against a real DO
   (the 30-way race, replay, the alarm).
 - `scripts/vision-spike/`: the vision-model eval (a dev-only Worker plus
   `run.mjs`).
+- The R2 attack script and the search eval runner are still not in the repo.
 
-The patterns, for re-creating the others:
+The patterns underneath (all now in `scripts/verify/lib.mjs`):
 
 - **Two users without a browser:**
   `curl -c jar -X POST $URL/api/auth/sign-up/email -H 'Origin: $URL' -d '{…}'`

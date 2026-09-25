@@ -872,3 +872,53 @@ shape that triggers them. They are listed rather than ticked.
   hash is replaced by `git log`.
 - **Why:** Raffaele is continuing in a new session.
 - **Decision:** none
+
+## 2026-09-25 — CLAUDE.md §6: agents push branches, Raffaele merges
+- **Type:** changed
+- **Scope:** `CLAUDE.md` §6
+- **What:** Agents may now push **feature branches** to `origin`. Raffaele
+  opens and merges PRs, and agents never push to `main`. "Commit and push only
+  when he asks" still holds.
+- **Why:** The PR flow in ADR-0024. Raffaele approved the exact wording.
+- **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (addendum §1)
+
+## 2026-09-25 — CI rollout step 1: the verification scripts
+- **Type:** added
+- **Scope:** `scripts/verify/{lib,browser,smoke,race,e2e,cleanup}.mjs`,
+  `scripts/verify/fixtures/{make-receipt.mjs,receipt.png}`, `.nvmrc`,
+  `package.json` (+ `puppeteer-core` dev dependency), `wiki/evidence/CI-1-verification-scripts.md`
+- **What:** The lost scratchpad scripts are back, in the repo:
+  - **smoke**: gate, forged `Origin`, a 2-user settle race with one winner, an
+    idempotent replay;
+  - **race**: the demo's "after";
+  - **e2e**: two browsers, including Read receipt and the confirm gate;
+  - **cleanup**: D1, KV, R2 and Vectorize, which runs even on failure and
+    sweeps `@example.test`.
+
+  All pass against the local stack. **Not yet run against production.**
+- **Why:** ADR-0024 rollout step 1.
+- **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (addendum §2–6)
+
+## 2026-09-25 — Fixed: the first click below an autofocused field was lost
+- **Type:** fixed
+- **Scope:** `src/app/(app)/groups/[groupId]/expenses/new/add-expense-form.tsx`,
+  `src/app/(app)/groups/new/create-group-form.tsx`, `scripts/verify/e2e.mjs`
+- **What:** A blur on a field that's still empty and was never typed in no
+  longer shows its error (autofocus isn't a touch). Each field's error line is
+  reserved, so an error appearing never moves what's below it. The form gap
+  went from `gap-5` to `gap-3`. The E2E's warning is now a failing check.
+- **Why:** Found by the E2E. The error appeared between mousedown and mouseup,
+  which moved the target 24 px and lost the click ("Choose file" on *Add an
+  expense*, "Create group" on *New group*). `screens-cluster-b.md` §7.4
+  already said "never validate an untouched field". Raffaele: "I don't want
+  any UI issue."
+- **Decision:** none (a bug fix within §7.4)
+
+## 2026-09-25 — Swept older local-dev test data from production R2 and Vectorize
+- **Type:** changed (data only)
+- **Scope:** local D1; production `splitr-search` and `splitr-receipts`
+- **What:** `node scripts/verify/cleanup.mjs http://localhost:3100` removed
+  3 test users, 4 groups, 49 expenses, 71 vectors and 4 receipt photos left
+  by earlier sessions. A dry run afterwards: `nothing to remove`.
+- **Why:** Raffaele's OK. Local dev writes to the real bucket and index.
+- **Decision:** none

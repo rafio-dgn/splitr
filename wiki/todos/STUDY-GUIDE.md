@@ -45,7 +45,7 @@ answer to "why?".
 | [0015](../decisions/0015-one-database-driver-d1-everywhere.md) | Why D1 locally too? | Two drivers would make every local check say nothing about the deployed database |
 | [0016](../decisions/0016-ai-integration-strategy.md) | What does the AI do? | 12 decisions **you** made: RAG categorises items, money needs a human, English only, a closed list of 11 categories, after the write, behind the AI Worker, one vector per item, group first then a seed corpus, a labelled eval |
 | [0017](../decisions/0017-llama-3-1-8b-fp8-replaces-the-deprecated-model.md) | The course's Llama is dead | It was deprecated on 2026-05-30 (error 5028). We use the same weights as `-fp8`; the eval picks E.4's model |
-| [0024](../decisions/0024-ci-cd-github-actions.md) | CI/CD (**beyond the course, your scope**) | **Your answers:** GitHub Actions + wrangler; production only; PRs with required checks; smoke tests every deploy and the full E2E nightly. Why the order is ledger → migrations → app → smoke |
+| [0024](../decisions/0024-ci-cd-github-actions.md) | CI/CD (**beyond the course, your scope**) | **Your answers:** GitHub Actions + wrangler; production only; PRs with required checks; smoke tests every deploy and the full E2E nightly. Why the order is ledger → migrations → app → smoke. **Step 1's addendum:** `puppeteer-core` (not a 150 MB Chrome download per PR), a synthetic receipt, and why cleanup deletes D1 *last* |
 | [0023](../decisions/0023-group-ledger-arbitrates-settlements.md) | **The Durable Object** | **Your answers:** it *arbitrates* (D1 stays the truth); settlements go through it now, voids and leaving when built; the idempotency key is minted when the form renders; the "before" is recorded and the "after" shown live. Mechanism: `blockConcurrencyWhile`, because a DO admits the next request while it awaits D1 |
 | [0022](../decisions/0022-semantic-search-design.md) | How does search work? | **Your answers:** across all your groups; item vectors **plus** one per hand-typed expense; each reads "item, at merchant", never the raw shorthand. Vectorize holds ids only, and D1 re-checks every hit |
 | [0021](../decisions/0021-receipt-reading-approach.md) | How are receipts read? | **Your answers:** two Llamas compared; each line stored raw *and* expanded (a new column, which is `REQ-D.5`); a "Read receipt" button; you confirm the total; test receipts are yours plus SROIE (CC-BY-4.0). You accepted Meta's Llama 3.2 licence. **Model: Llama 4 Scout** (your choice): 5/6 totals against 4/6, valid JSON 12/12 against 9/12, JSON mode, twice as fast, twice the neurons |
@@ -76,6 +76,8 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [REQ-D.4 semantic search](../evidence/REQ-D.4-semantic-search.md) | Search by meaning 11/11, keyword 1/11 (3/11 any-word) | "'The thing for the kitchen': keyword says Bangkok Street *Kitchen*, meaning says IKEA" |
 | [**The double settlement, WITH the DO**](../evidence/REQ-E.1-group-ledger-refuses-the-double-settlement.md) | **The "after"**: 201 + 409 in 5/5 production rounds (£200 for five £40 debts, against £280 before); the lock is proved necessary | "Same race, same code path, one change: the arbiter. **The centre of the demo**" |
 | [**The double settlement, without the DO**](../evidence/REQ-E.1-double-settle-without-the-do.md) | **E.2's "before"**: two concurrent settlements of one £40 debt, both accepted | "The ledger is internally consistent and factually wrong. That's why the DO exists." **The centre of the demo** |
+
+| [CI step 1: the verification scripts](../evidence/CI-1-verification-scripts.md) | smoke, race, E2E and cleanup are back in the repo and pass (locally; the production run is pending) | "`race.mjs` is the demo's live 'after'. `--keep` leaves the group so I can show it in a browser" |
 
 ## 4. The spoken questions: where your material is
 
@@ -193,6 +195,17 @@ these are here so you don't have to reconstruct them later.
   production held your own account. The row counts were checked before
   anything was dropped, and it turned out not to be empty.
 
+- **The E2E found a bug no one had noticed.** The first click below the
+  autofocused description is lost: blurring it shows an error, which pushes the
+  page 24 px down between mousedown and mouseup. Setting the file directly
+  (`uploadFile`) hid it; clicking like a person exposed it. Lesson one again:
+  verify in the medium the requirement names. **Fixed**, by the spec's own rule
+  (§7.4, "never validate an untouched field": autofocus isn't a touch) and by
+  reserving each error's line. The E2E now fails if it comes back.
+- **The test raced the app before it tested it.** Streaming skeletons,
+  pre-hydration clicks, and eventually consistent search each failed a run
+  before the app did. A browser test has to wait for what a person waits for.
+
 ## 7. Open questions waiting on you
 
 Kept in sync with [`backlog.md`](./backlog.md):
@@ -205,5 +218,6 @@ Kept in sync with [`backlog.md`](./backlog.md):
 - **Re-register on the live site.** Your account was dropped by the first migration, your choice.
 - **The seal leak also covers `wiki/context/glossary.md`** (EdgeLedger's domain terms).
 - **D.6: photograph 3–5 English receipts** into `splitr/.data/receipts/mine/`. Then you choose the vision model from the spike.
-- **CI/CD setup (ADR-0024):** the Cloudflare API token, the GitHub secrets, the `production` environment, branch protection, the `workflow` scope, and amending `CLAUDE.md` §6 for branch pushes.
+- **CI/CD setup (ADR-0024):** the Cloudflare API token, the GitHub secrets, the `production` environment, branch protection and the `workflow` scope. (§6 is amended, 2026-09-25.)
+- **Paste your production smoke output** into the [CI step 1 evidence](../evidence/CI-1-verification-scripts.md), so the file shows the live run too.
 - **Spoken answers:** `REQ-A.5`, `REQ-B.6`, `REQ-C.5`.

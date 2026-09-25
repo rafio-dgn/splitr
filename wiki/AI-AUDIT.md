@@ -1481,3 +1481,89 @@ does, months later, without the original chat transcript.
     production test data.
   - The CI token's permission names are to be confirmed in the dashboard.
 - **Open questions:** approval to start rollout step 1; the §6 amendment.
+
+## 2026-09-25T10:30Z — CI rollout step 1: the verification scripts
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "Read the handover and continue." Raffaele answered the
+  two open questions: yes to the §6 amendment, and start with CI step 1. Two
+  more were asked mid-task: `puppeteer-core`, and a generated receipt.
+- **Inputs read:** HANDOVER, ADR-0024, the E.1 evidence, both Route
+  Handlers, the expense and settlement schemas, `create-group`/`join-group`,
+  the D1 migration (foreign keys), the vector-id and receipt-key formats,
+  and the register, join, add-expense, settle and search UIs. `wrangler`
+  help for KV, R2 and Vectorize.
+- **Actions:**
+  - amended `CLAUDE.md` §6;
+  - wrote `scripts/verify/*` and `.nvmrc`;
+  - added `puppeteer-core`;
+  - rendered the fixture receipt;
+  - ran smoke, race and e2e against `next dev` plus a local ledger;
+  - deleted 7 orphaned test photos this session's failed E2E runs had left in
+    R2 (keys taken from this session's own dev log).
+- **Alternatives considered:**
+  - Group creation through the UI in smoke: rejected, because the Server Action
+    id rotates (ADR-0010), so smoke uses a D1 insert, as the plan said.
+  - Listing R2 over S3: rejected, because it keeps the S3 keys out of CI, so
+    photos are found through D1 and the E2E hands over its key.
+  - Failing the E2E on a model misread: rejected, because it would make the
+    nightly flaky on a job the vision eval does. A misread is reported instead.
+- **Assumptions:**
+  - Vectorize applies mutations in order, so a delete queued after an upsert
+    wins. The vector check after cleanup is consistent with this.
+  - GitHub's ubuntu runners have Chrome. Unverified until step 5.
+- **Verification:**
+  - All four scripts pass locally; outputs are in the evidence file.
+  - Controls tested: a failed run cleans up, vectors are really gone
+    (`get-vectors`), a photo uploaded before a deliberate failure is gone
+    (`r2 object get` → key does not exist), and cleanup refuses a real email.
+  - `tsc --noEmit` passes for both programs, and ESLint is clean.
+- **Found:**
+  - A real UX bug: the first click below the autofocused description is lost
+    to a layout shift (backlog).
+  - An orphaned local `wrangler dev` ledger (PID 8310, started 09:12) had
+    dropped out of the dev registry. Left running; a second ledger was
+    started on 8792.
+  - Older local test data sits in production R2 and Vectorize.
+- **Open questions:**
+  - Running smoke against production: remote D1 was blocked by the
+    permission classifier.
+  - Whether to sweep the older local test data out of production R2 and
+    Vectorize.
+  - Whether to fix the layout-shift bug now.
+
+## 2026-09-25T11:00Z — The layout-shift fix, the sweep, the branch and the PR
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Raffaele's answers:
+  1. "I did it" (he ran smoke against production; the output wasn't shared);
+  2. "ok" to the sweep;
+  3. "I don't want any UI issue";
+  4. commit to a new feature branch and open a PR to `main`.
+- **Inputs read:** `screens-cluster-b.md` §7.4, both forms that validate on
+  blur, and every `onBlur`/`autoFocus` in `src/` (only those two forms).
+- **Actions:**
+  - In both forms: pristine-blur rule, reserved error lines, form gap
+    `gap-5` → `gap-3`.
+  - The E2E's swallowed-click warning became a failing check.
+  - Ran the sweep.
+  - Created the feature branch, committed, pushed it and opened the PR, at his
+    explicit request.
+- **Alternatives considered:**
+  - Removing `autoFocus`: rejected. It's the spec's focus behaviour, and it
+    would fix only the pristine case, not an error that appears after typing.
+  - Absolutely positioned errors: rejected, because they can overlap the next
+    field.
+  - The pristine rule alone: rejected, because a real error appearing on blur
+    would still move things mid-click.
+- **Verification:**
+  - The E2E passes with the new guard, which failed before the fix.
+  - A scratch probe: *New group*'s first "Create group" click submits (1
+    POST); an amount error appears and "Who paid?" stays at y=616; the click
+    after it lands.
+  - Screenshots show both forms evenly spaced, with fields at identical
+    heights with and without errors.
+  - `npm test` 23 + 6, smoke and race: all green.
+  - `tsc` and ESLint are clean.
+  - The sweep's second dry run: nothing to remove.
+- **Open questions:** Raffaele's production smoke output, for the evidence
+  file. Creating this PR was done at his request. `CLAUDE.md` §6 still says
+  he opens PRs, and it's unchanged unless he says so.
