@@ -77,6 +77,7 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [**The double settlement, WITH the DO**](../evidence/REQ-E.1-group-ledger-refuses-the-double-settlement.md) | **The "after"**: 201 + 409 in 5/5 production rounds (£200 for five £40 debts, against £280 before); the lock is proved necessary | "Same race, same code path, one change: the arbiter. **The centre of the demo**" |
 | [**The double settlement, without the DO**](../evidence/REQ-E.1-double-settle-without-the-do.md) | **E.2's "before"**: two concurrent settlements of one £40 debt, both accepted | "The ledger is internally consistent and factually wrong. That's why the DO exists." **The centre of the demo** |
 
+| [CI steps 1–4: the scripts and the first CI deploy](../evidence/CI-1-verification-scripts.md) | merge → checks → ledger → migrations → app → smoke, green on production in ~3 min (run 36134628524) | "Every merge is tested, deployed in order, and smoke-tested on the live site, with the rollback commands printed if it fails" |
 | [CI step 1: the verification scripts](../evidence/CI-1-verification-scripts.md) | smoke, race, E2E and cleanup are back in the repo; all pass locally, and **smoke passes on production** (your run) | "`race.mjs` is the demo's live 'after'. `--keep` leaves the group so I can show it in a browser" |
 
 ## 4. The spoken questions: where your material is

@@ -1,0 +1,58 @@
+# The full two-browser E2E against production (ADR-0024, workflow 3): nightly,
+# and on demand. Not per deploy: it's slower (~1–5 min), it spends ~70 Workers
+# AI neurons on Read receipt, and browser tests are the flakiest part of a
+# pipeline. It creates @example.test data and removes it, even when it fails.
+name: e2e-nightly
+
+on:
+  schedule:
+    # 03:17 UTC daily: off the hour, when scheduled jobs pile up on GitHub.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+# The same group as deploy.yml: never test production while it's being
+# deployed, and never deploy under a running test. Queued, never cancelled.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # For the secrets: cleanup uses wrangler (D1, KV, R2, Vectorize).
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SITE: https://splitr.raffaele-digennaro.workers.dev
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # puppeteer-core downloads no browser: it drives the runner's own Chrome
+      # (channel "chrome", ADR-0024 step-1 addendum). This step shows which.
+      - name: Chrome on the runner
+        run: google-chrome --version
+
+      - name: E2E
+        run: node scripts/verify/e2e.mjs "$SITE"
+
+      # Each person's last screen, when a step failed (e2e.mjs writes them).
+      - name: Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-screenshots
+          path: .data/e2e-*.png
+          if-no-files-found: ignore
+          retention-days: 7

@@ -258,3 +258,21 @@ public annotation said just "exit code 1". So a **preflight** now runs first:
   wrangler's own error line and `[code: …]`s (colour codes stripped).
 
 Tested locally with a bogus token and no login.
+
+### Step 4 works (2026-09-25)
+
+The run after the secrets were added (36134628524, attempt 2) deployed in the
+designed order and passed smoke on production
+([evidence](../evidence/CI-1-verification-scripts.md#step-4-the-first-ci-deploy-to-production-2026-09-25)).
+**Also decided with step 5:** a docs-only merge (`wiki/**`, `docs/**`,
+`README.md`) doesn't redeploy (`paths-ignore` on `deploy.yml` only; PRs
+still run `ci.yml` in full).
+
+## Addendum, 2026-09-25: rollout step 5 (`e2e-nightly.yml`)
+
+Daily at 03:17 UTC, and by manual dispatch. It runs `e2e.mjs` against
+production with the runner's own Chrome, and uploads the screenshots on
+failure (kept 7 days). **It shares `deploy.yml`'s concurrency group**, so a
+test never runs during a deploy and a deploy never lands under a test. Its
+first run can only be a manual dispatch after the merge: GitHub offers "Run
+workflow" only for workflows on the default branch.
