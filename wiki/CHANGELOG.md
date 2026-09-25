@@ -1061,3 +1061,16 @@ shape that triggers them. They are listed rather than ticked.
     tolerating its absence on the first run.
 - **Why:** `REQ-E.4`, `REQ-M.7`, ADR-0025 step 4.
 - **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md)
+
+## 2026-09-25 — Fixed: `AI_SHARED_SECRET` failed to type-check on the CI runner
+- **Type:** fixed
+- **Scope:** `src/lib/categorise/categorise-expense.ts`
+- **What:** The secret is read as possibly absent
+  (`"AI_SHARED_SECRET" in env ? … : undefined`, then a `typeof` check), rather
+  than as a typed property.
+- **Why:** PR #7's first CI run: `wrangler types` only lists a secret when
+  `.dev.vars` names it, and the runner has none. Locally, `.dev.vars` hid this.
+  (The R2 secrets only type-check because OpenNext's own `CloudflareEnv`
+  happens to declare `R2_ACCESS_KEY_ID`.) Reproduced on a clean copy, then
+  fixed; `tsc` passes both with and without `.dev.vars`.
+- **Decision:** none

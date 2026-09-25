@@ -1790,3 +1790,23 @@ does, months later, without the original chat transcript.
 - **Open questions:** Raffaele sets `AI_SHARED_SECRETS` (on `splitr-ai`) and
   `AI_SHARED_SECRET` (on the app) after the merge's deploy. Then production
   verification.
+
+## 2026-09-26T00:10Z — PR #7's CI caught an untyped secret
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Actions:**
+  - Read the failed annotation ("Property 'AI_SHARED_SECRET' does not exist
+    on type 'CloudflareEnv'").
+  - Reproduced it on a clean copy with no `.dev.vars`.
+  - Found why the R2 secrets don't fail: OpenNext declares
+    `R2_ACCESS_KEY_ID` itself.
+  - Replaced the typed read with an `in`-narrowed, possibly-absent read.
+- **Alternatives considered:**
+  - Augmenting `CloudflareEnv` with `AI_SHARED_SECRET?: string`: rejected. It
+    conflicts with the generated `string` whenever `.dev.vars` exists.
+  - Committing a `.dev.vars.example` for `wrangler types`: rejected, as it
+    couples type generation to a file of secret names.
+- **Verification:** `tsc` passes on the clean copy and locally, and 24
+  categorisation tests pass.
+- **Lesson:** a second case today of a local file hiding what a clean machine
+  lacks (after the build credentials). The clean-copy simulation is the check
+  that finds these.
