@@ -48,19 +48,14 @@ ADR-0024's step-2 addendum). **Its first real run on PR #2 was green**
 (run 36126889551, 1 min 22 s, every step passed). Pushing it proved the
 credential has the `workflow` scope.
 
-**Step 4's first run (PR #3 merged) failed safely** at its first `wrangler`
-call: nothing deployed, production unchanged, and the reason only in the log. A
-preflight with readable annotations is on branch `ci/deploy-preflight` (a PR).
-Ask Raffaele what the failed step's log says, or whether the secrets are set.
+**CI/CD is live.** Merging to `main` deploys production: checks → ledger →
+migrations → app → smoke. The first green run was 36134628524 (app
+`2dbf0e59`, ledger `8cba5af0`). The repo secrets are set, and a docs-only
+merge doesn't deploy. **Step 5** (`e2e-nightly.yml`) is on branch
+`ci/e2e-nightly` with a PR. After the merge, dispatch it once from Actions
+(it needs the default branch) and check it's green.
 
-**Step 4 (`deploy.yml`) was built** on branch `ci/deploy-workflow` with a PR.
-**Merging it is the first production deploy through CI**, and it needs step 3
-done first: the token, the two secrets, the `production` environment and
-branch protection. It also ships PRs #1 and #2, which aren't live yet. After
-the merge, check the run: ledger → migrations → app → smoke all green, and the
-summary shows the "before" versions.
-
-**Next:** his settings (step 3) →
+**Next: E.7** (below). The old plan line, kept for the record: his settings (step 3) →
 `deploy.yml` → `e2e-nightly.yml`, then **E.7** (below). He may prefer E.7
 first, so ask.
 

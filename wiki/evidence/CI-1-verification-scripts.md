@@ -193,3 +193,27 @@ Verified:
     heights.
 - **Regression checks:** `npm test` 23 + 6, then smoke, race and the E2E, all
   green.
+
+## Step 4: the first CI deploy to production (2026-09-25)
+
+Run **36134628524**, attempt 2. Attempt 1 stopped at the new preflight:
+*"CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is empty"*. Raffaele added
+the secrets and re-ran it. Every step is green, in the designed order (from
+the job's step timestamps, UTC):
+
+| Step | Start → end |
+|---|---|
+| `ci / checks` (types, lint, 29 tests, build, size) | 12:50:02 → 12:51:18 |
+| Check the deploy credentials | 12:51:43 → 12:51:45 |
+| Record the live versions | 12:51:45 → 12:51:47 |
+| **Deploy the ledger** | 12:51:47 → 12:51:50 |
+| **Apply D1 migrations** | 12:51:50 → 12:51:53 |
+| **Build and deploy the app** | 12:51:53 → 12:52:29 |
+| Wait 20 s | 12:52:29 → 12:52:49 |
+| **Smoke tests** (on production, with cleanup) | 12:52:49 → 12:53:12 |
+
+Live afterwards (`wrangler deployments status`): app **`2dbf0e59`**
+(was `3d4f7f18`), ledger **`8cba5af0`** (was `134160f5`), and the site
+answers 200. PRs #1 and #2 (the form fix and the credential-free build) are in
+production through this deploy. From merge to smoke-tested production:
+about 3 minutes.

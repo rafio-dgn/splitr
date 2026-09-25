@@ -18,6 +18,12 @@ name: deploy
 on:
   push:
     branches: [main]
+    # A docs-only merge doesn't redeploy production. (PRs still run ci.yml in
+    # full, so the required check never waits on a skipped workflow.)
+    paths-ignore:
+      - "wiki/**"
+      - "docs/**"
+      - "README.md"
   workflow_dispatch:
 
 # One deploy at a time, and never cancel one halfway: a half-finished deploy

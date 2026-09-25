@@ -1664,3 +1664,28 @@ does, months later, without the original chat transcript.
   run's annotation, shows it.
 - **Open questions:** Raffaele: were the secrets set before the merge? What
   does the failed step's log say?
+
+## 2026-09-25T13:10Z — The first deploy confirmed; step 5 built
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "fixed, the CI/CD completed."
+- **Actions:**
+  - Read run 36134628524's steps through the public API: all green, in order
+    by their timestamps.
+  - Checked the live versions (`wrangler deployments status`, read-only) and
+    the site's 200.
+  - Wrote `e2e-nightly.yml`, and added `paths-ignore` for docs on
+    `deploy.yml`.
+  - Opened a PR on `ci/e2e-nightly`.
+- **Alternatives considered:**
+  - Running the E2E on every deploy: rejected in ADR-0024 (neurons, time,
+    flakiness).
+  - A separate concurrency group for the E2E: rejected, because it could test
+    mid-deploy.
+  - `paths-ignore` on `ci.yml` too: rejected, because a required check on a
+    skipped workflow never reports, and PRs would hang.
+- **Verification:** actionlint is clean. **The E2E workflow is unrun**: it can
+  only be dispatched after the merge.
+- **Assumptions:** the runner's `google-chrome` works headless for
+  `puppeteer-core` with `channel: "chrome"`. The "Chrome on the runner" step
+  shows the version, and the first dispatch shows the rest.
+- **Open questions:** none new.

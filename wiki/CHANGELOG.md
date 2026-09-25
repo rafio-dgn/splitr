@@ -980,3 +980,16 @@ shape that triggers them. They are listed rather than ticked.
   call, with nothing changed, but only "exit code 1" was visible outside the
   log.
 - **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step-4 first-run note)
+
+## 2026-09-25 — First CI deploy; CI rollout step 5: the nightly E2E
+- **Type:** added, changed, docs
+- **Scope:** `.github/workflows/e2e-nightly.yml` (new), `.github/workflows/deploy.yml`,
+  `wiki/evidence/CI-1-verification-scripts.md`, ADR-0024
+- **What:**
+  - Recorded the first successful CI deploy: run 36134628524, in the designed
+    order, smoke green, with app `2dbf0e59` and ledger `8cba5af0` live.
+  - Added `e2e-nightly.yml`: daily plus on demand, sharing the deploy's
+    concurrency group, with screenshots uploaded on failure.
+  - `deploy.yml` skips docs-only merges.
+- **Why:** ADR-0024 steps 4 and 5.
+- **Decision:** [ADR-0024](./decisions/0024-ci-cd-github-actions.md) (step 4 note, step-5 addendum)
