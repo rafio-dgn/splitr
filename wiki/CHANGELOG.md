@@ -1044,3 +1044,33 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-E.4`, ADR-0025 steps 2–3. Raffaele chose 8B + RAG with a 0.6
   threshold from the results.
 - **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md) (§5, and the eval's result)
+
+## 2026-09-25 — E.7 step 4: the app categorises line items after the save
+- **Type:** added
+- **Scope:** `src/lib/categorise/{after-save,categorise-expense}.ts` (+ 8 tests),
+  `src/lib/expenses/add-expense.ts` (step 9), `wrangler.jsonc` (the `AI_WORKER`
+  binding), `.github/workflows/deploy.yml` (deploys `splitr-ai`), `README.md`,
+  `wiki/todos/HANDOVER.md`
+- **What:**
+  - After the expense is durable, its line items go to `splitr-ai` in
+    `waitUntil`. Only real answers are written, onto rows still
+    `uncategorised`.
+  - Every outcome is audited, and nothing throws. A missing secret skips the
+    call.
+  - `deploy.yml` deploys the AI Worker after the ledger and before the app,
+    tolerating its absence on the first run.
+- **Why:** `REQ-E.4`, `REQ-M.7`, ADR-0025 step 4.
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md)
+
+## 2026-09-25 — Fixed: `AI_SHARED_SECRET` failed to type-check on the CI runner
+- **Type:** fixed
+- **Scope:** `src/lib/categorise/categorise-expense.ts`
+- **What:** The secret is read as possibly absent
+  (`"AI_SHARED_SECRET" in env ? … : undefined`, then a `typeof` check), rather
+  than as a typed property.
+- **Why:** PR #7's first CI run: `wrangler types` only lists a secret when
+  `.dev.vars` names it, and the runner has none. Locally, `.dev.vars` hid this.
+  (The R2 secrets only type-check because OpenNext's own `CloudflareEnv`
+  happens to declare `R2_ACCESS_KEY_ID`.) Reproduced on a clean copy, then
+  fixed; `tsc` passes both with and without `.dev.vars`.
+- **Decision:** none
