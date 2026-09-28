@@ -82,7 +82,13 @@ it (the amendment). **Met on production:** 201 ×5, then 429 with
 verified in the Server Action, failing closed; a forged submit was refused in
 the page and by curl. Production Turnstile refuses automated browsers
 (`Error 600010`), so the nightly E2E joins via D1 there (ADR-0030 §4,
-amended). **Next:** F.5 (AI Gateway) → F.6 (rotation drill).
+amended). **F.5 is built** (ADR-0031, branch `f5/ai-gateway`): every model call goes
+through the `splitr` AI Gateway, which Raffaele created in the dashboard and
+which must exist before `splitr-ai` deploys. Text is cached for 1 day;
+receipts are never cached or logged. The gateway allows 100 calls a minute,
+and our own `NeuronBudget` DO caps the day at 8,000 neurons. It's verified
+locally through the real gateway. After the merge, Raffaele checks the Logs
+tab. **Next:** F.6 (rotation drill).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random

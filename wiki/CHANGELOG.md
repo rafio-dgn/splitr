@@ -1294,3 +1294,21 @@ shape that triggers them. They are listed rather than ticked.
   F.2/F.3 are done.
 - **Why:** `REQ-F.2`.
 - **Decision:** none
+
+## 2026-09-28 — AI Gateway in front of every model call, and a daily neuron cap
+- **Type:** added
+- **Scope:**
+  - `workers/ai/src/index.ts` (`metered()`, the `NeuronBudget` Durable Object);
+  - `workers/ai/wrangler.jsonc` (`AI_GATEWAY_ID`, `AI_NEURON_CAP`, the DO and its migration);
+  - `src/lib/ai/neuron-budget.ts` and its 4 tests;
+  - ADR-0031, the REQ-F.4 evidence, and the requirement, build plan, study guide and handover.
+- **What:**
+  - Every `env.AI.run` in `splitr-ai` goes through the `splitr` gateway
+    (created by Raffaele in the dashboard), with `metadata.op` on each call.
+  - Text calls are cached for 1 day. Receipt reads are never cached and never
+    logged.
+  - The gateway rate-limits to 100 real calls a minute.
+  - Our own cap refuses model calls once 8,000 neurons have been spent in the
+    UTC day. Every caller already falls back.
+- **Why:** `REQ-F.4`. Raffaele made five choices, recorded in ADR-0031.
+- **Decision:** [ADR-0031](./decisions/0031-ai-gateway-and-neuron-cap.md)

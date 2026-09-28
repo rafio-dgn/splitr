@@ -2080,3 +2080,42 @@ does, months later, without the original chat transcript.
   membership. `.dev.vars` was restored afterwards.
 - **Open question:** how the nightly E2E should join, now that production
   refuses automated browsers.
+
+## 2026-09-28T16:30Z — F.5: AI Gateway and the neuron cap (REQ-F.4)
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** put AI Gateway in front of every model call, with
+  caching, logs, rate limits and a spend cap. Guide Raffaele through the
+  gateway form using only the options it shows ("don't guess them").
+- **Inputs:**
+  - Raffaele's screenshots of the create form;
+  - Cloudflare's pricing pages (AI Gateway, Workers AI, Workers Logs), fetched
+    to answer his cost question rather than from memory.
+- **Raffaele's decisions:**
+  - text cached 1 day, receipts never;
+  - everything logged except receipts;
+  - 100 per minute;
+  - our own 8,000-neuron daily cap;
+  - cache hits counted in the cap.
+- **Actions:**
+  - `metered()` wraps all five operations;
+  - the `NeuronBudget` DO, one per UTC day;
+  - explicit operation labels (my first version guessed the embed label from
+    the number of texts and mislabelled index calls; fixed);
+  - ADR-0031 and the evidence.
+- **Found by measuring:**
+  - an unknown gateway id fails every call (2001), so the gateway had to
+    exist before the merge;
+  - a cache hit still reports `usage.neurons`, although it costs 0;
+  - cache hits don't count toward the rate limit;
+  - a repeat sent milliseconds after the first isn't a hit yet.
+- **Not verified:** whether the dashboard saved the rate limit as *sliding*.
+  The form showed "fixed", and I asked Raffaele to change it; he hasn't
+  confirmed. The behaviour measured (21 of 120 refused) doesn't tell the two
+  apart.
+- **Verification:**
+  - 4 pure tests;
+  - `tsc` for both programs;
+  - the cap at 0 locally;
+  - probes against the real gateway;
+  - the full E2E through it, with the logs read back via `getLog`.
+- **Open:** Raffaele's production check of the Logs tab after the merge.

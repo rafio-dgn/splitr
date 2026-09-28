@@ -86,11 +86,16 @@ fields are exact; use them as the field names.
 limits, and a spend cap on the LLM route.
 
 **Acceptance criteria:**
-- [ ] **Every** model call routes through AI Gateway
-- [ ] Caching enabled
-- [ ] Logs visible
-- [ ] Rate limits configured
-- [ ] A spend cap set on the LLM route
+- [x] **Every** model call routes through AI Gateway
+- [x] Caching enabled
+- [x] Logs visible
+- [x] Rate limits configured
+- [x] A spend cap set on the LLM route
+
+Met locally through the real gateway on 2026-09-28
+([evidence](../../evidence/REQ-F.4-ai-gateway.md),
+[ADR-0031](../../decisions/0031-ai-gateway-and-neuron-cap.md)). The production
+check of the Logs tab is Raffaele's, after the merge.
 
 **Source:** capture §9 · **Status:** ✅ **In scope** ([ADR-0005](../../decisions/0005-optional-scope.md))
 
