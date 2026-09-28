@@ -81,3 +81,6 @@ the real pasted output, and the date.
 - [`REQ-F.3-audit-json.md`](./REQ-F.3-audit-json.md): the `[AUDIT]` coverage
   inventory, the line format, and a smoke run's history rebuilt from logs
   alone (2026-09-28, local).
+- [`REQ-F.1-settle-rate-limit.md`](./REQ-F.1-settle-rate-limit.md): six
+  rapid settle-up requests, the 6th 429 (HTTP and the form, on the production
+  build), per-user proof, and the rationale in ADR-0029.

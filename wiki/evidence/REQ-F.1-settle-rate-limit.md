@@ -1,0 +1,63 @@
+# `REQ-F.1`: settle-up rate limit, six rapid requests, the sixth is 429
+
+**Date:** 2026-09-28 · **Decision and rationale:** [ADR-0029](../decisions/0029-settle-up-rate-limit.md) · **Binding:** `SETTLE_LIMITER`, 5 per 60 s, key `settle:<userId>`
+**Verified:** the production build (webpack) in the local Workers runtime. **On production:** Raffaele's, after the merge.
+
+---
+
+## The criteria
+
+| Criterion | Met by |
+|---|---|
+| A rate-limit binding guards the busiest write route | `wrangler.jsonc` → `ratelimits` → `SETTLE_LIMITER`, checked first in `recordSettlement` (the form and the curl route) |
+| Six rapid requests, the sixth 429 | Below |
+| A production window and count | **5 per 60 s per signed-in user** |
+| The rationale, written down | ADR-0029, "The rationale for 5 per 60 s" |
+
+## HTTP (`scripts/verify/rate-limit.mjs`), on the production build
+
+```
+$ node scripts/verify/rate-limit.mjs http://localhost:8787
+  · Alice's six rapid requests → 201, 201, 201, 201, 201, 429
+  ✔ requests 1–5 are accepted (201)
+  ✔ the 6th returns 429
+  ✔ …with Retry-After: 60
+  ✔ D1 holds exactly 5 settlements: the refused request wrote nothing
+  ✔ Bob's request in the same minute is accepted: the limit is per user
+rate-limit passed
+
+[AUDIT] {"actor":"Op1B…","action":"settlement.record","target":"unknown","timestamp":"2026-09-28T11:55:24.102Z","outcome":"refused:rate-limited","persisted":false,"detail":{"limit":5,"periodSeconds":60}}
+```
+
+## The form, in a browser, on the production build
+
+```
+submit 1: Settled
+submit 2: Settled
+submit 3: Settled
+submit 4: Settled
+submit 5: Settled
+submit 6: RATE-LIMITED message shown
+```
+
+The screen says: *"That's a lot of settle-up attempts in a short time. Nothing
+was recorded. Wait a minute, then try again."* The form keeps its values, and
+the balance shows £35 still owed (5 × £1 recorded, not 6).
+
+## Found on the way
+
+1. **The form had no message for the new result.** Each status renders its
+   own message, so `rate-limited` would have rendered **nothing**. Added.
+2. **Under `next dev`, the form path wasn't limited** (six "Settled"), although
+   the HTTP path was. On the production build both are limited. This is a
+   local-proxy artefact, not a code path that ships.
+3. **`SETTLE_LIMITER` was typed `any`** (`RateLimit` wasn't aliased for the
+   app's program). Caught by the lesson-6 probe, and fixed.
+
+## On production (Raffaele, after the merge)
+
+```
+node scripts/verify/rate-limit.mjs https://splitr.raffaele-digennaro.workers.dev
+```
+
+Leave a minute after any other script that settles as the same user.

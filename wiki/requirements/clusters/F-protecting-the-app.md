@@ -20,12 +20,14 @@ times fast; the sixth should return **429**. Pick a production window + count an
 write the rationale.
 
 **Acceptance criteria:**
-- [ ] A rate-limit binding guards the busiest write route
+- [x] A rate-limit binding guards the busiest write route
 - [ ] **Demonstrated:** six rapid requests, the sixth returns **429**
-- [ ] A production window and count are chosen
-- [ ] The **rationale is written down**
+- [x] A production window and count are chosen
+- [x] The **rationale is written down**
 
-**Source:** capture §9 · **Status:** ✅ **In scope** ([ADR-0005](../../decisions/0005-optional-scope.md))
+**Source:** capture §9 · **Status:** 🟡 Built and verified on the production build (2026-09-28):
+**5 per 60 s per user** on settle-up, with the rationale in ADR-0029. 201×5 then 429, on HTTP and on the form
+([evidence](../../evidence/REQ-F.1-settle-rate-limit.md)). **Left:** the production run.
 
 **Notes:** The written rationale is part of the requirement. "Five per minute"
 without a reason does not satisfy it.

@@ -1969,3 +1969,20 @@ does, months later, without the original chat transcript.
 - **Open questions:** Raffaele runs `audit-tail.mjs` on production.
   ADR-0028's decisions were the AI's, within REQ-F.3's wording, so they're
   flagged for his review.
+
+## 2026-09-28T18:00Z — F.1: settle-up rate limit
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Decisions asked:** the route, the key and the limit (the binding allows
+  only 10 or 60 s windows). The recommendation was chosen on all three.
+- **Actions:** the binding, a first-thing check in the service, the 429 and
+  `Retry-After`, the form message, the proof script, and the `race.mjs` cap.
+- **Found:**
+  1. `SETTLE_LIMITER` was `any` (the lesson-6 probe caught it; `RateLimit`
+     aliased).
+  2. The form had no branch for the new status, so it would have been silent.
+  3. Under `next dev`, the Server Action path wasn't limited. I proved it's
+     dev-only by rerunning the browser check on the production build in
+     workerd: the 6th was refused.
+- **Verification:** HTTP and browser checks on the production build, smoke
+  still passes, and 75 plus 6 tests pass.
+- **Open questions:** Raffaele's production run of `rate-limit.mjs`.
