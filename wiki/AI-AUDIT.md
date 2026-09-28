@@ -2364,3 +2364,31 @@ does, months later, without the original chat transcript.
     finished, which left one fixture photo in R2. D1 was cleaned; the photo
     is logged in the backlog.
 - **Open questions:** none new.
+
+## 2026-09-29T01:15Z — Receipt from the camera or the device
+- **Agent:** Claude Opus 5.5, main session
+- **Prompt intent:** "on the mobile it looks that we can only take a photo and
+  not take the file from the device".
+- **Cause:** `capture="environment"` on the only file input. On phones it
+  opens the camera directly.
+- **Actions:**
+  - two inputs: a camera input (with `capture`, shown on touch devices only)
+    and the device picker `input#receipt` (without it);
+  - drag and drop on the zone for desktop;
+  - one shared change handler;
+  - the ADR-0033 addendum, the evidence file and the CHANGELOG.
+- **Alternatives considered:**
+  - dropping `capture` and keeping one input. Rejected: the phone's own sheet
+    offers the camera too, but one tap straight to the camera is the "snap"
+    the product promises.
+  - showing both buttons on desktop. Rejected: `capture` does nothing on
+    desktop, so "Take a photo" would just open a file dialog, which is
+    misleading.
+- **Verification:**
+  - touch-phone and desktop emulation: the right buttons show, only the
+    camera input has `capture`, the device picker opens, and overflow is 0px;
+  - screenshots reviewed;
+  - the E2E, 89 pure and 10 ledger tests, `tsc` and ESLint all pass.
+  - The first check caught a bug: the camera button showed on desktop,
+    because `hidden` lost to `inline-flex`. Fixed with a wrapper.
+- **Open questions:** none.

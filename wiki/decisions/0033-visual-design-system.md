@@ -169,3 +169,19 @@ when it's the main feature. He also asked for four other fixes.
   grid item is `min-width: auto`. The fix is `min-w-0` on the card. Also,
   `overflow-x: clip` on `html` and `body` as a safety net (`clip`, not
   `hidden`, so the sticky header still works).
+
+## Addendum (2026-09-29): camera or device, not camera only
+
+- **The problem Raffaele found:** on a phone, the receipt could only be taken
+  as a new photo. `capture="environment"` on the one file input made phones
+  open the camera straight away, which hid the photo library and files.
+- **Now there are two sources:**
+  - **Take a photo** has `capture`, and opens the camera. It shows on touch
+    devices only (`pointer: coarse`).
+  - **Choose from your device** (on desktop, "Choose a file") has no
+    `capture`, so the phone's own picker offers the library, files and the
+    camera. This is `input#receipt`, which the E2E clicks.
+  - On desktop, a file can still be dropped anywhere on the zone.
+- **A class-conflict lesson:** `hidden` placed next to the button style lost
+  to its `inline-flex`. Visibility toggles go on a wrapper element, not on
+  the element that carries the button style.

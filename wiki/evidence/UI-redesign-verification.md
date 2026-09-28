@@ -95,3 +95,14 @@ Issues found in that pass, and fixed:
   `receipts/grp_a2523edbac954559b18c07cd3214e1aa/` in the `splitr-receipts`
   bucket. That is the known orphan case in ADR-0020, and it's in the backlog.
   The D1 rows were cleaned (0 left).
+
+## Addendum (2026-09-29): two receipt sources
+
+- **Touch phone** (390px, `isMobile` and `hasTouch` emulated, so
+  `pointer: coarse`): "Take a photo" and "Choose from your device" are both
+  shown. Only the camera input has `capture="environment"`. `input#receipt`
+  has none, and opens the file chooser. Overflow is 0px.
+- **Desktop** (1280px): only "Choose a file" is shown, plus "Or drop it
+  here". Overflow is 0px.
+- **Tests:** `tsc`, ESLint, 89 pure and 10 ledger tests, and the full E2E all
+  pass. Cleanup left 0 rows.

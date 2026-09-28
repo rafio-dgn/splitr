@@ -68,6 +68,9 @@ const FIELD_ORDER: readonly FieldName[] = [
 
 const initialState: AddExpenseFormState = { status: "idle" };
 
+/** The types a receipt may be (ADR-0020); the server checks them again. */
+const RECEIPT_ACCEPT = "image/jpeg,image/png,image/webp";
+
 /**
  * The two fields the live "£x each" line needs — taken *from* the shared schema
  * with `.pick()`, never restated. If the amount rules change, this changes with
@@ -277,6 +280,31 @@ export function AddExpenseForm({
 
 	const alone = members.length === 1;
 
+	const fileControlsDisabled = pending || receipt.status === "uploading" || reading.status === "reading";
+	const [dragging, setDragging] = useState(false);
+
+	function onReceiptChosen(event: React.ChangeEvent<HTMLInputElement>): void {
+		const file = event.target.files?.[0];
+		// Cleared so choosing the same file again still fires a change.
+		event.target.value = "";
+		if (file !== undefined) void attachReceipt(file);
+	}
+
+	/** The device picker, `input#receipt`. Rendered in one of two places, so built here once. */
+	const receiptFileInput = (className: string) => (
+		<input
+			id="receipt"
+			ref={receiptInput}
+			type="file"
+			accept={RECEIPT_ACCEPT}
+			aria-label="Choose a receipt photo from your device"
+			aria-describedby="receipt-status"
+			disabled={fileControlsDisabled}
+			onChange={onReceiptChosen}
+			className={className}
+		/>
+	);
+
 	return (
 		<form
 			action={formAction}
@@ -330,21 +358,72 @@ export function AddExpenseForm({
 					</span>
 				</div>
 
+				{/* Two ways in, because a phone's camera-only picker (the old
+				    `capture` attribute) hid the photo library and files:
+				      - "Take a photo": the camera straight away. Touch devices only.
+				      - "Choose from your device": library, files, and on phones the
+				        OS sheet offers the camera too. This one is `input#receipt`,
+				        which the E2E clicks.
+				    On a desktop a file can also be dropped anywhere on the zone. */}
 				<div
+					onDragOver={(event) => {
+						if (preview !== null || fileControlsDisabled) return;
+						event.preventDefault();
+						setDragging(true);
+					}}
+					onDragLeave={() => setDragging(false)}
+					onDrop={(event) => {
+						if (preview !== null || fileControlsDisabled) return;
+						event.preventDefault();
+						setDragging(false);
+						const file = event.dataTransfer.files[0];
+						if (file !== undefined) void attachReceipt(file);
+					}}
 					className={`relative overflow-hidden rounded-tile ${
 						preview === null
-							? "border-2 border-dashed border-line-strong bg-surface-2 transition-colors duration-150 hover:border-primary has-focus-visible:border-primary"
+							? `border-2 border-dashed bg-surface-2 transition-colors duration-150 ${dragging ? "border-primary bg-primary-soft" : "border-line-strong"}`
 							: "bg-surface-2"
 					}`}
 				>
 					{preview === null ? (
-						<div aria-hidden className="pointer-events-none flex flex-col items-center gap-2 px-4 py-8 text-center">
-							<span className="grid size-14 place-items-center rounded-2xl bg-primary text-on-primary shadow-rest">
-								<Icon name="camera" className="size-7" />
+						<div className="flex flex-col items-center gap-3 px-4 py-7 text-center">
+							<span aria-hidden className="grid size-14 place-items-center rounded-2xl bg-primary text-on-primary shadow-rest">
+								<Icon name="receipt" className="size-7" />
 							</span>
-							<span className="font-semibold">Take a photo, or choose one</span>
+							<span aria-hidden className="font-semibold">
+								{dragging ? "Drop it here" : "Add a photo of the receipt"}
+							</span>
+							<div className="flex w-full flex-col items-stretch justify-center gap-2 sm:w-auto sm:flex-row">
+								{/* Touch devices only. The switch is on this wrapper: on the label
+								    itself, `hidden` lost to the button style's `inline-flex`. */}
+								<span className="hidden pointer-coarse:flex pointer-coarse:flex-col sm:pointer-coarse:flex-row">
+								<label
+									className={`has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary ${buttonClass()}`}
+								>
+									<Icon name="camera" className="size-[18px]" />
+									Take a photo
+									<input
+										type="file"
+										accept={RECEIPT_ACCEPT}
+										capture="environment"
+										disabled={fileControlsDisabled}
+										onChange={onReceiptChosen}
+										className="sr-only"
+									/>
+								</label>
+								</span>
+								<span
+									className={`relative has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary ${buttonClass({ variant: "secondary" })} pointer-fine:bg-primary pointer-fine:text-on-primary pointer-fine:border-transparent pointer-fine:hover:bg-primary-hover`}
+								>
+									<Icon name="upload" className="size-[18px]" />
+									<span className="pointer-coarse:hidden">Choose a file</span>
+									<span className="hidden pointer-coarse:inline">Choose from your device</span>
+									{receiptFileInput("absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed")}
+								</span>
+							</div>
 							<span className="max-w-xs text-[13px] text-muted">
-								It goes straight to storage, never through our servers.
+								<span className="pointer-coarse:hidden">Or drop it here. </span>
+								JPEG, PNG or WebP. It goes straight to storage, never through our servers.
 							</span>
 						</div>
 					) : (
@@ -368,7 +447,7 @@ export function AddExpenseForm({
 								<button
 									type="button"
 									onClick={() => receiptInput.current?.click()}
-									disabled={pending || receipt.status === "uploading" || reading.status === "reading"}
+									disabled={fileControlsDisabled}
 									className={`self-start ${buttonClass({ variant: "ghost", size: "sm" })}`}
 								>
 									<Icon name="camera" className="size-4" />
@@ -377,26 +456,9 @@ export function AddExpenseForm({
 							</div>
 						</div>
 					)}
-					{/* The real control. Before a photo is chosen it covers the whole
-					    drop zone, so a tap anywhere opens the camera or picker and a
-					    file can be dropped onto it. The E2E clicks it directly. */}
-					<input
-						id="receipt"
-						ref={receiptInput}
-						type="file"
-						accept="image/jpeg,image/png,image/webp"
-						capture="environment"
-						aria-label="Receipt photo"
-						aria-describedby="receipt-status"
-						disabled={pending || receipt.status === "uploading" || reading.status === "reading"}
-						onChange={(event) => {
-							const file = event.target.files?.[0];
-							if (file !== undefined) {
-								void attachReceipt(file);
-							}
-						}}
-						className={preview === null ? "absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed" : "sr-only"}
-					/>
+					{/* With a photo chosen, the device picker stays mounted (hidden) for
+					    "Use a different photo". */}
+					{preview !== null ? receiptFileInput("sr-only") : null}
 				</div>
 				<input type="hidden" name="receiptKey" value={receipt.status === "attached" ? receipt.key : ""} />
 

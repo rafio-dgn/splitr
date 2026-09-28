@@ -1447,3 +1447,13 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** Raffaele's review of the redesign.
 - **Decision:** ADR-0021 addendum (automatic read, his choice) and ADR-0033
   addendum.
+
+## 2026-09-29 — The receipt from the camera or from the device
+- **Type:** fixed
+- **Scope:** `add-expense-form.tsx`, `components/icons.tsx`
+- **What:** "Take a photo" (camera, touch devices only) sits beside "Choose
+  from your device", a file picker with no `capture`. On desktop there is
+  "Choose a file", and a file can be dropped on the zone.
+- **Why:** Raffaele: on mobile, only a new photo could be taken, not a file
+  from the device.
+- **Decision:** ADR-0033 addendum (2026-09-29).
