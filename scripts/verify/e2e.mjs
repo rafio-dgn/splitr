@@ -174,9 +174,20 @@ try {
 	const refusal = await bodyText(alice);
 	expect(refusal.includes(`${people.bob.name} recorded`), "Alice's duplicate is refused, naming Bob", refusal.slice(0, 400));
 
-	// 7. Search finds the receipt by one of its items. Indexing runs after the
-	// save (waitUntil) and Vectorize is eventually consistent, so poll.
+	// 7. Search finds the receipt by one of its items. First, search is reached
+	// the way a person reaches it: the "Search" link in the top bar, then the
+	// form. Until 2026-09-28 no link existed, and every script had opened the
+	// URL directly, so nobody noticed.
 	const query = "croissant";
+	await open(alice, `${baseUrl}/groups`);
+	await alice.locator('header a[href="/search"]').click();
+	await waitForPath(alice, /^\/search$/);
+	await fill(alice, 'input[name="q"]', query);
+	await alice.locator('form[role="search"] button[type="submit"]').click();
+	await waitForPath(alice, /^\/search\?q=croissant$/);
+	expect(true, "search is reached from the top bar, and its form submits the query");
+	// Indexing runs after the save (waitUntil) and Vectorize is eventually
+	// consistent, so poll.
 	let found = false;
 	// Up to 5 minutes: usually seconds, but on 2026-09-25 it took over 2
 	// (the vector was indexed; Vectorize hadn't made it queryable yet). A slow

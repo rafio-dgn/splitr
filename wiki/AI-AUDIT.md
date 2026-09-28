@@ -2145,3 +2145,24 @@ does, months later, without the original chat transcript.
     `gh run list`. Raffaele must say whether that is now allowed.
     **Resolved the same day:** Raffaele said yes, and `CLAUDE.md` §6 now
     allows opening PRs and reading their status, and nothing more.
+
+## 2026-09-28T20:30Z — A "Search" link, and an E2E that uses it
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Raffaele OK'd adding a search link. He also confirmed he
+  searched 8 times, which closed that finding on PR #23's branch.
+- **Inputs read:** `src/app/(app)/layout.tsx`, `src/app/(app)/search/page.tsx`
+  and `scripts/verify/e2e.mjs`.
+- **Actions:**
+  - added a `<Link href="/search">` in the top bar;
+  - E2E step 7 clicks it, fills `q` and submits, then polls as before.
+- **Alternatives considered:** a search box in the header. Rejected: a second
+  form to keep in step with the page's, for no gain.
+- **Assumptions:** that Next's production prefetch of the link is harmless.
+  Checked: `/search` with no `q` makes no model call (`query === ""` → null).
+- **Verification:**
+  - `tsc` and ESLint are clean.
+  - **The first E2E run failed** at "Read receipt": after the branch switch
+    reloaded it, the local AI Worker failed every call in 0 ms, before the
+    gateway. That was a local artefact: after a clean restart, the full E2E
+    passed, including the new step.
+- **Open questions:** none.
