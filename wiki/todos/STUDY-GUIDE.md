@@ -60,6 +60,7 @@ answer to "why?".
 | [0020](../decisions/0020-receipts-via-presigned-r2-urls.md) | How do receipt photos get stored? | The browser PUTs straight to R2 with a 5-minute presigned URL; the Worker only signs, and stores the key. It's checked on attach (group prefix, exists, ≤10 MB, image type) |
 | [0019](../decisions/0019-kv-holds-recent-descriptions-not-balances.md) | What goes in KV? | Recent descriptions for autofill, **not** the balance: KV can be a minute stale, and a stale balance is a wrong balance. **Your choice**, which changed the original plan |
 | [0018](../decisions/0018-splitr-domain-model.md) | The domain model | **Your 8 answers:** equal shares (items are informational); a settlement is "A paid B", valid only if A owes and B is owed; void-and-re-add, never edit; one currency per group; one rotatable invite code; leave only when square; any member may void; only the two parties record a settlement |
+| [0033](../decisions/0033-visual-design-system.md) | How should Splitr look? | One token set in `globals.css`, with no raw colours anywhere. Green for owed and settled; **clay, not red, for "you owe"**, because owing isn't an error. Toasts come via a flash cookie, so REQ-B.3 and the E2E URLs are untouched. Settle-up outcomes stay inline (§6) |
 
 **Still to decide, each with its own ADR:** the vision model (by spike, D.6); whether the DO *owns* the balance or only
 *arbitrates*, and whether **every** balance-changing write goes through it (E.1,
@@ -93,6 +94,7 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 
 | [CI steps 1–4: the scripts and the first CI deploy](../evidence/CI-1-verification-scripts.md) | merge → checks → ledger → migrations → app → smoke, green on production in ~3 min (run 36134628524) | "Every merge is tested, deployed in order, and smoke-tested on the live site, with the rollback commands printed if it fails" |
 | [CI step 1: the verification scripts](../evidence/CI-1-verification-scripts.md) | smoke, race, E2E and cleanup are back in the repo; all pass locally, and **smoke passes on production** (your run) | "`race.mjs` is the demo's live 'after'. `--keep` leaves the group so I can show it in a browser" |
+| [UI redesign verification](../evidence/UI-redesign-verification.md) | The redesign broke nothing: tsc, lint, 99 tests, build, and the full E2E twice | "Every E2E selector was treated as a contract" |
 
 ## 4. The spoken questions: where your material is
 
@@ -253,3 +255,4 @@ Kept in sync with [`backlog.md`](./backlog.md):
 - **D.6: photograph 3–5 English receipts** into `splitr/.data/receipts/mine/`. Then you choose the vision model from the spike.
 - **CI/CD setup (ADR-0024):** the Cloudflare API token, the GitHub secrets, the `production` environment, branch protection and the `workflow` scope. (§6 is amended, 2026-09-25.)
 - **Spoken answers:** `REQ-A.5`, `REQ-B.6`, `REQ-C.5`.
+- **UI redesign (applied 2026-09-28, ADR-0033):** look at it running, and reverse any of the five defaults I chose if you disagree: timing (now), icons (inline SVG), dark mode (follows the system), the mobile bottom bar, and toasts via a flash cookie.

@@ -5,12 +5,13 @@ export default function SearchLoading() {
 	return (
 		<div className="flex flex-col gap-8">
 			<Skeleton className="h-8 w-32" />
-			<p role="status" className="text-sm text-zinc-500">
+			<p role="status" className="text-sm text-muted">
 				Searching…
 			</p>
-			<div className="flex flex-col gap-3" aria-hidden>
+			<Skeleton className="h-12 w-full max-w-2xl" />
+			<div className="flex max-w-2xl flex-col gap-3" aria-hidden>
 				{[0, 1, 2, 3].map((row) => (
-					<Skeleton key={row} className="h-12 w-full" />
+					<Skeleton key={row} className="h-14 w-full" />
 				))}
 			</div>
 		</div>

@@ -12,7 +12,8 @@
 import { headers } from "next/headers";
 
 import { CopyLinkButton } from "@/components/copy-link-button";
-import { EmptyState, ScreenHeading } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Avatar, EmptyState, ScreenHeading, SectionLabel, cardClass } from "@/components/ui";
 import { resolveGroup } from "@/lib/groups/current-group";
 import { inviteUrl } from "@/lib/groups/membership";
 import { requireSession } from "@/lib/session";
@@ -50,33 +51,51 @@ export default async function MembersPage({
 			{alone ? (
 				/* §5.8: a group is never memberless — the viewer is in it. The real
 				   empty state is being alone. */
-				<EmptyState title="It's just you in here so far">
+				<EmptyState icon="users" title="It's just you in here so far">
 					<p>
 						Splitr doesn&rsquo;t do much with one person. Send someone the link.
 					</p>
 				</EmptyState>
 			) : (
-				<ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
-					{group.members.map((member) => (
-						<li key={member.id} className="py-3 text-sm">
-							{member.name}
-						</li>
-					))}
-				</ul>
+				<section className="flex flex-col gap-3">
+					<SectionLabel>
+						{group.members.length} {group.members.length === 1 ? "member" : "members"}
+					</SectionLabel>
+					<ul className={`flex flex-col px-4 py-1 ${cardClass}`}>
+						{group.members.map((member) => (
+							<li
+								key={member.id}
+								className="flex items-center gap-3 border-t border-line py-3 text-[15px] font-semibold first:border-t-0"
+							>
+								<Avatar id={member.id} name={member.name} size="lg" />
+								{member.name}
+							</li>
+						))}
+					</ul>
+				</section>
 			)}
 
-			<section className="rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
-				<h2 className="font-medium">Invite someone</h2>
-				<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+			{/* The invite panel: the one thing to do on this page.
+			    Its <code> must stay the first on the page (the E2E reads it). */}
+			<section className={`flex flex-col gap-4 p-5 md:p-6 ${cardClass}`}>
+				<div className="flex items-start gap-3">
+					<span className="grid size-10 shrink-0 place-items-center rounded-tile bg-primary-soft text-primary-ink">
+						<Icon name="link" />
+					</span>
+					<div>
+						<h2 className="font-display text-lg font-semibold">Invite someone</h2>
+						<p className="text-[15px] text-muted">
 					Anyone with this link can join {group.name}.
-				</p>
-				<div className="mt-4 flex flex-wrap items-center gap-3">
-					<code className="min-w-0 flex-1 overflow-x-auto rounded-md bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-900">
+						</p>
+					</div>
+				</div>
+				<div className="flex flex-wrap items-center gap-3">
+					<code className="flex h-11 min-w-0 flex-1 basis-64 items-center overflow-x-auto rounded-field border border-line bg-surface-2 px-3 font-mono text-sm whitespace-nowrap select-all">
 						{link}
 					</code>
 					<CopyLinkButton value={link} />
 				</div>
-				<p className="mt-4 text-sm text-zinc-500">
+				<p className="text-sm text-muted">
 					Splitr doesn&rsquo;t send it for you — paste it wherever the group
 					already talks.
 				</p>

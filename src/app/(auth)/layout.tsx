@@ -11,16 +11,20 @@
  */
 import Link from "next/link";
 
+import { Logo } from "@/components/logo";
+
 export default function AuthLayout({ children }: LayoutProps<"/">) {
 	return (
-		<div className="flex min-h-full flex-1 flex-col bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-			<header className="mx-auto w-full max-w-5xl px-6 py-6">
-				<Link href="/" className="text-lg font-semibold tracking-tight">
-					Splitr
+		<div className="flex min-h-full flex-1 flex-col">
+			<header className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6">
+				<Link href="/" aria-label="Splitr home" className="inline-flex rounded-lg">
+					<Logo size="sm" />
 				</Link>
 			</header>
-			<main className="mx-auto w-full max-w-sm flex-1 px-6 py-16">
-				{children}
+			<main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-16 md:pt-12">
+				<div className="rounded-card border border-line bg-surface p-6 shadow-rest md:p-8">
+					{children}
+				</div>
 			</main>
 		</div>
 	);

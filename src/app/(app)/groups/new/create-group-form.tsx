@@ -16,6 +16,7 @@
 
 import { useActionState, useState } from "react";
 
+import { Spinner, buttonClass, errorTextClass, inputClass, labelClass } from "@/components/ui";
 import { parseCreateGroup } from "@/lib/schemas/group";
 
 import { createGroupAction, type CreateGroupFormState } from "./actions";
@@ -46,8 +47,8 @@ export function CreateGroupForm() {
 
 	return (
 		<form action={formAction} className="flex flex-col gap-3">
-			<div className="flex flex-col gap-1">
-				<label htmlFor="name" className="text-sm font-medium">
+			<div className="flex flex-col gap-1.5">
+				<label htmlFor="name" className={labelClass}>
 					Group name
 				</label>
 				<input
@@ -65,16 +66,16 @@ export function CreateGroupForm() {
 					onBlur={() => {
 						if (edited || name !== "") setTouched(true);
 					}}
-					className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+					className={inputClass}
 				/>
 				{/* Always present, so an error appearing never moves the button. */}
-				<p id="name-error" role="alert" className="min-h-5 text-sm text-red-600">
+				<p id="name-error" role="alert" className={`min-h-5 ${errorTextClass}`}>
 					{error}
 				</p>
 			</div>
 
 			{state.status === "invalid" && state.formErrors.length > 0 ? (
-				<p role="alert" className="text-sm text-red-600">
+				<p role="alert" className={errorTextClass}>
 					We couldn&rsquo;t create the group. Try again — nothing was saved.
 				</p>
 			) : null}
@@ -82,13 +83,14 @@ export function CreateGroupForm() {
 			<button
 				type="submit"
 				disabled={pending}
-				className="self-start rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+				className={`mt-1 w-full ${buttonClass({ size: "lg" })}`}
 			>
+				{pending ? <Spinner /> : null}
 				{pending ? "Creating…" : "Create group"}
 			</button>
 
 			{state.status === "failed" ? (
-				<p role="alert" className="text-sm text-red-600">
+				<p role="alert" className={errorTextClass}>
 					We couldn&rsquo;t create the group. Nothing was saved. Try again.
 				</p>
 			) : null}

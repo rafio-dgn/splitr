@@ -450,3 +450,29 @@ requirement work, not new scope; they sit here only so they are not lost.
       production builds.** Verification scripts run back to back from one
       machine can hit 429. Leave about 15 s between them, or add a pause.
 
+
+## UI/UX redesign — applied 2026-09-28 ([ADR-0033](../decisions/0033-visual-design-system.md))
+
+Raffaele approved the plan (https://claude.ai/artifact/BoPtwD74qCEn1ZX477TWgk)
+and asked for it to be applied. It is applied and verified; see
+[the evidence](../evidence/UI-redesign-verification.md). It is on its own branch,
+`ui/redesign`, cut from `main` (not from `f6/rotation-drill`).
+
+- [x] ~~Arial overriding the loaded font~~: fixed in `globals.css`.
+- [x] ~~`red-600` errors at 4.12:1 on dark~~: `danger` is now 6.1–6.6:1.
+- [x] ~~16px receipt-line remove button~~: now 44px.
+- [x] Decisions closed on the plan's defaults (ADR-0033). Each is Raffaele's
+      to reverse:
+  - timing: now;
+  - icons: inline SVG;
+  - dark mode: follows the system setting;
+  - mobile: a bottom tab bar;
+  - toasts: a flash cookie.
+- [ ] `review` Raffaele: look at the running app (light and dark, phone
+      width) and say what to change.
+- [ ] `a11y` A VoiceOver pass and a 200% zoom check. Not done yet.
+- [ ] `proposed` `apple-icon.png` and `opengraph-image`. Skipped for now:
+      `next/og` on the Workers runtime needs checking first.
+- [ ] `proposed` Mobile tab bar: add a third tab ("You": account and sign
+      out) if an account page is ever built. Today the account menu lives in
+      the header.

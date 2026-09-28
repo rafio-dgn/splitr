@@ -16,6 +16,7 @@ import {
 	type AddExpenseResult,
 } from "@/lib/expenses/add-expense";
 import { audit } from "@/lib/audit";
+import { setFlash } from "@/lib/flash";
 import { getGroupForViewer } from "@/lib/groups/membership";
 import type { ReceiptDraft } from "@/lib/receipts/draft";
 import { readReceipt } from "@/lib/receipts/read-receipt";
@@ -61,7 +62,10 @@ export async function addExpenseAction(
 	});
 	if (result.status === "accepted") {
 		// Back to the group, where the new expense is now in the feed and the
-		// balances. Outside any try/catch: `redirect()` works by throwing.
+		// balances. The toast rides the redirect as a flash cookie (lib/flash.ts),
+		// so the URL stays exactly `/groups/<id>`. Outside any try/catch:
+		// `redirect()` works by throwing.
+		await setFlash("Expense added", result.expense.description);
 		redirect(`/groups/${result.expense.groupId}`);
 	}
 	return result;

@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { TurnstileWidget } from "@/components/turnstile-widget";
+import { Spinner, buttonClass, errorTextClass, hintClass, inputClass, labelClass } from "@/components/ui";
 import { signUp } from "@/lib/auth-client";
 
 import { joinGroupAction, type JoinOutcome } from "./actions";
@@ -65,12 +66,13 @@ export function JoinAsMember({ inviteCode, groupName, turnstileSiteKey }: { invi
 					setResetKey((k) => k + 1);
 					setError(joinFailureMessage(outcome));
 				}}
-				className="self-start rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+				className={`mt-1 w-full ${buttonClass({ size: "lg" })}`}
 			>
+				{busy ? <Spinner /> : null}
 				{busy ? "Joining…" : `Join ${groupName}`}
 			</button>
 			{error !== null ? (
-				<p role="alert" className="text-sm text-red-600">
+				<p role="alert" className={errorTextClass}>
 					{error}
 				</p>
 			) : null}
@@ -129,18 +131,18 @@ export function JoinForm({
 					setError(joinFailureMessage(outcome));
 				}}
 			>
-				<label className="flex flex-col gap-1 text-sm">
+				<label className={`flex flex-col gap-1.5 ${labelClass}`}>
 					Your name
 					<input
 						name="name"
 						autoComplete="name"
 						required
 						disabled={busy}
-						className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+						className={inputClass}
 					/>
 				</label>
 
-				<label className="flex flex-col gap-1 text-sm">
+				<label className={`flex flex-col gap-1.5 ${labelClass}`}>
 					Email
 					<input
 						name="email"
@@ -148,11 +150,11 @@ export function JoinForm({
 						autoComplete="email"
 						required
 						disabled={busy}
-						className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+						className={inputClass}
 					/>
 				</label>
 
-				<label className="flex flex-col gap-1 text-sm">
+				<label className={`flex flex-col gap-1.5 ${labelClass}`}>
 					Password
 					<input
 						name="password"
@@ -161,16 +163,16 @@ export function JoinForm({
 						required
 						minLength={12}
 						disabled={busy}
-						className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+						className={inputClass}
 					/>
-					<span className="text-xs text-zinc-500">At least 12 characters.</span>
+					<span className={`font-normal ${hintClass}`}>At least 12 characters.</span>
 				</label>
 
 				{/* REQ-F.2: between the last field and the submit button (§4.4). */}
 				<TurnstileWidget siteKey={turnstileSiteKey} onToken={setToken} resetKey={resetKey} />
 
 				{error !== null ? (
-					<p role="alert" className="text-sm text-red-600">
+					<p role="alert" className={errorTextClass}>
 						{error}
 					</p>
 				) : null}
@@ -178,15 +180,16 @@ export function JoinForm({
 				<button
 					type="submit"
 					disabled={busy || token === null}
-					className="self-start rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+					className={`mt-1 w-full ${buttonClass({ size: "lg" })}`}
 				>
+					{busy ? <Spinner /> : null}
 					{busy ? "Joining…" : `Join ${groupName}`}
 				</button>
 			</form>
 
-			<p className="text-sm text-zinc-500">
+			<p className="text-center text-sm text-muted">
 				Already have a Splitr account?{" "}
-				<Link href="/login" className="underline">
+				<Link href="/login" className="font-semibold text-primary-ink underline underline-offset-4">
 					Log in to join.
 				</Link>
 			</p>

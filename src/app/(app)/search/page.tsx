@@ -12,7 +12,8 @@
  */
 import Link from "next/link";
 
-import { EmptyState, ScreenHeading } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Banner, EmptyState, ScreenHeading, buttonClass, cardClass, inputClass } from "@/components/ui";
 import { formatGbp } from "@/lib/money";
 import { searchByKeyword, searchByMeaning } from "@/lib/search/search";
 import { requireSession } from "@/lib/session";
@@ -31,12 +32,15 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
 		query === "" ? null : mode === "keyword" ? await searchByKeyword(session.user.id, query) : await searchByMeaning(session.user.id, query);
 
 	const modeLink = (target: "meaning" | "keyword", label: string) =>
+		// A two-option segmented control. Both are links, so each mode is a URL.
 		target === mode ? (
-			<span className="font-medium">{label}</span>
+			<span aria-current="true" className="rounded-full bg-surface px-3.5 py-1.5 font-semibold text-ink shadow-rest">
+				{label}
+			</span>
 		) : (
 			<Link
 				href={`/search?q=${encodeURIComponent(query)}${target === "keyword" ? "&mode=keyword" : ""}`}
-				className="underline underline-offset-4"
+				className="rounded-full px-3.5 py-1.5 font-semibold text-muted hover:text-ink"
 			>
 				{label}
 			</Link>
@@ -46,28 +50,32 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
 		<div className="flex flex-col gap-8">
 			<ScreenHeading title="Search" />
 
-			<form action="/search" method="get" className="flex flex-col gap-3" role="search">
-				<label className="flex flex-col gap-1 text-sm">
+			<form action="/search" method="get" className="flex max-w-2xl flex-col gap-2" role="search">
+				<label htmlFor="q" className="text-sm font-semibold">
 					Find a past expense, in any of your groups
-					<input
-						name="q"
-						defaultValue={query}
-						placeholder="coffee, that Thai place, the thing for the kitchen…"
-						className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-					/>
 				</label>
-				{mode === "keyword" ? <input type="hidden" name="mode" value="keyword" /> : null}
-				<button
-					type="submit"
-					className="self-start rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
-				>
-					Search
-				</button>
+				<div className="flex flex-col gap-3 sm:flex-row">
+					<span className="relative flex-1">
+						<Icon name="search" className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted" />
+						<input
+							id="q"
+							name="q"
+							type="search"
+							defaultValue={query}
+							placeholder="coffee, that Thai place, the thing for the kitchen…"
+							className={`${inputClass} pl-11`}
+						/>
+					</span>
+					{mode === "keyword" ? <input type="hidden" name="mode" value="keyword" /> : null}
+					<button type="submit" className={buttonClass({ size: "md" })}>
+						Search
+					</button>
+				</div>
 			</form>
 
 			{result === null ? (
 				// §5.13, first empty: no query yet.
-				<EmptyState title="Find a past expense">
+				<EmptyState icon="search" title="Find a past expense">
 					<p>
 						Search by what it actually was, not what the receipt called it. Try &ldquo;coffee&rdquo;, or &ldquo;that
 						Thai place&rdquo;.
@@ -75,37 +83,47 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
 				</EmptyState>
 			) : (
 				<section className="flex flex-col gap-3">
-					<p className="text-sm text-zinc-500">
-						{modeLink("meaning", "By meaning")} · {modeLink("keyword", "By keyword")}
-						{result.truncated ? " · Searching your first 50 groups only." : null}
-					</p>
+					<div className="flex flex-wrap items-center gap-3 text-sm">
+						<span className="inline-flex rounded-full bg-surface-2 p-1">
+							{modeLink("meaning", "By meaning")}
+							{modeLink("keyword", "By keyword")}
+						</span>
+						{result.truncated ? <span className="text-muted">Searching your first 50 groups only.</span> : null}
+					</div>
 					{"fellBackToKeyword" in result && result.fellBackToKeyword ? (
 						// ADR-0025 §4: the query couldn't be understood by meaning in time. Say so,
 						// rather than pass keyword matches off as meaning matches.
-						<p role="status" className="text-sm text-amber-700 dark:text-amber-400">
+						<Banner role="status">
 							Search by meaning isn&rsquo;t available right now, so these are keyword matches.
-						</p>
+						</Banner>
 					) : null}
 					{result.hits.length === 0 ? (
 						// §5.13, second empty: a query that found nothing.
-						<EmptyState title={`Nothing matches “${query}”`}>
+						<EmptyState icon="search" title={`Nothing matches “${query}”`}>
 							<p>Try fewer words, or a different way of describing it.</p>
 						</EmptyState>
 					) : (
-						<ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+						<ul className={`flex max-w-2xl flex-col px-3 py-1 ${cardClass}`}>
 							{result.hits.map((hit) => (
-								<li key={hit.expenseId} className="py-3">
-									<Link href={`/groups/${hit.groupId}/expenses/${hit.expenseId}`} className="flex items-baseline justify-between gap-4">
-										<span className="flex flex-col">
-											<span className="font-medium">{hit.description}</span>
-											<span className="text-xs text-zinc-500">
+								<li key={hit.expenseId} className="border-t border-line first:border-t-0">
+									<Link
+										href={`/groups/${hit.groupId}/expenses/${hit.expenseId}`}
+										className="flex items-center justify-between gap-4 rounded-[10px] px-2 py-3 hover:bg-surface-2"
+									>
+										<span className="flex min-w-0 flex-col">
+											<span className="truncate font-semibold">{hit.description}</span>
+											<span className="truncate text-[13px] text-muted">
 												{hit.groupName} · {hit.spentAt}
 												{hit.matchedItem !== null ? ` · matched “${hit.matchedItem}”` : ""}
 											</span>
 										</span>
 										<span className="flex flex-col items-end">
-											<span className="tabular-nums">{formatGbp(hit.amountMinorUnits)}</span>
-											{hit.score !== null ? <span className="text-xs text-zinc-500">{hit.score.toFixed(2)}</span> : null}
+											<span className="font-semibold tabular-nums">{formatGbp(hit.amountMinorUnits)}</span>
+											{/* Kept for the REQ-D.4 side-by-side at the demo, but labelled
+											    and quiet: it means little to anyone else. */}
+											{hit.score !== null ? (
+												<span className="text-xs text-faint tabular-nums">similarity {hit.score.toFixed(2)}</span>
+											) : null}
 										</span>
 									</Link>
 								</li>

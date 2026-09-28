@@ -22,15 +22,18 @@ import { useState } from "react";
 
 import { signOut } from "@/lib/auth-client";
 
+import { Icon } from "./icons";
+import { buttonClass, errorTextClass } from "./ui";
+
 export function SignOutButton() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 
 	return (
-		<div className="flex items-center gap-3">
+		<div className="flex flex-col gap-2">
 			{error !== null ? (
-				<p role="alert" className="text-sm text-red-600">
+				<p role="alert" className={errorTextClass}>
 					{error}
 				</p>
 			) : null}
@@ -57,8 +60,10 @@ export function SignOutButton() {
 					router.replace("/login");
 					router.refresh();
 				}}
-				className="rounded-full border border-zinc-300 px-3 py-1.5 font-medium hover:border-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:hover:border-zinc-500"
+				aria-busy={busy}
+				className={`w-full ${buttonClass({ variant: "secondary", size: "sm" })}`}
 			>
+				<Icon name="logOut" className="size-4" />
 				{busy ? "Signing out…" : "Sign out"}
 			</button>
 		</div>

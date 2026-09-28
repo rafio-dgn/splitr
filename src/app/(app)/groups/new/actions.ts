@@ -7,6 +7,7 @@
 
 import { redirect } from "next/navigation";
 
+import { setFlash } from "@/lib/flash";
 import { createGroup, type CreateGroupResult } from "@/lib/groups/create-group";
 import { requireSession } from "@/lib/session";
 
@@ -31,7 +32,10 @@ export async function createGroupAction(
 	);
 
 	if (result.status === "created") {
-		// Outside any try/catch: `redirect()` works by throwing.
+		// The confirmation rides the redirect as a flash cookie (lib/flash.ts), so
+		// the URL stays exactly `/groups/<id>`. Outside any try/catch:
+		// `redirect()` works by throwing.
+		await setFlash("Group created", "Next, invite the people you split with.");
 		redirect(`/groups/${result.groupId}`);
 	}
 	return result;

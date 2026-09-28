@@ -94,3 +94,4 @@ the real pasted output, and the date.
 - [`REQ-F.5-secret-rotation.md`](./REQ-F.5-secret-rotation.md): the rotation
   drill's runbook, the local rehearsal (a fallback window 19:47:25–19:48:00,
   `status=refused key=none/1` ×10), and slots for the three production parts.
+- [`UI-redesign-verification.md`](./UI-redesign-verification.md): ADR-0033 (2026-09-28). The redesign broke nothing: tsc, lint, 99 tests, build, and the full E2E twice on the final code; plus a light and dark screenshot pass at 1280 and 390 px.

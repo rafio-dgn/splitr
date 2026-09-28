@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono, Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
+// ADR-0033: Outfit for headings and the amounts people read aloud, Plus Jakarta
+// Sans for everything you operate, JetBrains Mono only for machine-produced
+// text (receipt lines as printed, invite links). All three are variable fonts,
+// self-hosted by next/font, so there is no layout shift and no external request.
+const outfit = Outfit({
+	variable: "--font-outfit",
 	subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
+const jakarta = Plus_Jakarta_Sans({
+	variable: "--font-jakarta",
+	subsets: ["latin"],
+});
+
+const jetbrains = JetBrains_Mono({
+	variable: "--font-jetbrains",
 	subsets: ["latin"],
 });
 
@@ -25,9 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 	return (
 		<html
 			lang="en"
-			className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+			className={`${outfit.variable} ${jakarta.variable} ${jetbrains.variable} h-full antialiased`}
 		>
-			<body className="min-h-full flex flex-col">{children}</body>
+			<body className="flex min-h-full flex-col bg-canvas font-sans text-ink">
+				{children}
+			</body>
 		</html>
 	);
 }

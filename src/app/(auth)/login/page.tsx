@@ -9,13 +9,13 @@ import { LoginForm } from "./login-form";
 export default function LoginPage() {
 	return (
 		<div className="flex flex-col gap-8">
-			<h1 className="text-2xl font-semibold tracking-tight">Log in</h1>
+			<h1 className="font-display text-3xl font-bold tracking-tight">Log in</h1>
 
 			<LoginForm />
 
-			<p className="text-sm text-zinc-500">
+			<p className="text-center text-sm text-muted">
 				No account yet?{" "}
-				<Link href="/register" className="underline">
+				<Link href="/register" className="font-semibold text-primary-ink underline underline-offset-4">
 					Sign up
 				</Link>
 			</p>
