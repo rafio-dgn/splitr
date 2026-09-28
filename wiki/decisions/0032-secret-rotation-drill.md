@@ -65,9 +65,10 @@ key we hold.
 
 4. **The proof of "no downtime" (Raffaele): a monitor and a key-position
    log.**
-   - **`scripts/verify/rotation-monitor.mjs`** searches by meaning as a test
-     user every 2 s and reports every keyword fallback, with its start and
-     end. `EXPECT=clean` makes any fallback fail the run.
+   - **A search watch** (`scripts/verify/rotation-watch.mjs`, run by the
+     guided script, or by hand with `rotation-monitor.mjs`) searches by
+     meaning as a test user every 2 s and reports every keyword fallback,
+     with its start and end.
    - **`splitr-ai` logs which key in the list matched**, on every call:
      `key=2/2`, or `key=none/2` for a refusal. It logs the position, never
      the key (`keyLabel()` in `secret.ts`, 1 new test). Before step e, the
@@ -87,11 +88,21 @@ key we hold.
 
 ## How the keys are handled
 
-- They're generated in Raffaele's terminal with `openssl rand -hex 32`, kept in
-  shell variables for the session, and piped into `wrangler secret put`. They
-  are never pasted into chat, files or commits.
+- **Amended the same day (Raffaele: "the instructions are not clear"):** a
+  guided script, `scripts/verify/rotation-drill.mjs` (`day1`, `day2`,
+  `repair`), replaces the three-terminal runbook. It generates the keys in
+  memory (`crypto.randomBytes(32)`) and pipes them into `wrangler secret put`.
+  They are never printed, logged or written to a file.
+- **The live key (K2) goes into Raffaele's macOS Keychain**, because day 2
+  needs it. So does the *next* rotation, since a dual-key window needs the old
+  value, and K0's loss is what forced K1 into this drill. *Accepted trade-off:*
+  `security add-generic-password -w <value>` takes the value as an argument,
+  so it's visible to `ps` on that Mac for a moment. That's accepted on a
+  single-user machine.
 - Each `wrangler secret put` deploys a new version of that Worker with the
   new value, which is the "deploy" of each step.
+- `repair` puts one fresh key on all three Workers, in case the drill
+  stops halfway through the breakage.
 
 ## Consequences
 

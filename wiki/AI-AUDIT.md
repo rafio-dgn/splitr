@@ -2199,3 +2199,37 @@ does, months later, without the original chat transcript.
     19:47:25–19:48:00 and `status=refused key=none/1` ×10.
   - `.dev.vars` was restored (checked with `cmp`).
 - **Open questions:** none. The production runs are Raffaele's.
+
+## 2026-09-28T20:15Z — "The instructions are not clear, and why do I need to do this?"
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Raffaele found the runbook unclear and asked why it's his
+  to run. After I proposed a guided script, he ran the proposed command
+  before it existed (`MODULE_NOT_FOUND`), which I took as a yes.
+- **Answer given:**
+  - *Why:* `REQ-F.5` is an in-scope requirement, and the breakage is part of
+    it.
+  - *Why him:* his rules. Secrets never pass through the AI, and production
+    changes (secrets, D1) are his to run.
+- **Actions:**
+  - `rotation-drill.mjs`, one guided command per day, plus `repair`;
+  - the watchers moved into `rotation-watch.mjs`;
+  - K2 kept in the macOS Keychain.
+- **Alternatives considered:**
+  - keeping the runbook and just rewording it. Rejected: three terminals and
+    shell variables were the real problem;
+  - the AI running the secret commands. Rejected by his rules.
+- **Assumptions:**
+  - the `ps` exposure of `security -w <value>` is acceptable on his
+    single-user Mac (stated in the ADR);
+  - that `wrangler tail` prints "Connected to" on connect. Checked in
+    wrangler's source (`Connected to ${scriptDisplayName}, waiting for
+    logs...`), not yet on a production run. If it doesn't, the script stops
+    after 60 s with a clear error, before changing anything.
+- **Verification:**
+  - a full local rehearsal of day1 and day2 with a stand-in wrangler: every
+    step behaved as described, and cleanup left 0 rows;
+  - everything restored (three `.dev.vars` files checked with `cmp`, the
+    rehearsal Keychain item and state files deleted), and the local servers
+    restarted on their original keys;
+  - `tsc` and ESLint are clean.
+- **Open questions:** none.

@@ -1370,3 +1370,17 @@ shape that triggers them. They are listed rather than ticked.
     retiring K1 once the cron is seen on K2.
 - **Why:** `REQ-F.5`. Raffaele's three choices are in ADR-0032.
 - **Decision:** [ADR-0032](./decisions/0032-secret-rotation-drill.md)
+
+## 2026-09-28 — The rotation drill becomes one guided command per day
+- **Type:** changed
+- **Scope:**
+  - `scripts/verify/rotation-drill.mjs` (new), `scripts/verify/rotation-watch.mjs` (new);
+  - `scripts/verify/rotation-monitor.mjs`, now a thin wrapper;
+  - ADR-0032 ("How the keys are handled"), the REQ-F.5 evidence, the handover.
+- **What:** `rotation-drill.mjs day1 | day2 | repair` runs every
+  `wrangler secret put` itself, with in-memory keys piped in, and pauses before
+  each step saying what it will do and what to expect. It runs both watchers
+  in the same window, keeps K2 in the macOS Keychain, and writes a log with no
+  secrets.
+- **Why:** Raffaele found the three-terminal runbook unclear.
+- **Decision:** [ADR-0032](./decisions/0032-secret-rotation-drill.md) (amended)

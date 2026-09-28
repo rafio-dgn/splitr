@@ -1,7 +1,7 @@
 # `REQ-F.5`: the secret-rotation drill, wrong then right
 
 **Date:** 2026-09-28 (parts 1–2), 2026-09-29 (part 3) · **Decision:** [ADR-0032](../decisions/0032-secret-rotation-drill.md) · **Secret:** `AI_SHARED_SECRET`, sent by `splitr` and `splitr-cron`, checked by `splitr-ai` against `AI_SHARED_SECRETS`
-**Run by:** Raffaele, on production. The AI wrote the commands and reads the output.
+**Run by:** Raffaele, on production, with `scripts/verify/rotation-drill.mjs`. The AI wrote the script and reads its log.
 
 ---
 
@@ -11,7 +11,7 @@
 |---|---|
 | The wrong way first, and the breakage observed | Part 1 |
 | Then correctly: dual-key window → deploy consumer → update producer → retire old key | Parts 2 and 3 |
-| No downtime during the correct rotation | Parts 2 and 3: the monitor with `EXPECT=clean` |
+| No downtime during the correct rotation | Parts 2 and 3: the script's "NO DOWNTIME" line (every search answered by meaning) |
 | Both outcomes written up | "What happened", at the end |
 
 ## Local rehearsal (2026-09-28, before production)
@@ -32,77 +32,70 @@ splitr-ai, with the right key:    7 × [ai] embed status=ok key=1/1
 
 ---
 
-## The runbook (Raffaele)
+## How to run it (Raffaele): one guided command per day
 
-**Three terminals, all in the repo, all signed in to wrangler.** Keep
-terminal C open from start to finish: it holds the keys in shell variables,
-and they're lost if it closes. Never echo them.
+The first runbook (three terminals, hand-typed commands) was too hard to
+follow (Raffaele, 2026-09-28), so `scripts/verify/rotation-drill.mjs` now
+does the work. It runs every command itself and **pauses before each step**,
+saying what it's about to do and what you should see.
 
-- **A, the monitor:**
-  `node scripts/verify/rotation-monitor.mjs https://splitr.raffaele-digennaro.workers.dev`
-  (Parts 2 and 3: prefix it with `EXPECT=clean`.)
-- **B, the consumer's log:**
-  `npx wrangler tail splitr-ai --format pretty | grep --line-buffered "\[ai\]"`
-- **C, the commands below.**
+**Day 1 (today, ~10 min):**
 
-### Part 1: the wrong way (swap the receiver's key only)
+```sh
+node scripts/verify/rotation-drill.mjs day1
+```
 
-1. Start A and B. Wait for a line of dots in A.
-2. In C:
-   ```sh
-   K1=$(openssl rand -hex 32)
-   printf %s "$K1" | npx wrangler secret put AI_SHARED_SECRETS -c workers/ai/wrangler.jsonc
-   ```
-3. **Watch it break:**
-   - A prints `KEYWORD FALLBACK`;
-   - B prints `status=refused key=none/1`.
-4. **On the live site, add an expense with an item** (say "Rotation drill
-   lunch" £5, one item "sandwich"). It saves, and its item stays
-   uncategorised: that's the work the cron will do at 02:30 (ADR-0032).
-5. **Recover** by moving both producers to K1:
-   ```sh
-   printf %s "$K1" | npx wrangler secret put AI_SHARED_SECRET
-   printf %s "$K1" | npx wrangler secret put AI_SHARED_SECRET -c workers/cron/wrangler.jsonc
-   ```
-6. A prints `✔ by meaning again`, and B prints `status=ok key=1/1`. Wait a
-   minute, then Ctrl+C in A. **Paste A's summary and B's lines here.**
+Press Enter at each of the 5 pauses:
+- steps 1–2 are Part 1, the wrong way, then recovering;
+- steps 3–5 are Part 2, the right way.
 
-### Part 2: the right way, today (a dual-key window, then the producers)
+**Day 2 (after 02:30 UTC, i.e. 03:30 WEST, ~3 min):**
 
-1. Start A with **`EXPECT=clean`**. B keeps running.
-2. **Open the window** (consumer first). In C:
-   ```sh
-   K2=$(openssl rand -hex 32)
-   printf %s "$K1,$K2" | npx wrangler secret put AI_SHARED_SECRETS -c workers/ai/wrangler.jsonc
-   ```
-   B: `key=1/2`. A: still dots.
-3. **Move the app:**
-   ```sh
-   printf %s "$K2" | npx wrangler secret put AI_SHARED_SECRET
-   ```
-   B: `key=2/2`. A: still dots.
-4. **Move the cron:**
-   ```sh
-   printf %s "$K2" | npx wrangler secret put AI_SHARED_SECRET -c workers/cron/wrangler.jsonc
-   ```
-5. Wait a minute, then Ctrl+C in A. **Paste A's summary and B's lines here.**
-6. **Keep K2 for tomorrow** in your password manager (you'll need it in Part
-   3), then close C. **Leave the window open overnight.**
+```sh
+node scripts/verify/rotation-drill.mjs day2
+```
 
-### Part 3: tomorrow, after 02:30 UTC (proof, then retire)
+It asks you to check the 02:30 lines in the dashboard (Workers & Pages →
+`splitr-ai` → Logs; they should say `key=2/2`), then retires K1.
 
-1. **Proof that nothing sends K1:** in the dashboard, open Workers →
-   `splitr-ai` → Logs, around 02:30 UTC. The cron's calls should say
-   `key=2/2`, and none should say `key=1/2`. Your drill-lunch item should now
-   be categorised. **Paste or screenshot the lines.**
-2. Start A with `EXPECT=clean`, and B.
-3. **Retire K1:** in a new terminal C, paste K2 from your password manager
-   when asked:
-   ```sh
-   npx wrangler secret put AI_SHARED_SECRETS -c workers/ai/wrangler.jsonc
-   ```
-   B: `key=1/1`. A: still dots.
-4. Wait a minute, then Ctrl+C in A. **Paste A's summary and B's lines here.**
+**If something goes wrong:** `node scripts/verify/rotation-drill.mjs repair`
+puts one fresh key on all three Workers.
+
+What it takes care of:
+- **The keys:** made in memory and piped into `wrangler secret put`, never
+  printed or written to a file. The live one (K2) goes into your macOS
+  Keychain as "splitr AI_SHARED_SECRET".
+- **The watchers:** a test user searching every 2 s, and
+  `wrangler tail splitr-ai` for the key positions.
+- **The work for the cron:** an expense with an item, saved during the
+  breakage.
+- **Cleanup:** the test users, day 1's and day 2's.
+- **A log:** `.data/rotation-drill-<day>-<time>.log`, with no secrets, which
+  Claude reads for this file.
+
+### Local rehearsal of the guided script (2026-09-28)
+
+This used a stand-in `wrangler` whose "secret put" rewrites the local
+`.dev.vars` and **restarts** that local server. Locally, then, each
+"deploy" is a real gap. Production rolls out a new version without one.
+Every step did what it said:
+
+```
+PART 1, step 1  ✘ search fell back to keyword
+                splitr-ai: 6 × embed status=refused key=none/1, 1 × index refused, 1 × categorise refused
+                the drill's lunch expense: saved → 201, its item → uncategorised
+PART 1, step 2  ✔ search by meaning works again; splitr-ai: 6 × embed status=ok key=1/1
+PART 2, step 3  splitr-ai: 10 × embed status=ok key=1/2
+PART 2, step 4  splitr-ai: 8 × embed status=ok key=2/2
+PART 3, step 7  splitr-ai: 15 × embed status=ok key=1/1
+cleanup: done, D1 re-checked (0 rows left)
+```
+
+The few fallbacks in Parts 2 and 3 came during the local restarts (for
+example 20:07:14–20:07:23, while `next dev` restarted). **On production, Parts
+2 and 3 must show none.** Everything the rehearsal touched was restored: the
+three `.dev.vars` files (checked with `cmp`), the rehearsal's Keychain item
+(deleted), and its state files.
 
 ---
 
