@@ -1086,3 +1086,20 @@ shape that triggers them. They are listed rather than ticked.
   - All five of `REQ-E.4`'s criteria are ticked.
 - **Why:** ADR-0025 step 4 verification, and `REQ-M.7` on the live site.
 - **Decision:** none
+
+## 2026-09-28 — E.7 step 5: every model call behind `splitr-ai`; the app loses its `ai` binding
+- **Type:** changed
+- **Scope:** `src/lib/ai/{budget,contract,ops,worker}.ts` (+ 10 tests),
+  `workers/ai/src/{index,env-check}.ts`, `src/lib/search/{index-expense,search}.ts`,
+  `src/lib/receipts/read-receipt.ts`, `src/lib/categorise/categorise-expense.ts`,
+  `src/app/(app)/search/page.tsx`, `wrangler.jsonc`, `cloudflare-globals.d.ts`
+- **What:**
+  - `splitr-ai` gained `embed`, `index` and `readReceipt`, each checking the
+    secret first. The app calls them through one helper (`aiWorker()`, which
+    gives `null` when no secret is set).
+  - Search gets a 3 s budget, then keyword results with a visible note. Index
+    gets 5 s in the Worker. Receipt reading keeps its 30 s budget in the app.
+  - The app's `ai` binding is removed, and `tsc` confirms nothing uses it.
+- **Why:** ADR-0016 §6 and ADR-0025 step 5. It makes F.5 (AI Gateway) a
+  one-Worker change.
+- **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md) (steps 4–5 note)

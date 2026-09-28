@@ -85,8 +85,9 @@ with an eval of 28/30 against 23/30 without RAG
 its write-path fallback are built (step 4): locally, with the AI Worker down,
 saves return 201 in about 60 ms and items stay `uncategorised`. **On production
 (2026-09-28):** 9/9 items categorised, and saves with items take 184 ms
-against 183 ms without. **Every criterion is met.** Left, from ADR-0025 (not
-from `REQ-E.4`): step 5, moving embeddings and OCR behind the AI Worker.
+against 183 ms without. **Every criterion is met.** ADR-0025 step 5 is also
+done (2026-09-28): every model call goes through `splitr-ai`, and the app has
+no `ai` binding.
 
 **Notes:** Four sub-requirements in one bullet. The fallback clause is the same
 rule as `REQ-M.7` — the write path must survive the AI Worker being down or slow.

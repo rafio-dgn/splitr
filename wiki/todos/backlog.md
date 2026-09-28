@@ -424,7 +424,7 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [x] `E.7` **After PR (step 4) merges:** (done 2026-09-28: 9/9 categorised, 184 against 183 ms) Raffaele sets `AI_SHARED_SECRETS`
       on `splitr-ai` and `AI_SHARED_SECRET` on the app, then production is
       verified (items categorised; saves with items not slower than without).
-- [ ] `E.7` **Step 5:** embeddings (indexing and the search query, with the
+- [x] `E.7` **Step 5** (done 2026-09-28): embeddings (indexing and the search query, with the
       3 s keyword fallback) and OCR (the 30 s budget) move behind `splitr-ai`,
       and the app loses its `ai` binding (ADR-0016 §6).
 - [ ] `E.7` **Check categorisation in the nightly E2E** once the secrets are
@@ -433,4 +433,10 @@ requirement work, not new scope; they sit here only so they are not lost.
       until it returns (wrangler's platform proxy; measured 2026-09-25). Local
       receipt saves feel about 1 s slower than on production. Relevant if the
       demo runs on `next dev` (see F-2).
+- [ ] `X.5` **Update the architecture diagram:** add `splitr-ai` (the AI_WORKER
+      service binding; AI, Vectorize and read-only D1 behind it), remove the
+      app's `ai` binding, and add the CI/CD flow.
+- [ ] `size` **Step 5 didn't change the app's size** (still 2,543 KiB, 83%).
+      The Better Auth copies remain the lever (see the `size` item above).
+      `splitr-ai` is 126 KiB.
 
