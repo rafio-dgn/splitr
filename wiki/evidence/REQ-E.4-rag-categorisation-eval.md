@@ -137,3 +137,35 @@ returns its promise at once, so `waitUntil` doesn't hold the response. The `ai`
 binding doesn't behave this way, which is why search indexing never slowed
 saves. **To confirm on production** after the deploy: compare the save latency
 with and without line items.
+
+## Step 4 on production (2026-09-28, run by Raffaele)
+
+After PR #7 deployed (run 36401140161) and Raffaele set `AI_SHARED_SECRETS`
+on `splitr-ai` and `AI_SHARED_SECRET` on the app:
+
+```
+$ node scripts/verify/categorise.mjs https://splitr.raffaele-digennaro.workers.dev
+categorise cat-mul1bvdi-d7f10e → https://splitr.raffaele-digennaro.workers.dev
+  ✔ sign-up alice.cat-mul1bvdi-d7f10e@example.test → 200
+  ✔ save "Plain 1" → 201
+  ✔ save "Receipt 1" → 201
+  ✔ save "Plain 2" → 201
+  ✔ save "Receipt 2" → 201
+  ✔ save "Plain 3" → 201
+  ✔ save "Receipt 3" → 201
+  ✔ all 9 line items categorised
+  · 9/9 match the expected category (reported, not asserted: accuracy is the eval's job)
+  · median save: plain 183 ms, with 3 items 184 ms
+  ✔ saves with line items are not held up by the AI (within 500 ms of plain saves)
+cleanup: 1 user(s), 1 group(s), 6 expense(s), 15 vector id(s), 0 receipt(s)
+cleanup: done, D1 re-checked (0 rows left)
+
+categorise check passed
+```
+
+- **`REQ-E.4` on the live site:** real categories arrive after the response,
+  9/9 correct.
+- **`REQ-M.7` on the live site:** 184 ms against 183 ms. A save with line
+  items costs nothing extra, because the AI runs in `waitUntil`.
+- **The `next dev` artefact is confirmed local-only.** The same script run
+  locally gave 9/9 labels, but 1,316 ms against 69 ms for the saves.

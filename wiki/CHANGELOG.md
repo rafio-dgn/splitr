@@ -1074,3 +1074,15 @@ shape that triggers them. They are listed rather than ticked.
   happens to declare `R2_ACCESS_KEY_ID`.) Reproduced on a clean copy, then
   fixed; `tsc` passes both with and without `.dev.vars`.
 - **Decision:** none
+
+## 2026-09-28 — `REQ-E.4` verified on production
+- **Type:** added, docs
+- **Scope:** `scripts/verify/categorise.mjs` (new), `wiki/evidence/REQ-E.4-rag-categorisation-eval.md`,
+  REQ-E.4's status, `wiki/todos/{HANDOVER,STUDY-GUIDE,backlog}.md`
+- **What:**
+  - A re-runnable live check: 9 line items must be categorised, and saves
+    with items must be within 500 ms of plain saves. It cleans up after itself.
+  - Raffaele's production run passed: 9/9 correct, 184 ms against 183 ms.
+  - All five of `REQ-E.4`'s criteria are ticked.
+- **Why:** ADR-0025 step 4 verification, and `REQ-M.7` on the live site.
+- **Decision:** none

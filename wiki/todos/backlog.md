@@ -421,7 +421,7 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `dx` **A `wrangler dev` can drop out of the dev registry** while still
       running (the ledger on 8791, 2026-09-25). `next dev` then answers
       settle-up with 503 "Worker splitr-ledger not found". Restart the ledger.
-- [ ] `E.7` **After PR (step 4) merges:** Raffaele sets `AI_SHARED_SECRETS`
+- [x] `E.7` **After PR (step 4) merges:** (done 2026-09-28: 9/9 categorised, 184 against 183 ms) Raffaele sets `AI_SHARED_SECRETS`
       on `splitr-ai` and `AI_SHARED_SECRET` on the app, then production is
       verified (items categorised; saves with items not slower than without).
 - [ ] `E.7` **Step 5:** embeddings (indexing and the search query, with the
