@@ -58,17 +58,16 @@ timestamp, outcome** — on every mutation. `wrangler tail | grep AUDIT` should
 return parseable lines.
 
 **Acceptance criteria:**
-- [ ] Every mutation emits an `[AUDIT]` line
-- [ ] Each line carries **actor, action, target, timestamp, outcome**
-- [ ] The payload is **parseable JSON**
-- [ ] **Demonstrated:** `wrangler tail | grep AUDIT` yields parseable output
-- [ ] Every change to a record is traceable from logs alone
+- [x] Every mutation emits an `[AUDIT]` line
+- [x] Each line carries **actor, action, target, timestamp, outcome**
+- [x] The payload is **parseable JSON**
+- [x] **Demonstrated:** `wrangler tail | grep AUDIT` yields parseable output
+- [x] Every change to a record is traceable from logs alone
 
-**Source:** capture §9, §8, §13 · **Status:** **`[MUST]`** — 🟡 Built and
-verified locally (2026-09-28): exact field names, full coverage (ADR-0028),
-and 14/14 lines parseable with the smoke run's history rebuilt from the logs
-([evidence](../../evidence/REQ-F.3-audit-json.md)). **Left:** the production
-`wrangler tail` run.
+**Source:** capture §9, §8, §13 · **Status:** **`[MUST]`** — ✅ **Met on production**
+(2026-09-28): `wrangler tail | grep AUDIT` gave 14/14 parseable lines with the
+five fields, and the smoke run's history was rebuilt from logs alone
+([evidence](../../evidence/REQ-F.3-audit-json.md), ADR-0028).
 
 **Notes:** This is the one Cluster F item that is not optional. The five named
 fields are exact; use them as the field names.

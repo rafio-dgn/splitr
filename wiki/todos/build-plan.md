@@ -132,7 +132,7 @@ double-settle bug without the DO, then fix it with one. That contrast is the dem
 | F.1 | Rate-limit binding on the settle-up route; 6 rapid requests → 6th returns **429**. **Write the window/count rationale** | `REQ-F.1` |
 | F.2 | Turnstile on the public `/join/[invite]` form; verify server-side in the Server Action | `REQ-F.2` |
 | F.3 | **Forge a submit; confirm the server rejects it.** Capture the command | `REQ-F.2` |
-| F.4 | Audit lines as parseable JSON; prove `wrangler tail \| grep AUDIT` works | 🟡 2026-09-28: built and verified locally (ADR-0028); production tail pending |
+| F.4 | Audit lines as parseable JSON; prove `wrangler tail \| grep AUDIT` works | ✅ 2026-09-28: met on production, `wrangler tail | grep AUDIT` 14/14 (ADR-0028) |
 | F.5 | AI Gateway in front of **every** model call — vision, Llama, embeddings. Caching, logs, rate limits, spend cap | `REQ-F.4` |
 | F.6 | Secret-rotation drill: **wrong way first**, observe the breakage; then dual-key → deploy consumer → update producer → retire old key | `REQ-F.5` |
 | F.7 | Write up both rotation outcomes | `REQ-F.5` |
