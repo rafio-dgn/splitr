@@ -1312,3 +1312,25 @@ shape that triggers them. They are listed rather than ticked.
     UTC day. Every caller already falls back.
 - **Why:** `REQ-F.4`. Raffaele made five choices, recorded in ADR-0031.
 - **Decision:** [ADR-0031](./decisions/0031-ai-gateway-and-neuron-cap.md)
+
+## 2026-09-28 — `REQ-F.4` met on production
+- **Type:** docs
+- **Scope:** the REQ-F.4 evidence and status, `wiki/todos/{build-plan,HANDOVER,STUDY-GUIDE,backlog}.md`
+- **What:**
+  - Added Raffaele's Logs-tab readings: the expense's calls, one search miss
+    then seven cache hits at $0, the deploy's smoke calls, and the rate-limit
+    probe's refusals. The rate limit is confirmed as sliding.
+  - Filed two findings in the backlog: search has no link in the app, and
+    there were 8 embeddings for what may have been two searches.
+- **Why:** `REQ-F.4`.
+- **Decision:** none
+
+## 2026-09-28 — Agents may open PRs and read CI status
+- **Type:** changed
+- **Scope:** `CLAUDE.md` §6
+- **What:** Agents may now open a PR from a feature branch (`gh pr create`)
+  and read PR and CI status. Merging, closing, approving, settings and
+  everything else on GitHub stay Raffaele's.
+- **Why:** Raffaele said yes (2026-09-28), after I pointed out that PR #22 had
+  broken the old rule.
+- **Decision:** none (it amends the working rule in ADR-0024's 2026-09-25 amendment)

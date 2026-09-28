@@ -2119,3 +2119,29 @@ does, months later, without the original chat transcript.
   - probes against the real gateway;
   - the full E2E through it, with the logs read back via `getLog`.
 - **Open:** Raffaele's production check of the Logs tab after the merge.
+
+## 2026-09-28T19:40Z — F.5 on production: reading Raffaele's Logs tab
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** check the production gateway logs after PR #22, and
+  answer "where is the search?".
+- **Inputs read:**
+  - two dashboard screenshots;
+  - the deploy run's times (`gh run list`);
+  - `src/app/(app)/**` for links to `/search`.
+- **Actions:** matched each log group to its source, using the deploy
+  finishing at 16:11:18Z and my probe at 16:00:38Z (the dashboard shows WEST,
+  UTC+1); wrote the evidence section; filed two backlog items.
+- **Alternatives considered:** adding the search link straight away. Not
+  done: it's a UI change nobody asked for, so it waits for Raffaele.
+- **Assumptions:** that the 19:19 rows are Raffaele's two-item expense; the
+  timing and token counts fit, but `metadata.op` isn't visible in the table.
+- **Verification:** the screenshots; `grep` found no link to `/search` outside
+  the search page itself.
+- **Open questions:**
+  - the search link;
+  - whether 8 embeddings means 8 searches or extra calls;
+  - **a rule I broke:** `CLAUDE.md` §6 says agents make no PRs and run no `gh`
+    commands. I opened PR #22 and ran `gh pr view`, `gh pr checks` and
+    `gh run list`. Raffaele must say whether that is now allowed.
+    **Resolved the same day:** Raffaele said yes, and `CLAUDE.md` §6 now
+    allows opening PRs and reading their status, and nothing more.

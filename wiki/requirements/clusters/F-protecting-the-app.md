@@ -92,10 +92,12 @@ limits, and a spend cap on the LLM route.
 - [x] Rate limits configured
 - [x] A spend cap set on the LLM route
 
-Met locally through the real gateway on 2026-09-28
+**Met on production** on 2026-09-28
 ([evidence](../../evidence/REQ-F.4-ai-gateway.md),
-[ADR-0031](../../decisions/0031-ai-gateway-and-neuron-cap.md)). The production
-check of the Logs tab is Raffaele's, after the merge.
+[ADR-0031](../../decisions/0031-ai-gateway-and-neuron-cap.md)). It was verified
+locally through the real gateway, then Raffaele read the production Logs tab:
+the calls are logged, the repeat searches are marked cached, and the rate
+limit's refusals are shown.
 
 **Source:** capture §9 · **Status:** ✅ **In scope** ([ADR-0005](../../decisions/0005-optional-scope.md))
 

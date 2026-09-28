@@ -52,6 +52,15 @@
       `@cf/llava-hf/llava-1.5-7b-hf`, or Moondream 3? Decide at build-plan step
       D.6 after testing OCR quality on real receipts.
 - [ ] `question` Any deadline for the demo (`REQ-X.8`)?
+- [ ] `question` **Search has no link in the app** (found 2026-09-28, while
+      checking F.5 on production). `/search` is reachable only by URL; every
+      script opened it directly. The proposal: a "Search" link beside "Groups"
+      in the top bar, plus an E2E check that search is reached by clicking.
+      Waiting for Raffaele's yes.
+- [ ] `question` **Eight search embeddings for what may have been two
+      searches** (production, 19:23:57–19:24:07 UTC): one miss, then seven
+      cache hits. If Raffaele searched only twice, the page makes extra calls
+      (link prefetch is a guess, not checked).
 
 ## Queued
 
