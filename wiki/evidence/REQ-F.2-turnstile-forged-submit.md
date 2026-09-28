@@ -55,3 +55,69 @@ node scripts/verify/turnstile-forge.mjs https://splitr.raffaele-digennaro.worker
 
 There, the **forged** token must be refused too: in the browser ("We couldn't
 confirm you're human") and through curl.
+
+## Production, run 1 (2026-09-28, Raffaele): no token for the automated browser
+
+```
+turnstile-forge ts-mulco5kt-85cf2e → https://splitr.raffaele-digennaro.workers.dev
+  ✔ sign-up owner… → 200
+  ✔ sign-up joiner… → 200
+Waiting failed: 60000ms exceeded
+```
+
+- The code was live: the deploy finished at 14:35:14Z, and the run started at
+  14:35:52Z (`mulco5kt`).
+- **The Join button never enabled:** Turnstile issued no token to the
+  headless browser in 60 s.
+- **The likely cause (a hypothesis, unconfirmed):** Turnstile doing its job.
+  In Managed mode, an automated browser gets a check or a challenge.
+- The script gave no evidence either way, so it now saves a screenshot, the
+  console (Turnstile logs its error codes there) and every request to
+  `challenges.cloudflare.com`. With `HEADFUL=1` the window is visible, and it
+  waits up to 3 minutes for a human to complete the check. The forgery
+  happens after the token is issued, so the proof holds.
+- **The diagnostics were tested against Cloudflare's always-block test key**
+  (`2x00000000000000000000AB`): they printed the challenge requests and
+  `[Cloudflare Turnstile] Error: 600010`.
+
+## Production, run 2 (HEADFUL, Raffaele): Turnstile refuses the automated browser, by design
+
+With the window visible and Raffaele clicking:
+- the widget ran its challenge **8 times**;
+- every cycle ended in `[Cloudflare Turnstile] Error: 600010`, with its
+  failure frame (`…/fr/428fj/it-it/auto/failure`) and the troubleshooting
+  panel;
+- the console showed Turnstile **probing for automation** (`%c%d
+  font-size:0;color:transparent`, plus `console.table`, `dirxml` and `count`
+  calls).
+
+**Conclusion:** a browser driven through Chrome's automation protocol never
+gets a token on production. That's the control working.
+
+**So the proof skips the widget, as a real forger would.** A DOM click on
+the `disabled` button is ignored, because React drops mouse events for
+elements whose *props* say disabled. So the script calls the button's React
+`onClick` (from `__reactProps$…`) directly. The Server Action is then called
+with no real token, and the intercepted request carries a forged one.
+
+**Rehearsed locally, with Cloudflare's always-block site key and always-fail
+secret** (Cloudflare's real `siteverify` answering):
+
+```
+$ EXPECT_REFUSAL=1 node scripts/verify/turnstile-forge.mjs http://localhost:3100
+  · bypass: called the button's React onClick directly
+  ✔ the Server Action request was intercepted (no real token existed; sent "forged-by-script-…")
+  ✔ the page says "We couldn't confirm you're human"
+  ✔ no membership was written
+  $ curl -X POST …/join/5aa9062e7a -H 'Next-Action: 60fe0df9…' -H 'Cookie: <the joiner's session>' --data '["5aa9062e7a",""]'
+    → 1:{"status":"not-verified"}
+  ✔ curl with an EMPTY token → the server answers not-verified
+  $ curl -X POST …/join/5aa9062e7a -H 'Next-Action: 60fe0df9…' -H 'Cookie: <the joiner's session>' --data '["5aa9062e7a","forged-by-script-…"]'
+    → 1:{"status":"not-verified"}
+  ✔ curl with a FORGED token → the server answers not-verified
+turnstile-forge passed
+
+[AUDIT] {…"action":"group.join",…"outcome":"refused:turnstile:rejected","persisted":false,"detail":{"codes":"invalid-input-response"}}
+[AUDIT] {…"action":"group.join",…"outcome":"refused:turnstile:missing-token","persisted":false,…}
+[AUDIT] {…"action":"group.join",…"outcome":"refused:turnstile:rejected","persisted":false,"detail":{"codes":"invalid-input-response"}}
+```

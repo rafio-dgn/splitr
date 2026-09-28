@@ -40,6 +40,17 @@ production after every deploy.
    step fails loudly. *Rejected:* joining via D1 in the E2E, which would stop
    testing the form.
 
+**§4 amended (Raffaele, 2026-09-28, after the production runs).** The first
+production runs showed Turnstile **never** gives an automated browser a token
+(`Error 600010` on every challenge, even with a human clicking in the
+automated window), so the nightly E2E would fail at "Bob joins" every night.
+Now, **on production, the E2E joins Bob via D1**: he signs up through the API,
+his membership row is inserted, and his browser gets his session. Everything
+after that still runs in two browsers. **Locally it still uses the real
+form**, since the test keys let automation through. `E2E_JOIN=form|d1`
+overrides. The join form's browser flow on production is covered by
+`turnstile-forge.mjs`, which skips the widget the way a forger would.
+
 ## How it works
 
 - `src/lib/turnstile/verify.ts` (pure, with `fetch` injected) posts the

@@ -2045,3 +2045,38 @@ does, months later, without the original chat transcript.
   - 84 pure plus 10 DO tests pass, and `tsc`, ESLint and actionlint are clean.
 - **Open questions:** Raffaele's widget (the site key, which is public, and
   the secret), then the production run.
+
+## 2026-09-28T22:00Z — Turnstile gave the automated browser no token on production
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Inputs:** Raffaele's run (a 60 s timeout), and the deploy timeline (the
+  code was live).
+- **Hypothesis, unconfirmed:** Turnstile's Managed mode challenges the
+  headless browser. It needs evidence.
+- **Actions:**
+  - Added diagnostics (a screenshot, the console, the challenge requests) and
+    a `HEADFUL=1` human-check mode.
+  - Tested the failure path locally by temporarily pointing `.dev.vars` at
+    the always-block test key; the diagnostics printed `Error: 600010`. The
+    file was restored.
+- **Flagged:** tonight's nightly E2E joins through the same widget, so it may
+  fail at "Bob joins". ADR-0030 §4 chose that knowingly: we learn something
+  real.
+
+## 2026-09-28T22:45Z — The forged submit skips the widget, as a forger would
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Inputs:** Raffaele's headful run: 8 challenge cycles, each ending in
+  `Error: 600010`, with Turnstile's automation probes visible in the console.
+- **Conclusion:** automation never gets a token on production, by design.
+- **Actions:**
+  - The script waits 20 s; with no token, it calls the button's React
+    `onClick` directly.
+  - My first two bypasses failed. Removing the `disabled` attribute and
+    clicking, and even a DOM `.click()`, were both ignored, because React
+    blocks mouse events on elements whose props say disabled. Found by
+    reading why no audit line appeared.
+- **Verification:** a local rehearsal with the always-block key and the
+  always-fail secret (Cloudflare's real `siteverify`): refused in the page,
+  by empty-token curl and by forged-token curl, with 3 audit lines and no
+  membership. `.dev.vars` was restored afterwards.
+- **Open question:** how the nightly E2E should join, now that production
+  refuses automated browsers.
