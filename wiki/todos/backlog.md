@@ -421,4 +421,16 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `dx` **A `wrangler dev` can drop out of the dev registry** while still
       running (the ledger on 8791, 2026-09-25). `next dev` then answers
       settle-up with 503 "Worker splitr-ledger not found". Restart the ledger.
+- [ ] `E.7` **After PR (step 4) merges:** Raffaele sets `AI_SHARED_SECRETS`
+      on `splitr-ai` and `AI_SHARED_SECRET` on the app, then production is
+      verified (items categorised; saves with items not slower than without).
+- [ ] `E.7` **Step 5:** embeddings (indexing and the search query, with the
+      3 s keyword fallback) and OCR (the 30 s budget) move behind `splitr-ai`,
+      and the app loses its `ai` binding (ADR-0016 §6).
+- [ ] `E.7` **Check categorisation in the nightly E2E** once the secrets are
+      live: poll D1 for the receipt's items leaving `uncategorised`.
+- [ ] `dx` **Under `next dev`, a service-binding call blocks the response**
+      until it returns (wrangler's platform proxy; measured 2026-09-25). Local
+      receipt saves feel about 1 s slower than on production. Relevant if the
+      demo runs on `next dev` (see F-2).
 

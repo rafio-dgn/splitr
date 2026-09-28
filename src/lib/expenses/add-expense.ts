@@ -23,6 +23,7 @@ import { getGroupForViewer, isMember } from "@/lib/groups/membership";
 import { newId } from "@/lib/ids";
 import { checkUploadedReceipt } from "@/lib/receipts/receipts";
 
+import { categoriseExpense } from "@/lib/categorise/categorise-expense";
 import { indexExpense } from "@/lib/search/index-expense";
 
 import { forgetRecentDescriptions } from "./recent-descriptions";
@@ -201,7 +202,7 @@ export async function addExpense(
 			),
 			// Line items from a confirmed receipt draft, in the same batch, so the
 			// expense and its items land together or not at all. Each one starts
-			// `uncategorised` (the schema default); categorisation is E.7.
+			// `uncategorised` (the schema default) until step 9 below labels it.
 			...items.map((item, position) =>
 				db.insert(lineItem).values({
 					id: item.id,
@@ -251,6 +252,15 @@ export async function addExpense(
 		id: expenseId,
 		groupId: group.id,
 		description: expense.description,
+		items: items.map((item) => ({ id: item.id, description: item.description })),
+	}).catch(() => undefined);
+
+	// 9. Categorise the line items (REQ-E.4, ADR-0025), after the response as
+	//    well. A failure leaves them `uncategorised` for the nightly backfill.
+	await categoriseExpense({
+		actorId: actor.id,
+		groupId: group.id,
+		expenseId,
 		items: items.map((item) => ({ id: item.id, description: item.description })),
 	}).catch(() => undefined);
 

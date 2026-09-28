@@ -60,13 +60,15 @@ merge doesn't deploy. **Step 5** (`e2e-nightly.yml`) is on branch
 **all 30 eval labels approved by Raffaele**. Steps 2–3 are done: `splitr-ai`
 (`workers/ai/`) is built and verified locally through a real service binding.
 **Eval: 8B + RAG 28/30**, and Raffaele chose 8B with a 0.6 threshold
-([evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). **Next is step
-4:**
-- deploy `splitr-ai` (add it to `deploy.yml` before the app);
-- `wrangler secret put AI_SHARED_SECRETS` on it and `AI_SHARED_SECRET` on the
-  app (**Raffaele runs these**: secrets are never in chat);
-- add the `AI_WORKER` service binding to the app;
-- categorise in `waitUntil` after the expense save.
+([evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). **Step 4 is built** (branch `e7/wire-categorisation`, with a PR). After its
+merge deploys `splitr-ai`, **Raffaele sets the two secrets** (the same random
+value in both; never in chat):
+`npx wrangler secret put AI_SHARED_SECRETS -c workers/ai/wrangler.jsonc` and
+`npx wrangler secret put AI_SHARED_SECRET`.
+Until then, the app skips categorisation (`skipped:no-secret`). Then verify
+on production: a receipt's items get categorised, and saves with items aren't
+slower than saves without. **Then step 5:** move embeddings and OCR behind
+`splitr-ai`, and remove the app's `ai` binding.
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random
@@ -133,11 +135,17 @@ npx next typegen           # route types (RouteContext)
 npm run db:migrate:local   # drizzle/0000 + 0001 into the local D1
 ```
 
-**Every time (two processes: settle-up needs the ledger):**
+**Every time (three processes: settle-up needs the ledger, categorisation the AI Worker):**
 ```bash
 npx wrangler dev -c workers/group-ledger/wrangler.jsonc --port 8791 --persist-to .wrangler/state
+npx wrangler dev -c workers/ai/wrangler.jsonc --port 8793 --persist-to .wrangler/state
 npm run dev -- -p 3100
 ```
+The AI Worker needs `workers/ai/.dev.vars` with `AI_SHARED_SECRETS=<x>`, and
+`./.dev.vars` needs `AI_SHARED_SECRET=<x>`, where `<x>` is the same random,
+local-only value. **To stop a `wrangler dev`, kill the `wrangler` process, not
+the port.** Killing only the listener leaves the parent registered, and
+another instance keeps answering (it happened on 2026-09-25).
 
 **Local dev writes to REAL cloud resources in three places:** R2 and
 Vectorize are `remote: true` (they have no useful local simulation), and
