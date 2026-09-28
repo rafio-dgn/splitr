@@ -1,0 +1,18 @@
+{
+	// Its own program, with the full workerd runtime types (no DOM here, so no
+	// Element clash, unlike the Next.js app: ADR-0015 §4). It also typechecks the
+	// shared, pure modules it imports from ../../src.
+	"compilerOptions": {
+		"target": "es2024",
+		"lib": ["es2024"],
+		"module": "es2022",
+		"moduleResolution": "Bundler",
+		"strict": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"isolatedModules": true,
+		"allowImportingTsExtensions": true,
+		"types": ["./worker-configuration.d.ts"]
+	},
+	"include": ["worker-configuration.d.ts", "src/**/*.ts"]
+}

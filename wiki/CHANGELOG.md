@@ -1103,3 +1103,25 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** ADR-0016 §6 and ADR-0025 step 5. It makes F.5 (AI Gateway) a
   one-Worker change.
 - **Decision:** [ADR-0025](./decisions/0025-rag-worker-eval-seed-secret-fallback.md) (steps 4–5 note)
+
+## 2026-09-28 — E.8/E.9: the nightly sweep (`splitr-cron`), in-app reminders, migration 0002
+- **Type:** added
+- **Scope:**
+  - `workers/cron/` (new Worker) and `src/lib/cron/sweep.ts` (+ tests);
+  - `src/lib/expenses/transfers.ts` (+ tests) and `src/lib/reminders/`
+    (+ tests), plus `src/components/reminder-banners.tsx` and the two groups
+    pages;
+  - `src/db/schema.ts` and `drizzle/0002_cron_reminders_and_index_state.sql`;
+  - `src/lib/search/index-expense.ts`;
+  - `scripts/{cron-run.mjs,verify/cron-twice.mjs}`, `scripts/verify/cleanup.mjs`;
+  - `package.json`, the `ci`/`deploy` workflows, and the evidence.
+- **What:**
+  - A 02:30 UTC sweep that UPSERTs reminders, backfills `uncategorised` items
+    (never `other`) and re-indexes expenses without an `expense_indexed` row.
+    It's bounded at 50 + 50 per run.
+  - In-app banners for debts at least 3 days old, confirmed against the live
+    balances.
+  - A manual trigger with no public endpoint, and cleanup updated for the new
+    foreign keys.
+- **Why:** `REQ-E.6`. Raffaele's four choices are in ADR-0026.
+- **Decision:** [ADR-0026](./decisions/0026-nightly-cron-worker.md)

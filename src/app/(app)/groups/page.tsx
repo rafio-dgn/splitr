@@ -11,7 +11,11 @@
  */
 import Link from "next/link";
 
+import { ReminderBanners } from "@/components/reminder-banners";
 import { ActionLink, EmptyState, ScreenHeading } from "@/components/ui";
+import { suggestTransfers } from "@/lib/expenses/transfers";
+import { liveReminders } from "@/lib/reminders/live";
+import { storedRemindersFor } from "@/lib/reminders/stored";
 import { getGroupBalances } from "@/lib/expenses/group-balances";
 import { getGroupForViewer, getGroupsForViewer } from "@/lib/groups/membership";
 import { formatGbp } from "@/lib/money";
@@ -39,8 +43,15 @@ export default async function GroupsPage() {
 			const group = await getGroupForViewer(summary.id, viewerId);
 			const balances = group === null ? [] : await getGroupBalances(group);
 			const mine = balances.find((balance) => balance.userId === viewerId);
-			return { ...summary, net: mine?.netMinorUnits ?? 0 };
+			return { ...summary, net: mine?.netMinorUnits ?? 0, transfers: suggestTransfers(balances) };
 		}),
+	);
+
+	// ADR-0026 §2: the cron's reminders, shown only where the live balances still agree.
+	const reminders = liveReminders(
+		viewerId,
+		await storedRemindersFor(viewerId, cards.map((c) => c.id)),
+		new Map(cards.map((c) => [c.id, c.transfers])),
 	);
 
 	return (
@@ -51,6 +62,8 @@ export default async function GroupsPage() {
 					<ActionLink href="/groups/new">Create a group</ActionLink>
 				) : null}
 			</div>
+
+			<ReminderBanners reminders={reminders} showGroup />
 
 			{cards.length === 0 ? (
 				<EmptyState
