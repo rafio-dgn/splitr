@@ -84,3 +84,6 @@ the real pasted output, and the date.
 - [`REQ-F.1-settle-rate-limit.md`](./REQ-F.1-settle-rate-limit.md): six
   rapid settle-up requests, the 6th 429 (HTTP and the form, on the production
   build), per-user proof, and the rationale in ADR-0029.
+- [`REQ-F.2-turnstile-forged-submit.md`](./REQ-F.2-turnstile-forged-submit.md):
+  Turnstile on `/join`, the intercepted and curl-replayed forged submit, and the
+  fail-closed tests (2026-09-28, local).

@@ -1233,3 +1233,30 @@ shape that triggers them. They are listed rather than ticked.
   ticked.
 - **Why:** `REQ-F.1`.
 - **Decision:** none
+
+## 2026-09-28 — F.2/F.3 (`REQ-F.2`): Turnstile on the join form, and the forged-submit proof
+- **Type:** added
+- **Scope:**
+  - `src/lib/turnstile/verify.ts` (+ tests) and `src/components/turnstile-widget.tsx`;
+  - `src/app/join/[inviteCode]/{actions,join-form,page}.tsx`;
+  - `wrangler.jsonc` (`TURNSTILE_SITE_KEY`, a placeholder), `.env.example`,
+    and the `ci.yml` placeholder check;
+  - `scripts/verify/turnstile-forge.mjs`, ADR-0030 and the evidence.
+- **What:**
+  - A Managed widget on `/join`, with the token verified in `joinGroupAction`
+    before `joinGroup`; it fails closed and writes an audit line.
+  - Proof: the real request intercepted with its token swapped, then replayed
+    with curl.
+  - CI fails while a `SET-ME` placeholder remains.
+- **Why:** `REQ-F.2`. Raffaele's four choices are in ADR-0030.
+- **Decision:** [ADR-0030](./decisions/0030-turnstile-on-join.md)
+
+## 2026-09-28 — The production Turnstile site key
+- **Type:** changed
+- **Scope:** `wrangler.jsonc` (`TURNSTILE_SITE_KEY`), `wiki/todos/HANDOVER.md`
+- **What:** The `SET-ME` placeholder is replaced by the site key of
+  Raffaele's widget (Managed, `splitr.raffaele-digennaro.workers.dev`). It's
+  public by design. `TURNSTILE_SECRET_KEY` is set as a secret (checked by name
+  with `wrangler secret list`).
+- **Why:** `REQ-F.2`. CI blocked the placeholder until now.
+- **Decision:** [ADR-0030](./decisions/0030-turnstile-on-join.md)

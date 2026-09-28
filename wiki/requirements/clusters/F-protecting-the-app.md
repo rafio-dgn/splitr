@@ -46,7 +46,10 @@ Server Action; forge a submit and confirm the server rejects it.
 - [ ] **Demonstrated:** a forged submit is rejected by the server
 - [ ] The forged-submit command is recorded as evidence
 
-**Source:** capture §9 · **Status:** ✅ **In scope** ([ADR-0005](../../decisions/0005-optional-scope.md))
+**Source:** capture §9 · **Status:** 🟡 Built and verified locally (2026-09-28, ADR-0030): the widget on `/join`,
+verified in `joinGroupAction`, failing closed. A curl-forged submit (empty token) was refused, with no membership
+written ([evidence](../../evidence/REQ-F.2-turnstile-forged-submit.md)). **Left:** Raffaele's widget keys, then the
+production run, where the forged *token* must be refused too.
 
 **Notes:** Requires a genuinely public, unauthenticated form — see the reference
 architecture's "public intake form" (§2.5). If the chosen project has no public
