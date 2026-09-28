@@ -1860,3 +1860,36 @@ does, months later, without the original chat transcript.
   - Size: the app is unchanged at 2,543 KiB, and `splitr-ai` is 126 KiB.
 - **Not verified:** the receipt-read fallback in a browser with the Worker
   down (the code path is shared with the tested ones).
+
+## 2026-09-28T13:30Z — E.8/E.9: the nightly sweep
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "Notifications in app is fine. You can go on."
+- **Decisions asked:** four (where it lives, the reminder rule, re-index
+  tracking, the manual trigger). The recommendation was chosen on all four.
+- **Deviation, flagged:** "an `indexed_at` column" became an `expense_indexed`
+  table, with the same meaning, because ADR-0018 §3 makes expense rows
+  immutable. Recorded in ADR-0026 §3.
+- **Actions:**
+  - Migration 0002 (two tables, plus a hand-added backfill so history isn't
+    re-embedded).
+  - `suggestTransfers`, the pure `sweep`, and the `splitr-cron` Worker with
+    raw-SQL UPSERTs.
+  - Banners checked against the live balances.
+  - `cron-run.mjs` and `cron-twice.mjs`; cleanup fixed for the new foreign
+    keys (otherwise every deploy's smoke cleanup would have failed);
+    deploy/CI wiring.
+- **Alternatives considered:**
+  - Timestamps in the reminder rows: rejected, because a same-day rerun
+    would differ.
+  - Trusting the stored reminder for the banner: rejected, because it would
+    nag about a debt paid since the run.
+  - Drizzle for the UPSERT: raw SQL chosen instead, so the
+    `ON CONFLICT … DO UPDATE` is visible at the demo.
+- **Verification:**
+  - 15 new tests (72 pure plus 6 DO in total).
+  - The local double run: identical, with no AI work on run 2.
+  - Browser check of the banner (the age rule, both pages, gone after
+    settling).
+  - `tsc` passes for all four programs; ESLint and actionlint are clean.
+- **Open questions:** Raffaele sets `AI_SHARED_SECRET` on `splitr-cron`, and
+  runs `cron-twice.mjs` on production.

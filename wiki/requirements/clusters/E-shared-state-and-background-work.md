@@ -119,7 +119,10 @@ twice and confirm the result is identical.
 - [ ] **Demonstrated:** run twice, results identical
 - [ ] A manual trigger exists so this can be shown without waiting for the cron
 
-**Source:** capture §8 · **Status:** Blocked on `REQ-D.1`
+**Source:** capture §8 · **Status:** 🟡 Built and proven locally (2026-09-28):
+`splitr-cron`, UPSERT reminders, run twice → byte-identical
+([evidence](../../evidence/REQ-E.6-cron-run-twice.md)). **Left:** the
+production double run, after the merge and the cron's secret.
 
 **Notes:** The double-run proof is the requirement. Deterministic composite keys
 are what make the UPSERT idempotent. Remember `ctx.waitUntil` (`REQ-C.5` Q3).

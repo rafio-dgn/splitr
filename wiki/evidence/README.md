@@ -75,3 +75,6 @@ the real pasted output, and the date.
   the 2×2 eval (2026-09-25) that picked **8B + RAG (28/30)**, the threshold
   sweep, the AI Worker refusing a wrong secret through a real service binding,
   and the unit tests.
+- [`REQ-E.6-cron-run-twice.md`](./REQ-E.6-cron-run-twice.md): the nightly sweep
+  run twice, byte-identical (2026-09-28, local), plus the in-app reminder
+  checked in a browser.
