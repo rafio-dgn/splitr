@@ -79,3 +79,45 @@ Waiting failed: 60000ms exceeded
 - **The diagnostics were tested against Cloudflare's always-block test key**
   (`2x00000000000000000000AB`): they printed the challenge requests and
   `[Cloudflare Turnstile] Error: 600010`.
+
+## Production, run 2 (HEADFUL, Raffaele): Turnstile refuses the automated browser, by design
+
+With the window visible and Raffaele clicking:
+- the widget ran its challenge **8 times**;
+- every cycle ended in `[Cloudflare Turnstile] Error: 600010`, with its
+  failure frame (`…/fr/428fj/it-it/auto/failure`) and the troubleshooting
+  panel;
+- the console showed Turnstile **probing for automation** (`%c%d
+  font-size:0;color:transparent`, plus `console.table`, `dirxml` and `count`
+  calls).
+
+**Conclusion:** a browser driven through Chrome's automation protocol never
+gets a token on production. That's the control working.
+
+**So the proof skips the widget, as a real forger would.** A DOM click on
+the `disabled` button is ignored, because React drops mouse events for
+elements whose *props* say disabled. So the script calls the button's React
+`onClick` (from `__reactProps$…`) directly. The Server Action is then called
+with no real token, and the intercepted request carries a forged one.
+
+**Rehearsed locally, with Cloudflare's always-block site key and always-fail
+secret** (Cloudflare's real `siteverify` answering):
+
+```
+$ EXPECT_REFUSAL=1 node scripts/verify/turnstile-forge.mjs http://localhost:3100
+  · bypass: called the button's React onClick directly
+  ✔ the Server Action request was intercepted (no real token existed; sent "forged-by-script-…")
+  ✔ the page says "We couldn't confirm you're human"
+  ✔ no membership was written
+  $ curl -X POST …/join/5aa9062e7a -H 'Next-Action: 60fe0df9…' -H 'Cookie: <the joiner's session>' --data '["5aa9062e7a",""]'
+    → 1:{"status":"not-verified"}
+  ✔ curl with an EMPTY token → the server answers not-verified
+  $ curl -X POST …/join/5aa9062e7a -H 'Next-Action: 60fe0df9…' -H 'Cookie: <the joiner's session>' --data '["5aa9062e7a","forged-by-script-…"]'
+    → 1:{"status":"not-verified"}
+  ✔ curl with a FORGED token → the server answers not-verified
+turnstile-forge passed
+
+[AUDIT] {…"action":"group.join",…"outcome":"refused:turnstile:rejected","persisted":false,"detail":{"codes":"invalid-input-response"}}
+[AUDIT] {…"action":"group.join",…"outcome":"refused:turnstile:missing-token","persisted":false,…}
+[AUDIT] {…"action":"group.join",…"outcome":"refused:turnstile:rejected","persisted":false,"detail":{"codes":"invalid-input-response"}}
+```
