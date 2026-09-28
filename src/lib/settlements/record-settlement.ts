@@ -22,11 +22,8 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getGroupForViewer, isMember } from "@/lib/groups/membership";
 import { parseRecordSettlement, type SettlementFieldErrors } from "@/lib/schemas/settlement";
 
-import type { LedgerDecision } from "./ledger-contract";
-
-/** Mirrors `wrangler.jsonc` → `ratelimits` → SETTLE_LIMITER, for the audit line and Retry-After. */
-const SETTLE_LIMIT = 5;
-const SETTLE_PERIOD_SECONDS = 60;
+import type { LedgerDecision, SettleSlot } from "./ledger-contract";
+import { SETTLE_LIMIT, SETTLE_WINDOW_MS } from "./rate-window";
 
 export interface Actor {
 	readonly id: string;
@@ -61,11 +58,32 @@ export async function recordSettlement(
 	// REQ-F.1 (ADR-0029), before anything else: a flood (valid or not) costs one
 	// counter check each and never reaches the ledger or D1. The key is the
 	// signed-in user, so flatmates on one Wi-Fi don't share a budget.
+	//
+	// Two layers (ADR-0029 amendment). The binding is the cheap front line, but
+	// it's "permissive, eventually consistent": a tight burst of 6 all passed on
+	// production. The ledger's per-user SettleRateLimiter counts exactly, so the
+	// 6th is refused every time.
 	const { env } = await getCloudflareContext({ async: true });
 	const { success } = await env.SETTLE_LIMITER.limit({ key: `settle:${actor.id}` });
-	if (!success) {
-		audit({ actor: actor.id, action: "settlement.record", target: "unknown", outcome: "refused:rate-limited", persisted: false, detail: { limit: SETTLE_LIMIT, periodSeconds: SETTLE_PERIOD_SECONDS } });
-		return local({ status: "rate-limited", retryAfterSeconds: SETTLE_PERIOD_SECONDS });
+	let slot: SettleSlot = success ? { allowed: true, retryAfterSeconds: 0 } : { allowed: false, retryAfterSeconds: SETTLE_WINDOW_MS / 1000 };
+	if (slot.allowed) {
+		try {
+			slot = await env.LEDGER.takeSettleSlot(actor.id);
+		} catch {
+			// The ledger is unreachable, so the settlement itself will fail below
+			// (503), with nothing written. A limiter outage mustn't be the error.
+		}
+	}
+	if (!slot.allowed) {
+		audit({
+			actor: actor.id,
+			action: "settlement.record",
+			target: "unknown",
+			outcome: "refused:rate-limited",
+			persisted: false,
+			detail: { limit: SETTLE_LIMIT, periodSeconds: SETTLE_WINDOW_MS / 1000, by: success ? "exact-counter" : "binding" },
+		});
+		return local({ status: "rate-limited", retryAfterSeconds: slot.retryAfterSeconds });
 	}
 
 	const parsed = parseRecordSettlement(rawInput);

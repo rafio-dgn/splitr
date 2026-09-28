@@ -119,3 +119,41 @@ describe("GroupLedger: idempotency (REQ-E.2)", () => {
 		});
 	});
 });
+
+describe("SettleRateLimiter (REQ-F.1, ADR-0029 amendment): exact, per user", () => {
+	const limiter = (user: string) => env.SETTLE_RATE.get(env.SETTLE_RATE.idFromName(user));
+
+	it("allows 5 in a row and refuses the 6th, with a Retry-After", async () => {
+		const stub = limiter(`u_seq_${crypto.randomUUID()}`);
+		const results = [];
+		for (let i = 0; i < 6; i++) results.push(await stub.take());
+		expect(results.map((r) => r.allowed)).toEqual([true, true, true, true, true, false]);
+		expect(results[5]?.retryAfterSeconds).toBeGreaterThan(0);
+	});
+
+	it("20 requests from one user at the same instant: exactly 5 are allowed (what the binding couldn't do)", async () => {
+		const stub = limiter(`u_burst_${crypto.randomUUID()}`);
+		const results = await Promise.all(Array.from({ length: 20 }, () => stub.take()));
+		expect(results.filter((r) => r.allowed)).toHaveLength(5);
+	});
+
+	it("is per user: one user's lockout doesn't touch another's budget", async () => {
+		const a = limiter(`u_a_${crypto.randomUUID()}`);
+		const b = limiter(`u_b_${crypto.randomUUID()}`);
+		for (let i = 0; i < 6; i++) await a.take();
+		expect((await b.take()).allowed).toBe(true);
+	});
+
+	it("its alarm clears storage once every hit has left the window", async () => {
+		const stub = limiter(`u_alarm_${crypto.randomUUID()}`);
+		await stub.take();
+		// Age the stored hit past the window, then fire the alarm (60 s can't be waited out).
+		await runInDurableObject(stub, async (_instance, state) => {
+			await state.storage.put("hits", [Date.now() - 120_000]);
+		});
+		expect(await runDurableObjectAlarm(stub)).toBe(true);
+		await runInDurableObject(stub, async (_instance, state) => {
+			expect(await state.storage.get("hits")).toBeUndefined();
+		});
+	});
+});

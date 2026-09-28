@@ -19,6 +19,12 @@ export interface SettleRequest {
 	readonly idempotencyKey: string | null;
 }
 
+/** REQ-F.1's exact per-user limit (ADR-0029 amendment): may this user make another settle-up request now? */
+export interface SettleSlot {
+	readonly allowed: boolean;
+	readonly retryAfterSeconds: number;
+}
+
 /** The ledger's decision, as returned (and cached) by the Durable Object. */
 export type LedgerDecision =
 	| {
