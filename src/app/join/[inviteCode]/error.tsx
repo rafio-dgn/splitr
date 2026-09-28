@@ -11,7 +11,7 @@ import { ErrorState } from "@/components/ui";
 
 export default function JoinError({ retry }: { retry: () => void }) {
 	return (
-		<main className="mx-auto w-full max-w-lg px-6 py-20">
+		<main className="mx-auto w-full max-w-lg px-4 py-10 md:py-16">
 			<ErrorState title="We couldn't load this invite" onRetry={retry}>
 				This one&rsquo;s on us, not on your link. Try again in a moment.
 			</ErrorState>

@@ -13,6 +13,9 @@
 
 import { useEffect, useState } from "react";
 
+import { Icon } from "./icons";
+import { buttonClass } from "./ui";
+
 export function CopyLinkButton({ value }: { value: string }) {
 	const [copied, setCopied] = useState(false);
 
@@ -39,9 +42,11 @@ export function CopyLinkButton({ value }: { value: string }) {
 					setCopied(false);
 				}
 			}}
-			className="shrink-0 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500"
+			className={`shrink-0 ${buttonClass({ variant: copied ? "secondary" : "primary" })}`}
 		>
-			{copied ? "Copied." : "Copy link"}
+			<Icon name={copied ? "check" : "link"} className="size-[18px]" />
+			{/* The live region announces the change; the label alone would be missed. */}
+			<span aria-live="polite">{copied ? "Copied." : "Copy link"}</span>
 		</button>
 	);
 }

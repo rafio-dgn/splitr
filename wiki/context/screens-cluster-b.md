@@ -222,7 +222,8 @@ Turnstile drops into an existing form later rather than forcing a redesign.
      and *"Not you? Switch account."*
 4. On success: membership is created and the user lands on
    `/groups/[groupId]` with a one-line confirmation: **"You're in. Here's where
-   Flat 12b stands."**
+   Flat 12b stands."** *(Since ADR-0033, 2026-09-28, it is shown as a toast.
+   `?joined=1` still drives it.)*
 
 **Turnstile's placement is decided now, not later:** the widget sits between the
 last field and the submit button, and its token is verified **inside the server
@@ -235,7 +236,9 @@ action** at `REQ-F.2`. Cluster B leaves the space and ships the form without it.
 3. Client validates against the shared schema and shows per-field errors; the
    server validates against the *same* schema independently (`REQ-B.2`).
 4. On success, redirect to `/groups/[groupId]` with a confirmation line:
-   **"Added — Tesco run, £42.50, split 4 ways."**
+   **"Added — Tesco run, £42.50, split 4 ways."** *(Since ADR-0033, 2026-09-28,
+   this is an "Expense added" toast naming the expense, carried by a flash
+   cookie so the URL stays exactly `/groups/[groupId]`.)*
 5. A **"Snap a receipt instead"** slot sits at the top of this screen from
    Cluster D (`REQ-D.3`). In Cluster B the slot is absent — no disabled button,
    no "coming soon". Do not promise what does not exist.

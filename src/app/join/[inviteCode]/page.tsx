@@ -12,8 +12,10 @@
  * accident (§5.1).
  */
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import Link from "next/link";
 
-import { ActionLink, EmptyState, ScreenHeading } from "@/components/ui";
+import { Logo } from "@/components/logo";
+import { ActionLink, EmptyState, ScreenHeading, cardClass } from "@/components/ui";
 import { getGroupForViewer, getInvite } from "@/lib/groups/membership";
 import { getSession } from "@/lib/session";
 
@@ -37,7 +39,8 @@ export default async function JoinPage({
 		// nothing to leak, and the wording is vague about *why* on purpose so that
 		// adding expiry later needs no copy change.
 		return (
-			<main className="mx-auto w-full max-w-lg px-6 py-20">
+			<main className="mx-auto flex w-full max-w-lg flex-col gap-8 px-4 py-10 md:py-16">
+				<JoinBrand />
 				<EmptyState
 					title="This invite isn't valid"
 					action={<ActionLink href="/">Go to Splitr</ActionLink>}
@@ -57,7 +60,8 @@ export default async function JoinPage({
 		const group = await getGroupForViewer(invite.groupId, session.user.id);
 		if (group !== null) {
 			return (
-				<main className="mx-auto w-full max-w-lg px-6 py-20">
+				<main className="mx-auto flex w-full max-w-lg flex-col gap-8 px-4 py-10 md:py-16">
+				<JoinBrand />
 					<EmptyState
 						title={`You're already in ${group.name}.`}
 						action={
@@ -70,7 +74,8 @@ export default async function JoinPage({
 			);
 		}
 		return (
-			<main className="mx-auto flex w-full max-w-lg flex-col gap-8 px-6 py-20">
+			<main className="mx-auto flex w-full max-w-lg flex-col gap-8 px-4 py-10 md:py-16">
+				<JoinBrand />
 				<ScreenHeading
 					title={`${invite.invitedByName} invited you to ${invite.groupName}`}
 				>
@@ -80,13 +85,16 @@ export default async function JoinPage({
 						splitting here.
 					</p>
 				</ScreenHeading>
-				<JoinAsMember inviteCode={invite.code} groupName={invite.groupName} turnstileSiteKey={turnstileSiteKey} />
+				<div className={`p-6 ${cardClass}`}>
+					<JoinAsMember inviteCode={invite.code} groupName={invite.groupName} turnstileSiteKey={turnstileSiteKey} />
+				</div>
 			</main>
 		);
 	}
 
 	return (
-		<main className="mx-auto flex w-full max-w-lg flex-col gap-8 px-6 py-20">
+		<main className="mx-auto flex w-full max-w-lg flex-col gap-8 px-4 py-10 md:py-16">
+				<JoinBrand />
 			<ScreenHeading
 				title={`${invite.invitedByName} invited you to ${invite.groupName}`}
 			>
@@ -97,7 +105,22 @@ export default async function JoinPage({
 				</p>
 			</ScreenHeading>
 
-			<JoinForm inviteCode={invite.code} groupName={invite.groupName} turnstileSiteKey={turnstileSiteKey} />
+			<div className={`flex flex-col gap-4 p-6 ${cardClass}`}>
+				<JoinForm inviteCode={invite.code} groupName={invite.groupName} turnstileSiteKey={turnstileSiteKey} />
+			</div>
 		</main>
+	);
+}
+
+/**
+ * The join page sits outside both shells (it's public, and the `(auth)` shell
+ * would add login chrome), so it brings its own mark: someone arriving from a
+ * link in a group chat should see whose site this is.
+ */
+function JoinBrand() {
+	return (
+		<Link href="/" aria-label="Splitr home" className="self-start rounded-lg">
+			<Logo size="sm" />
+		</Link>
 	);
 }

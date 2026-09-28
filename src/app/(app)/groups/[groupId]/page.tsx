@@ -25,7 +25,15 @@ import { Suspense } from "react";
 
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { ReminderBanners } from "@/components/reminder-banners";
-import { EmptyState } from "@/components/ui";
+import { ToastOnMount } from "@/components/toaster";
+import {
+	Avatar,
+	ButtonLink,
+	EmptyState,
+	SectionLabel,
+	cardClass,
+	positionTextClass,
+} from "@/components/ui";
 import { suggestTransfers } from "@/lib/expenses/transfers";
 import { liveReminders } from "@/lib/reminders/live";
 import { storedRemindersFor } from "@/lib/reminders/stored";
@@ -44,8 +52,9 @@ export default async function GroupDashboardPage({
 	const session = await requireSession();
 	const { groupId } = await params;
 	// §4.4: the join flow lands here with a one-line confirmation. Reading it
-	// from the URL on the server keeps the confirmation off the client entirely —
-	// no state, no effect, no extra request.
+	// from the URL on the server keeps the decision on the server — no fetch, no
+	// extra request. It's shown as a toast (ADR-0033); `?joined=1` stays in the
+	// URL because the E2E waits for exactly that path.
 	const justJoined = (await searchParams).joined === "1";
 
 	// The layout already established membership and `resolveGroup` is
@@ -66,84 +75,75 @@ export default async function GroupDashboardPage({
 	// ADR-0026 §2: the cron's reminder for this group, only if the live balance still agrees.
 	const reminders = liveReminders(session.user.id, await storedRemindersFor(session.user.id, [group.id]), new Map([[group.id, suggestTransfers(balances)]]));
 
+	const iOwe = (mine?.netMinorUnits ?? 0) < 0;
+
 	return (
-		<div className="flex flex-col gap-12">
+		<div className="flex flex-col gap-6">
 			{justJoined ? (
-				<p
-					role="status"
-					className="rounded-xl bg-zinc-100 px-4 py-3 text-sm dark:bg-zinc-900"
-				>
-					You&rsquo;re in. Here&rsquo;s where {group.name} stands.
-				</p>
+				<ToastOnMount
+					id={`joined:${group.id}`}
+					title="You're in"
+					detail={`Here's where ${group.name} stands.`}
+				/>
 			) : null}
 
 			<ReminderBanners reminders={reminders} showGroup={false} />
 
-			{/* A. Where you stand — §4.6 A, with §5.5's empty state. */}
-			<section>
-				{settled ? (
-					<EmptyState title="Everyone's square">
-						Nothing is owed in {group.name} right now.
-					</EmptyState>
-				) : (
-					<>
-						<h1 className="text-3xl font-semibold tracking-tight">
-							{describePosition(mine?.netMinorUnits ?? 0).sentence}
-						</h1>
-						<p className="mt-2 text-zinc-600 dark:text-zinc-400">
-							{balances
-								.filter(
-									(balance) =>
-										balance.userId !== session.user.id &&
-										balance.netMinorUnits !== 0,
-								)
-								.map((balance) =>
-									balance.netMinorUnits < 0
-										? `${balance.name} owes ${formatGbp(-balance.netMinorUnits)}`
-										: `${balance.name} is owed ${formatGbp(balance.netMinorUnits)}`,
-								)
-								.join(" · ")}
-						</p>
-					</>
-				)}
-			</section>
-
-			{/* B. Everyone's position — §4.6 B. One line per member, so the group
-			    can read it together over a table. Hidden when everyone is square,
-			    because a column of "Square" says less than the sentence above. */}
-			{settled ? null : (
-				<section>
-					<h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
-						Everyone&rsquo;s position
-					</h2>
-					<ul className="mt-4 flex flex-col gap-2">
-						{balances.map((balance) => (
-							<li
-								key={balance.userId}
-								className="flex items-baseline justify-between gap-4 text-sm"
-							>
-								<span>{balance.name}</span>
-								<span className="text-zinc-600 dark:text-zinc-400">
-									{balance.netMinorUnits === 0
-										? "square"
-										: balance.netMinorUnits < 0
-											? `owes ${formatGbp(-balance.netMinorUnits)}`
-											: `owed ${formatGbp(balance.netMinorUnits)}`}
-								</span>
-							</li>
-						))}
-					</ul>
+			<div className="grid items-start gap-6 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+				{/* A + B. Where you stand, then everyone's position — §4.6 A and B,
+				    with §5.5's empty state. One card: the sentence is the headline and
+				    the list is the detail, so no position is said twice. First on a
+				    phone, on the right on a desktop. */}
+				<section className={`flex flex-col gap-5 p-5 md:order-2 md:p-6 ${settled ? "" : cardClass}`}>
+					{settled ? (
+						<EmptyState title="Everyone's square" icon="checkCircle">
+							Nothing is owed in {group.name} right now.
+						</EmptyState>
+					) : (
+						<>
+							<SectionLabel>Where you stand</SectionLabel>
+							<h1 className="font-display text-[34px] leading-[1.05] font-bold tracking-tight tabular-nums md:text-[40px]">
+								<Headline sentence={describePosition(mine?.netMinorUnits ?? 0).sentence} />
+							</h1>
+							{iOwe ? (
+								<ButtonLink href={`/groups/${group.id}/settle`} variant="secondary" icon="swap">
+									Settle up
+								</ButtonLink>
+							) : null}
+							{/* Hidden when everyone is square, because a column of "Square"
+							    says less than the sentence above. */}
+							<div>
+								<h2 className="sr-only">Everyone&rsquo;s position</h2>
+								<ul className="flex flex-col">
+									{balances.map((balance) => (
+										<li
+											key={balance.userId}
+											className="flex items-center gap-3 border-t border-line py-2.5 text-[15px]"
+										>
+											<Avatar id={balance.userId} name={balance.name} />
+											<span className="min-w-0 flex-1 truncate font-semibold">
+												{balance.userId === session.user.id ? "You" : balance.name}
+											</span>
+											<span className={`font-semibold tabular-nums ${positionTextClass(balance.netMinorUnits)}`}>
+												{balance.netMinorUnits === 0
+													? "square"
+													: balance.netMinorUnits < 0
+														? `${balance.userId === session.user.id ? "owe" : "owes"} ${formatGbp(-balance.netMinorUnits)}`
+														: `owed ${formatGbp(balance.netMinorUnits)}`}
+											</span>
+										</li>
+									))}
+								</ul>
+							</div>
+						</>
+					)}
 				</section>
-			)}
 
-			{/* C. What's been spent — §4.6 C. Its own Suspense boundary so a slow
-			    feed does not hold up the balance, and its own error boundary so a
-			    broken feed does not take the balance down with it (§5.6). */}
-			<section>
-				<h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
-					What&rsquo;s been spent
-				</h2>
-				<div className="mt-4">
+				{/* C. What's been spent — §4.6 C. Its own Suspense boundary so a slow
+				    feed does not hold up the balance, and its own error boundary so a
+				    broken feed does not take the balance down with it (§5.6). */}
+				<section className="flex flex-col gap-3 md:order-1">
+					<SectionLabel>What&rsquo;s been spent</SectionLabel>
 					<SectionErrorBoundary
 						title="We couldn't load the expenses"
 						description="The balance above is still accurate."
@@ -152,8 +152,26 @@ export default async function GroupDashboardPage({
 							<ExpenseFeed groupId={groupId} />
 						</Suspense>
 					</SectionErrorBoundary>
-				</div>
-			</section>
+				</section>
+			</div>
 		</div>
+	);
+}
+
+/**
+ * The position sentence with the amount under the highlighter: "You owe
+ * £16.50". The sentence itself comes from `describePosition`, unchanged; this
+ * only finds the amount in it to mark.
+ */
+function Headline({ sentence }: { sentence: string }) {
+	const match = /£[\d,]+\.\d{2}/.exec(sentence);
+	if (match === null) return <>{sentence}</>;
+	const at = match.index;
+	return (
+		<>
+			{sentence.slice(0, at)}
+			<span className="highlighter">{match[0]}</span>
+			{sentence.slice(at + match[0].length)}
+		</>
 	);
 }

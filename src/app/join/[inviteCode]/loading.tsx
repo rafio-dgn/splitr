@@ -8,10 +8,11 @@ import { Skeleton } from "@/components/ui";
 
 export default function JoinLoading() {
 	return (
-		<main className="mx-auto flex w-full max-w-lg flex-col gap-6 px-6 py-20">
+		<main className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-10 md:py-16">
+			<Skeleton className="h-8 w-28" />
 			<Skeleton className="h-8 w-72" />
 			<Skeleton className="h-4 w-56" />
-			<Skeleton className="h-40 w-full rounded-2xl" />
+			<Skeleton className="h-64 w-full rounded-card" />
 			<p className="sr-only" role="status">
 				Checking this invite…
 			</p>

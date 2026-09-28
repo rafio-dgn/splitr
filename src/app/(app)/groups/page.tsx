@@ -12,7 +12,13 @@
 import Link from "next/link";
 
 import { ReminderBanners } from "@/components/reminder-banners";
-import { ActionLink, EmptyState, ScreenHeading } from "@/components/ui";
+import {
+	ActionLink,
+	ButtonLink,
+	EmptyState,
+	PositionBadge,
+	ScreenHeading,
+} from "@/components/ui";
 import { suggestTransfers } from "@/lib/expenses/transfers";
 import { liveReminders } from "@/lib/reminders/live";
 import { storedRemindersFor } from "@/lib/reminders/stored";
@@ -59,7 +65,9 @@ export default async function GroupsPage() {
 			<div className="flex flex-wrap items-end justify-between gap-4">
 				<ScreenHeading title="Your groups" />
 				{cards.length > 0 ? (
-					<ActionLink href="/groups/new">Create a group</ActionLink>
+					<ButtonLink href="/groups/new" icon="plus">
+						Create a group
+					</ButtonLink>
 				) : null}
 			</div>
 
@@ -68,6 +76,7 @@ export default async function GroupsPage() {
 			{cards.length === 0 ? (
 				<EmptyState
 					title="No groups yet"
+					icon="users"
 					action={<ActionLink href="/groups/new">Create a group</ActionLink>}
 				>
 					<p>
@@ -79,23 +88,29 @@ export default async function GroupsPage() {
 					</p>
 				</EmptyState>
 			) : (
-				<ul className="flex flex-col gap-3">
+				<ul className="grid gap-3 md:grid-cols-2">
 					{cards.map((card) => (
 						<li key={card.id}>
 							<Link
 								href={`/groups/${card.id}`}
-								className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 px-5 py-4 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
+								className="flex items-center gap-4 rounded-card border border-line bg-surface px-4 py-4 shadow-rest transition-[border-color,box-shadow,transform] duration-200 ease-out-soft hover:-translate-y-px hover:border-line-strong hover:shadow-float md:px-5"
 							>
-								<span>
-									<span className="block font-medium">{card.name}</span>
-									<span className="block text-sm text-zinc-500">
+								<span
+									aria-hidden
+									className="grid size-11 shrink-0 place-items-center rounded-tile bg-surface-2 font-display text-lg font-bold"
+								>
+									{card.name.trim().charAt(0).toUpperCase()}
+								</span>
+								<span className="min-w-0 flex-1">
+									<span className="block truncate font-semibold">{card.name}</span>
+									<span className="block text-sm text-muted">
 										{card.memberCount}{" "}
 										{card.memberCount === 1 ? "person" : "people"}
 									</span>
 								</span>
-								<span className="text-sm font-medium">
+								<PositionBadge netMinorUnits={card.net}>
 									{positionLabel(card.net)}
-								</span>
+								</PositionBadge>
 							</Link>
 						</li>
 					))}

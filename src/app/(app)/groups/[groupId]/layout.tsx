@@ -17,6 +17,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Icon } from "@/components/icons";
+import { AddExpenseFab, GroupActions, GroupTabs } from "@/components/nav";
+import { AvatarStack, cardClass } from "@/components/ui";
 import { resolveGroup } from "@/lib/groups/current-group";
 import { requireSession } from "@/lib/session";
 
@@ -35,35 +38,43 @@ export default async function GroupLayout({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5 dark:border-zinc-800">
-				<Link
-					href={`/groups/${group.id}`}
-					className="text-xl font-semibold tracking-tight"
-				>
-					{group.name}
-				</Link>
-				<nav className="flex flex-wrap items-center gap-3 text-sm">
-					<Link
-						href={`/groups/${group.id}/expenses/new`}
-						className="rounded-full bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+			<div className={`px-5 pt-5 md:px-6 md:pt-6 ${cardClass}`}>
+				<div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+					<span
+						aria-hidden
+						className="grid size-12 shrink-0 place-items-center rounded-[14px] bg-surface-2 font-display text-xl font-bold"
 					>
-						Add an expense
-					</Link>
+						{group.name.trim().charAt(0).toUpperCase()}
+					</span>
 					<Link
-						href={`/groups/${group.id}/settle`}
-						className="rounded-full border border-zinc-300 px-4 py-2 font-medium hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500"
+						href={`/groups/${group.id}`}
+						className="min-w-0 font-display text-2xl font-bold tracking-tight md:text-[28px]"
 					>
-						Settle up
+						{group.name}
 					</Link>
-					<Link
-						href={`/groups/${group.id}/members`}
-						className="rounded-full border border-zinc-300 px-4 py-2 font-medium hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500"
-					>
-						Invite someone
-					</Link>
-				</nav>
+					<span className="flex items-center gap-1.5">
+						<AvatarStack people={group.members} />
+						{/* Invite lives on the Members tab; this is its shortcut. */}
+						<Link
+							href={`/groups/${group.id}/members`}
+							aria-label="Invite someone"
+							className="grid size-8 place-items-center rounded-full border border-dashed border-line-strong bg-surface-2 text-ink hover:bg-surface-3"
+						>
+							<Icon name="plus" className="size-3.5" />
+						</Link>
+					</span>
+					<div className="flex-1" />
+					{/* One primary action per screen: Add expense. On phones both move
+					    down: Add expense to the floating button, Settle up to the
+					    balance card. */}
+					<GroupActions groupId={group.id} />
+				</div>
+				<div className="mt-4">
+					<GroupTabs groupId={group.id} />
+				</div>
 			</div>
 			{children}
+			<AddExpenseFab groupId={group.id} />
 		</div>
 	);
 }

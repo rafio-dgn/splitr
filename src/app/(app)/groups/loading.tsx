@@ -13,17 +13,18 @@ export default function GroupsLoading() {
 	return (
 		<div className="flex flex-col gap-8">
 			<Skeleton className="h-8 w-40" />
-			<ul className="flex flex-col gap-3" aria-hidden>
+			<ul className="grid gap-3 md:grid-cols-2" aria-hidden>
 				{[0, 1, 2].map((row) => (
 					<li
 						key={row}
-						className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 px-5 py-4 dark:border-zinc-800"
+						className="flex items-center gap-4 rounded-card border border-line bg-surface px-5 py-4"
 					>
-						<span className="flex flex-col gap-2">
+						<Skeleton className="size-11 rounded-tile" />
+						<span className="flex flex-1 flex-col gap-2">
 							<Skeleton className="h-4 w-36" />
 							<Skeleton className="h-3 w-20" />
 						</span>
-						<Skeleton className="h-4 w-24" />
+						<Skeleton className="h-6 w-28 rounded-full" />
 					</li>
 				))}
 			</ul>

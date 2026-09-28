@@ -12,7 +12,7 @@
  */
 import { notFound } from "next/navigation";
 
-import { EmptyState, ScreenHeading } from "@/components/ui";
+import { Avatar, EmptyState, SectionLabel, cardClass } from "@/components/ui";
 import { categoryLabel } from "@/lib/categories";
 import { getExpenseInGroup, listLineItems } from "@/lib/expenses/expense-feed";
 import { resolveGroup } from "@/lib/groups/current-group";
@@ -58,25 +58,28 @@ export default async function ExpenseDetailPage({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<ScreenHeading eyebrow={group.name} title={expense.description}>
-				<p>
-					{formatGbp(expense.amountMinorUnits)} · {expense.paidByName} paid ·{" "}
-					{DAY.format(new Date(`${expense.spentAt}T00:00:00Z`))}
+			<div>
+				<p className="text-xs font-bold uppercase tracking-[0.1em] text-muted">{group.name}</p>
+				<h1 className="mt-1.5 font-display text-3xl font-bold tracking-tight">{expense.description}</h1>
+				<p className="mt-3 font-display text-4xl font-bold tracking-tight tabular-nums">
+					<span className="highlighter">{formatGbp(expense.amountMinorUnits)}</span>
 				</p>
-			</ScreenHeading>
+				<p className="mt-2 text-muted">
+					{expense.paidByName} paid · {DAY.format(new Date(`${expense.spentAt}T00:00:00Z`))}
+				</p>
+			</div>
 
 			<section>
-				<h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
-					The split
-				</h2>
-				<ul className="mt-4 flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+				<SectionLabel>The split</SectionLabel>
+				<ul className={`mt-3 flex max-w-xl flex-col px-4 py-1 ${cardClass}`}>
 					{expense.shares.map((share) => (
 						<li
 							key={share.userId}
-							className="flex items-baseline justify-between gap-4 py-3 text-sm"
+							className="flex items-center gap-3 border-t border-line py-3 text-[15px] first:border-t-0"
 						>
-							<span>{nameOf(share.userId)}</span>
-							<span>{formatGbp(share.shareMinorUnits)}</span>
+							<Avatar id={share.userId} name={nameOf(share.userId)} />
+							<span className="flex-1 font-semibold">{nameOf(share.userId)}</span>
+							<span className="font-semibold tabular-nums">{formatGbp(share.shareMinorUnits)}</span>
 						</li>
 					))}
 				</ul>
@@ -84,9 +87,7 @@ export default async function ExpenseDetailPage({
 
 			{expense.receiptKey !== null ? (
 				<section>
-					<h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
-						Receipt
-					</h2>
+					<SectionLabel>Receipt</SectionLabel>
 					{receiptUrl !== null ? (
 						// A plain <img>, deliberately not next/image: its optimiser would
 						// fetch the photo *through* the Worker, which is exactly what
@@ -95,32 +96,32 @@ export default async function ExpenseDetailPage({
 						<img
 							src={receiptUrl}
 							alt={`Receipt for ${expense.description}`}
-							className="mt-4 max-h-[32rem] rounded-lg border border-zinc-200 dark:border-zinc-800"
+							className="mt-3 max-h-[32rem] rounded-card border border-line bg-surface shadow-rest"
 						/>
 					) : (
-						<p className="mt-4 text-sm text-zinc-500">The receipt photo can&rsquo;t be shown right now.</p>
+						<p className="mt-3 text-sm text-muted">The receipt photo can&rsquo;t be shown right now.</p>
 					)}
 				</section>
 			) : null}
 
 			<section>
-				<h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
-					Line items
-				</h2>
-				<div className="mt-4">
+				<SectionLabel>Line items</SectionLabel>
+				<div className="mt-3 max-w-xl">
 					{lineItems.length > 0 ? (
-						<ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+						<ul className={`flex flex-col px-4 py-1 ${cardClass}`}>
 							{lineItems.map((item) => (
-								<li key={item.id} className="flex items-baseline justify-between gap-4 py-3 text-sm">
+								<li key={item.id} className="flex items-baseline justify-between gap-4 border-t border-line py-3 text-[15px] first:border-t-0">
 									<span className="flex flex-col">
-										<span>{item.description}</span>
+										<span className="font-semibold">{item.description}</span>
 										{item.rawText !== null && item.rawText !== item.description ? (
-											<span className="text-xs text-zinc-500">Printed as &ldquo;{item.rawText}&rdquo;</span>
+											<span className="font-mono text-xs text-muted">Printed as &ldquo;{item.rawText}&rdquo;</span>
 										) : null}
 									</span>
 									<span className="flex flex-col items-end">
-										<span className="tabular-nums">{formatGbp(item.amountMinorUnits)}</span>
-										<span className="text-xs text-zinc-500">{categoryLabel(item.category)}</span>
+										<span className="font-semibold tabular-nums">{formatGbp(item.amountMinorUnits)}</span>
+										<span className="mt-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+											{categoryLabel(item.category)}
+										</span>
 									</span>
 								</li>
 							))}

@@ -2166,3 +2166,94 @@ does, months later, without the original chat transcript.
     gateway. That was a local artefact: after a clean restart, the full E2E
     passed, including the new step.
 - **Open questions:** none.
+
+## 2026-09-28T21:00Z — A full UI/UX redesign plan, using ui-ux-pro-max
+- **Agent:** Claude Opus 5.5, main session
+- **Prompt intent:** Raffaele asked for a plan and an artifact covering a
+  complete redesign: logo, palette, navigation, components, font, page layouts,
+  CTAs, toasts, loading, and everything else UI/UX. He asked for the
+  `ui-ux-pro-max` plugin to be used.
+- **Actions:**
+  - audited every screen in `src/app` and `src/components`;
+  - ran ui-ux-pro-max: `--design-system`, plus the `color`,
+    `typography`, `style`, `ux` and `nextjs` searches;
+  - published the proposal as a private artifact: https://claude.ai/artifact/BoPtwD74qCEn1ZX477TWgk
+- **No code changed.**
+- **Findings** (from the code, not guessed):
+  - `globals.css` sets `font-family: Arial` on `body`, so the Geist font
+    that `layout.tsx` loads never renders;
+  - 258 hard-coded `zinc-*` classes;
+  - the primary button class string is pasted into 10 files;
+  - errors use `text-red-600`, which is 4.12:1 on the dark background;
+  - the receipt-line remove button (`✕`) is about 16px;
+  - no logo, favicon, toast system or mobile navigation;
+  - search shows the raw similarity score to users.
+- **What the tool returned, and what I did with it:**
+  - Palette "Fintech/Crypto" (gold and purple on navy). Rejected: it is
+    dark-only and breaks the tool's own "avoid AI purple" rule.
+  - The product search for "peer payment social consumer" returned 0 matches.
+    So the palette (ledger green, clay for "owe", highlighter yellow) is my
+    own synthesis. I checked every pair with the WCAG formula.
+  - Kept: the Minimalism/Swiss style; Outfit + Plus Jakarta Sans + JetBrains
+    Mono; the UX rules on toasts, loading and validation.
+- **Alternatives considered:**
+  - "Trust & Authority" with IBM Plex. Rejected: it reads corporate, and
+    Splitr's audience is flatmates.
+  - Showing settle-up outcomes as toasts. Rejected: `screens-cluster-b.md`
+    §6 wants them in place, and a toast would hide the "Already settled"
+    proof.
+- **Assumptions:**
+  - toasts are fed by a server-set flash cookie, so REQ-B.3 (no client data
+    call) still holds. The Next 16 cookies API is not yet checked against
+    `node_modules/next/dist/docs`.
+- **Verification:** contrast ratios computed by script. Nothing to type-check.
+- **Open questions:** six, listed in the artifact's §15 and in `backlog.md`.
+  The main ones: when to do it, the icon dependency, and the mobile bottom bar.
+
+## 2026-09-28T23:00Z — Applying the UI/UX redesign
+- **Agent:** Claude Opus 5.5, main session
+- **Prompt intent:** "I like the plan, please go on applying the changes."
+- **Inputs read:**
+  - every file under `src/app` and `src/components`;
+  - `scripts/verify/{e2e,browser,lib}.mjs`, for the selectors the redesign
+    must not break;
+  - the Next 16 docs on `cookies`, fonts and app icons;
+  - `screens-cluster-b.md`.
+- **Actions:**
+  - built the design system: tokens, fonts, logo, icons, the component kit,
+    navigation and toasts;
+  - rebuilt every screen on it;
+  - wrote ADR-0033 and the evidence file;
+  - annotated `screens-cluster-b.md` §4.4 and §4.5;
+  - updated the backlog and the study guide.
+  - Edits were targeted class swaps, so the files keep their rationale
+    comments.
+- **Alternatives considered:**
+  - rewriting whole files. Rejected: that would lose the comments and make
+    the diff unreviewable (REQ-M.3).
+  - hiding the file input behind a styled label. Rejected: the E2E clicks
+    `input#receipt` itself.
+  - a search field in the header. Rejected: the E2E reads the first
+    `button[type=submit]` in the document.
+  - copy-link as a toast. Rejected: §4.3 specifies "Copy link" → "Copied.".
+  - hiding the search similarity score. Rejected: REQ-D.4's demo side-by-side
+    uses it. It is now labelled "similarity" and muted.
+- **Assumptions:**
+  - Raffaele's "I like the plan" accepts the plan's defaults for the five
+    open decisions. They are recorded in ADR-0033 as his to reverse.
+  - Don't commit and don't switch branch, because he didn't ask. He then
+    asked for its own branch: it moved to `ui/redesign`, cut from `main`. The
+    only overlap with `f6/rotation-drill` was appended log entries in
+    AI-AUDIT, CHANGELOG and STUDY-GUIDE, re-applied onto `main`'s versions.
+- **Verification:**
+  - `tsc` and ESLint are clean;
+  - 89/89 pure tests and 10/10 ledger tests pass;
+  - `npm run build` succeeds;
+  - the E2E passed twice on `localhost:3100`, the second time on the final
+    code (cleanup left 0 rows);
+  - a screenshot pass at 1280px and 390px, in light and dark, found three
+    visual issues, all fixed.
+- **Open questions:**
+  - Raffaele to review the look.
+  - A VoiceOver pass and a 200% zoom check.
+  - `apple-icon` and OG image on Workers.

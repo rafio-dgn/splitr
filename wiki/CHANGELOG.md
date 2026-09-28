@@ -1353,3 +1353,41 @@ shape that triggers them. They are listed rather than ticked.
   reachable only by URL, and every script had opened it directly. Raffaele
   OK'd the fix.
 - **Decision:** none
+
+## 2026-09-28 — UI/UX redesign proposal (docs only)
+- **Type:** docs
+- **Scope:** `wiki/todos/backlog.md`, `wiki/todos/STUDY-GUIDE.md`, AI-AUDIT
+- **What:** logged a full redesign proposal (published as a private artifact)
+  as `proposed` backlog work, with six open decisions for Raffaele. No code
+  changed.
+- **Why:** Raffaele asked for it. No course requirement asks for a redesign,
+  so it is logged, not built (CLAUDE.md §6).
+- **Decision:** none yet. ADR-0033 "Visual design system" is to be written
+  once he approves the direction.
+
+## 2026-09-28 — The redesign, applied (ADR-0033)
+- **Type:** changed
+- **Scope:**
+  - `src/app/globals.css`, `src/app/layout.tsx`, `src/app/icon.svg` (new);
+  - `src/components/{ui,icons,logo,nav,toaster}.tsx` (icons, logo, nav and
+    toaster are new);
+  - `src/lib/flash.ts` (new);
+  - the `(app)` and `(auth)` shells, and every page, form, `loading.tsx` and
+    `error.tsx` under `src/app`;
+  - the create-group and add-expense actions (a flash toast before
+    `redirect()`).
+- **What:**
+  - design tokens with light and dark swapped at the token level, and three
+    self-hosted fonts;
+  - a logo and favicon;
+  - a component kit: buttons, fields, banners, badges, avatars, skeletons and
+    a spinner;
+  - navigation with active states, a mobile tab bar, a floating "Add
+    expense", group tabs and an account menu;
+  - toasts, pending buttons, a receipt progress stepper, and skeletons shaped
+    like each page;
+  - every screen rebuilt on the kit.
+  - Copy, routes, form fields and behaviour are unchanged, apart from two
+    confirmations that are now toasts: "joined" and "expense added".
+- **Why:** Raffaele approved the redesign plan and asked for it to be applied.
+- **Decision:** [ADR-0033](./decisions/0033-visual-design-system.md)

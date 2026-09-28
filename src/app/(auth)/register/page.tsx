@@ -16,19 +16,19 @@ export default function RegisterPage() {
 	return (
 		<div className="flex flex-col gap-8">
 			<div>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-display text-3xl font-bold tracking-tight">
 					Create your Splitr account
 				</h1>
-				<p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+				<p className="mt-2 text-[15px] text-muted">
 					Free, and you can start a group in about ten seconds.
 				</p>
 			</div>
 
 			<RegisterForm />
 
-			<p className="text-sm text-zinc-500">
+			<p className="text-center text-sm text-muted">
 				Already have an account?{" "}
-				<Link href="/login" className="underline">
+				<Link href="/login" className="font-semibold text-primary-ink underline underline-offset-4">
 					Log in.
 				</Link>
 			</p>

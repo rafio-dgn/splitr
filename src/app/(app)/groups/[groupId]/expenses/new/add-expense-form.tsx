@@ -24,7 +24,18 @@
 
 import { useActionState, useRef, useState } from "react";
 
-import { ActionLink, EmptyState } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import {
+	ActionLink,
+	Avatar,
+	EmptyState,
+	Spinner,
+	buttonClass,
+	errorTextClass,
+	hintClass,
+	inputClass,
+	labelClass,
+} from "@/components/ui";
 import type { GroupMember } from "@/lib/groups/membership";
 import { formatGbp } from "@/lib/money";
 import {
@@ -265,7 +276,7 @@ export function AddExpenseForm({
 					focusFirstError(parsed.fieldErrors);
 				}
 			}}
-			className="flex max-w-lg flex-col gap-3"
+			className="flex max-w-xl flex-col gap-3"
 		>
 			<input type="hidden" name="groupId" value={groupId} />
 			{/* Not an input the user sees — the £ prefix below *is* the currency
@@ -300,7 +311,7 @@ export function AddExpenseForm({
 						update("description", event.target.value);
 					}}
 					onBlur={() => blurred("description")}
-					className="rounded-md border border-zinc-300 px-3 py-2 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+					className={inputClass}
 				/>
 				{/* Native suggestions: no JavaScript of ours, and a stale list only means a
 				    missing suggestion (ADR-0019). */}
@@ -312,8 +323,12 @@ export function AddExpenseForm({
 			</Field>
 
 			<Field id="amount" label="Amount" error={errorFor("amount")}>
-				<div className="flex items-center gap-2">
-					<span aria-hidden className="text-zinc-500">
+				{/* The £ sits inside the field: it *is* the currency (§7.3). */}
+				<div className="relative">
+					<span
+						aria-hidden
+						className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 font-display text-lg font-semibold text-muted"
+					>
 						£
 					</span>
 					<input
@@ -334,7 +349,7 @@ export function AddExpenseForm({
 							update("amount", event.target.value);
 						}}
 						onBlur={() => blurred("amount")}
-						className="flex-1 rounded-md border border-zinc-300 px-3 py-2 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+						className={`${inputClass} h-14 pl-8 font-display text-xl font-semibold tabular-nums`}
 					/>
 				</div>
 			</Field>
@@ -355,7 +370,7 @@ export function AddExpenseForm({
 					}
 					onChange={(event) => update("spentAt", event.target.value)}
 					onBlur={() => markTouched("spentAt")}
-					className="rounded-md border border-zinc-300 px-3 py-2 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+					className={inputClass}
 				/>
 			</Field>
 
@@ -374,7 +389,7 @@ export function AddExpenseForm({
 					}
 					onChange={(event) => update("paidById", event.target.value)}
 					onBlur={() => markTouched("paidById")}
-					className="rounded-md border border-zinc-300 px-3 py-2 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+					className={inputClass}
 				>
 					{members.map((member) => (
 						<option key={member.id} value={member.id}>
@@ -400,7 +415,7 @@ export function AddExpenseForm({
 						: undefined
 				}
 			>
-				<legend className="text-sm font-medium">Split between</legend>
+				<legend className={`mb-1 ${labelClass}`}>Split between</legend>
 				{alone ? (
 					<EmptyState
 						title={`You're the only member of ${groupName}`}
@@ -414,33 +429,44 @@ export function AddExpenseForm({
 						it with yet.
 					</EmptyState>
 				) : (
-					members.map((member) => (
-						<label key={member.id} className="flex items-center gap-2 text-sm">
-							<input
-								type="checkbox"
-								name="participantIds"
-								value={member.id}
-								disabled={pending}
-								checked={values.participantIds.includes(member.id)}
-								onChange={(event) => {
-									markTouched("participantIds");
-									update(
-										"participantIds",
-										event.target.checked
-											? [...values.participantIds, member.id]
-											: values.participantIds.filter((id) => id !== member.id),
-									);
-								}}
-							/>
-							{member.name}
-						</label>
-					))
+					// Each person is a 44px chip. The native checkbox is still the
+					// control (it's what the form submits), just visually hidden; the
+					// chip shows its state with a tick as well as colour.
+					<div className="flex flex-wrap gap-2">
+						{members.map((member) => (
+							<label
+								key={member.id}
+								className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-line-strong bg-surface py-1 pr-3.5 pl-1 text-sm font-semibold transition-colors duration-150 has-checked:border-primary has-checked:bg-primary-soft has-checked:text-primary-ink has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary has-disabled:opacity-60"
+							>
+								<input
+									type="checkbox"
+									name="participantIds"
+									value={member.id}
+									disabled={pending}
+									checked={values.participantIds.includes(member.id)}
+									onChange={(event) => {
+										markTouched("participantIds");
+										update(
+											"participantIds",
+											event.target.checked
+												? [...values.participantIds, member.id]
+												: values.participantIds.filter((id) => id !== member.id),
+										);
+									}}
+									className="peer sr-only"
+								/>
+								<Avatar id={member.id} name={member.name} />
+								{member.name}
+								<Icon name="check" className="hidden size-4 peer-checked:block" />
+							</label>
+						))}
+					</div>
 				)}
 				{errorFor("participantIds") !== undefined ? (
 					<p
 						id="participantIds-error"
 						role="alert"
-						className="text-sm text-red-600"
+						className={errorTextClass}
 					>
 						{errorFor("participantIds")}
 					</p>
@@ -448,7 +474,9 @@ export function AddExpenseForm({
 			</fieldset>
 
 			{perPerson !== undefined ? (
-				<p className="text-sm text-zinc-500">{formatGbp(perPerson)} each.</p>
+				<p className="text-sm text-muted">
+					<strong className="font-semibold text-ink tabular-nums">{formatGbp(perPerson)}</strong> each.
+				</p>
 			) : null}
 
 			{/* The receipt photo: optional, and its failure never blocks the expense
@@ -466,10 +494,10 @@ export function AddExpenseForm({
 							void attachReceipt(file);
 						}
 					}}
-					className="text-sm"
+					className="block w-full cursor-pointer text-sm text-muted file:mr-3 file:h-11 file:cursor-pointer file:rounded-full file:border file:border-solid file:border-line-strong file:bg-surface file:px-5 file:font-semibold file:text-ink hover:file:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"
 				/>
 				<input type="hidden" name="receiptKey" value={receipt.status === "attached" ? receipt.key : ""} />
-				<p role="status" className="text-xs text-zinc-500">
+				<p role="status" className={hintClass}>
 					{receipt.status === "uploading" ? `Uploading ${receipt.name}…` : null}
 					{receipt.status === "attached" ? `Attached: ${receipt.name}` : null}
 					{receipt.status === "failed" ? receipt.message : null}
@@ -479,10 +507,19 @@ export function AddExpenseForm({
 						type="button"
 						disabled={pending || reading.status === "reading"}
 						onClick={() => void readAttachedReceipt(receipt.key)}
-						className="self-start rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium disabled:opacity-50 dark:border-zinc-700"
+						aria-busy={reading.status === "reading"}
+						className={`self-start ${buttonClass({ variant: "secondary" })}`}
 					>
+						{reading.status === "reading" ? <Spinner /> : <Icon name="sparkle" className="size-[18px]" />}
 						{reading.status === "reading" ? "Reading the receipt…" : "Read receipt"}
 					</button>
+				) : null}
+				{receipt.status === "attached" ? (
+					<ReceiptSteps
+						reading={reading.status === "reading"}
+						read={draftItems !== null}
+						confirmed={totalConfirmed}
+					/>
 				) : null}
 				{reading.status === "failed" ? (
 					<p role="status" className="text-sm">
@@ -492,7 +529,7 @@ export function AddExpenseForm({
 			</Field>
 
 			{draftItems !== null ? (
-				<section className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+				<section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-rest">
 					<p className="text-sm">
 						<strong>Read from the receipt.</strong> Check the description and, above all, the{" "}
 						<strong>amount</strong> against the photo. The items are for reference only; they don&rsquo;t
@@ -500,7 +537,7 @@ export function AddExpenseForm({
 					</p>
 					<ul className="flex flex-col gap-2">
 						{draftItems.map((item, index) => (
-							<li key={index} className="flex flex-wrap items-center gap-2 text-sm">
+							<li key={index} className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm first:border-t-0 first:pt-0">
 								<input
 									aria-label={`Item ${index + 1}`}
 									value={item.description}
@@ -509,19 +546,19 @@ export function AddExpenseForm({
 											(items ?? []).map((it, i) => (i === index ? { ...it, description: event.target.value } : it)),
 										)
 									}
-									className="flex-1 rounded-md border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+									className={`${inputClass} flex-1 basis-40`}
 								/>
 								<span className="w-20 text-right tabular-nums">{formatGbp(item.amountMinorUnits)}</span>
 								<button
 									type="button"
 									aria-label={`Remove item ${index + 1}`}
 									onClick={() => setDraftItems((items) => (items ?? []).filter((_, i) => i !== index))}
-									className="text-zinc-500"
+									className={buttonClass({ variant: "ghost" })}
 								>
-									✕
+									<Icon name="x" className="size-[18px]" />
 								</button>
 								{item.rawText !== item.description ? (
-									<span className="basis-full pl-1 text-xs text-zinc-500">Printed as &ldquo;{item.rawText}&rdquo;</span>
+									<span className="basis-full pl-1 font-mono text-xs text-muted">Printed as &ldquo;{item.rawText}&rdquo;</span>
 								) : null}
 							</li>
 						))}
@@ -539,18 +576,19 @@ export function AddExpenseForm({
 								})),
 						)}
 					/>
-					<label className="flex items-center gap-2 text-sm font-medium">
+					<label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-tile bg-surface-2 px-3 text-sm font-semibold">
 						<input
 							type="checkbox"
 							name="amountConfirmed"
 							value="yes"
 							checked={totalConfirmed}
 							onChange={(event) => setTotalConfirmed(event.target.checked)}
+							className="size-5 accent-primary"
 						/>
 						I&rsquo;ve checked the amount against the receipt
 					</label>
 					{errorFor("amountConfirmed") !== undefined ? (
-						<p role="alert" className="text-sm text-red-600">
+						<p role="alert" className={errorTextClass}>
 							{errorFor("amountConfirmed")}
 						</p>
 					) : null}
@@ -561,7 +599,7 @@ export function AddExpenseForm({
 			    an itemised expense after a failed round trip is the fastest way to
 			    lose a user. */}
 			{state.status === "invalid" && state.formErrors.length > 0 ? (
-				<p role="alert" className="text-sm text-red-600">
+				<p role="alert" className={errorTextClass}>
 					We couldn&rsquo;t save this expense. Nothing was added — your details
 					are still here, try again.
 				</p>
@@ -577,13 +615,15 @@ export function AddExpenseForm({
 					// its amount is confirmed. The server enforces this too.
 					(draftItems !== null && !totalConfirmed)
 				}
-				className="self-start rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+				aria-busy={pending}
+				className={`mt-2 w-full sm:w-auto sm:self-start ${buttonClass({ size: "lg" })}`}
 			>
+				{pending ? <Spinner /> : null}
 				{pending ? "Adding…" : "Add expense"}
 			</button>
 
 			{state.status === "failed" ? (
-				<p role="alert" className="text-sm text-red-600">
+				<p role="alert" className={errorTextClass}>
 					We couldn&rsquo;t save that expense. Nothing was recorded and no balance
 					changed. Try again.
 				</p>
@@ -604,8 +644,8 @@ function Field({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="flex flex-col gap-1">
-			<label htmlFor={id} className="text-sm font-medium">
+		<div className="flex flex-col gap-1.5">
+			<label htmlFor={id} className={labelClass}>
 				{label}
 			</label>
 			{children}
@@ -613,9 +653,61 @@ function Field({
 			    appearing never moves what's below it. A move between mousedown and
 			    mouseup loses the click (2026-09-25). The form's gap is smaller to
 			    match. */}
-			<p id={`${id}-error`} role="alert" className="min-h-5 text-sm text-red-600">
+			<p id={`${id}-error`} role="alert" className={`min-h-5 ${errorTextClass}`}>
 				{error}
 			</p>
 		</div>
+	);
+}
+
+/**
+ * Where a receipt is in its three steps (ADR-0033 §loading). Reading takes
+ * seconds, so it shows its progress instead of one spinner. Derived entirely
+ * from the form's own state: it adds no new state and no request.
+ */
+function ReceiptSteps({
+	reading,
+	read,
+	confirmed,
+}: {
+	reading: boolean;
+	read: boolean;
+	confirmed: boolean;
+}) {
+	const steps = [
+		{ label: "Uploaded", state: "done" },
+		{ label: "Reading the lines", state: read ? "done" : reading ? "now" : "todo" },
+		{ label: "Check the total", state: confirmed ? "done" : read ? "now" : "todo" },
+	] as const;
+	return (
+		<ol className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]" aria-label="Receipt progress">
+			{steps.map((step, index) => (
+				<li key={step.label} className="flex items-center gap-2">
+					<span
+						className={`grid size-6 place-items-center rounded-full border-2 text-[11px] font-bold ${
+							step.state === "done"
+								? "border-primary bg-primary text-on-primary"
+								: step.state === "now"
+									? "border-primary text-primary-ink"
+									: "border-line-strong text-muted"
+						}`}
+					>
+						{step.state === "done" ? (
+							<Icon name="check" className="size-3.5" />
+						) : step.state === "now" && step.label === "Reading the lines" ? (
+							<Spinner className="size-3" />
+						) : (
+							index + 1
+						)}
+					</span>
+					<span className={step.state === "todo" ? "text-muted" : "font-semibold"}>
+						{step.label}
+						<span className="sr-only">
+							{step.state === "done" ? ", done" : step.state === "now" ? ", in progress" : ", to do"}
+						</span>
+					</span>
+				</li>
+			))}
+		</ol>
 	);
 }

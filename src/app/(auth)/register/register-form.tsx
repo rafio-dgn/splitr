@@ -16,6 +16,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Spinner, buttonClass, errorTextClass, hintClass, inputClass, labelClass } from "@/components/ui";
 import { signUp } from "@/lib/auth-client";
 
 export function RegisterForm() {
@@ -53,18 +54,18 @@ export function RegisterForm() {
 				router.refresh();
 			}}
 		>
-			<label className="flex flex-col gap-1 text-sm">
+			<label className={`flex flex-col gap-1.5 ${labelClass}`}>
 				Your name
 				<input
 					name="name"
 					autoComplete="name"
 					required
 					disabled={busy}
-					className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+					className={inputClass}
 				/>
 			</label>
 
-			<label className="flex flex-col gap-1 text-sm">
+			<label className={`flex flex-col gap-1.5 ${labelClass}`}>
 				Email
 				<input
 					name="email"
@@ -72,11 +73,11 @@ export function RegisterForm() {
 					autoComplete="email"
 					required
 					disabled={busy}
-					className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+					className={inputClass}
 				/>
 			</label>
 
-			<label className="flex flex-col gap-1 text-sm">
+			<label className={`flex flex-col gap-1.5 ${labelClass}`}>
 				Password
 				<input
 					name="password"
@@ -85,13 +86,13 @@ export function RegisterForm() {
 					required
 					minLength={12}
 					disabled={busy}
-					className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+					className={inputClass}
 				/>
-				<span className="text-xs text-zinc-500">At least 12 characters.</span>
+				<span className={`font-normal ${hintClass}`}>At least 12 characters.</span>
 			</label>
 
 			{error !== null ? (
-				<p role="alert" className="text-sm text-red-600">
+				<p role="alert" className={errorTextClass}>
 					{error}
 				</p>
 			) : null}
@@ -99,8 +100,9 @@ export function RegisterForm() {
 			<button
 				type="submit"
 				disabled={busy}
-				className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+				className={`mt-1 w-full ${buttonClass({ size: "lg" })}`}
 			>
+				{busy ? <Spinner /> : null}
 				{busy ? "Creating…" : "Create account"}
 			</button>
 		</form>

@@ -10,7 +10,7 @@
  * Each render mints a fresh idempotency key, so this form's retries and
  * double-clicks replay instead of writing twice (REQ-E.2).
  */
-import { EmptyState, ScreenHeading } from "@/components/ui";
+import { Banner, EmptyState, ScreenHeading, cardClass } from "@/components/ui";
 import { isSettled } from "@/lib/expenses/balances";
 import { getGroupBalances } from "@/lib/expenses/group-balances";
 import { resolveGroup } from "@/lib/groups/current-group";
@@ -39,7 +39,7 @@ export default async function SettlePage({ params }: PageProps<"/groups/[groupId
 		return (
 			<div className="flex flex-col gap-8">
 				<ScreenHeading eyebrow={group.name} title={`Settle up in ${group.name}`} />
-				<EmptyState title={`Nothing to settle: everyone in ${group.name} is square.`} />
+				<EmptyState icon="checkCircle" title={`Nothing to settle: everyone in ${group.name} is square.`} />
 			</div>
 		);
 	}
@@ -59,15 +59,17 @@ export default async function SettlePage({ params }: PageProps<"/groups/[groupId
 		<div className="flex flex-col gap-8">
 			<ScreenHeading eyebrow={group.name} title={`Settle up in ${group.name}`} />
 
-			<ul className="flex flex-col gap-1 text-sm">
+			<ul className={`flex max-w-xl flex-col px-5 py-2 ${cardClass}`}>
 				{debtors.map((b) => (
-					<li key={b.userId}>
-						{b.name} owes {formatGbp(-b.netMinorUnits)}
+					<li key={b.userId} className="flex justify-between gap-4 border-t border-line py-2.5 text-[15px] first:border-t-0">
+						<span className="font-semibold">{b.name}</span>
+						<span className="font-semibold text-owe tabular-nums">owes {formatGbp(-b.netMinorUnits)}</span>
 					</li>
 				))}
 				{creditors.map((b) => (
-					<li key={b.userId}>
-						{b.name} is owed {formatGbp(b.netMinorUnits)}
+					<li key={b.userId} className="flex justify-between gap-4 border-t border-line py-2.5 text-[15px] first:border-t-0">
+						<span className="font-semibold">{b.name}</span>
+						<span className="font-semibold text-primary-ink tabular-nums">is owed {formatGbp(b.netMinorUnits)}</span>
 					</li>
 				))}
 			</ul>
@@ -84,10 +86,10 @@ export default async function SettlePage({ params }: PageProps<"/groups/[groupId
 					idempotencyKey={crypto.randomUUID()}
 				/>
 			) : (
-				<p className="text-sm text-zinc-500">
+				<Banner>
 					You&rsquo;re square, so there&rsquo;s nothing for you to record. Only the person who paid, or the person
 					who was paid, can record a settlement.
-				</p>
+				</Banner>
 			)}
 		</div>
 	);
