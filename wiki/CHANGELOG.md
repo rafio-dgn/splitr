@@ -1223,3 +1223,13 @@ shape that triggers them. They are listed rather than ticked.
   "permissive, eventually consistent" (Cloudflare's docs). Raffaele chose the
   binding plus an exact counter.
 - **Decision:** [ADR-0029](./decisions/0029-settle-up-rate-limit.md) (amendment)
+
+## 2026-09-28 — `REQ-F.1` met on production
+- **Type:** docs
+- **Scope:** the REQ-F.1 evidence and status, `wiki/todos/{build-plan,HANDOVER}.md`
+- **What:** Raffaele's production rerun: 201 ×5, then 429 with
+  `Retry-After: 58`. That's the exact counter's value; the binding always
+  says 60. D1 holds 5, and another user was unaffected. All 4 criteria are
+  ticked.
+- **Why:** `REQ-F.1`.
+- **Decision:** none

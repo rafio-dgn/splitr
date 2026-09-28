@@ -2014,3 +2014,10 @@ does, months later, without the original chat transcript.
   - `tsc` passes for all programs.
 - **Open questions:** Raffaele's production rerun. It should show 429, with
   `"by":"exact-counter"` in the tail.
+
+## 2026-09-28T20:00Z — Recorded REQ-F.1 on production
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Actions:** recorded Raffaele's pasted output in the evidence, and ticked
+  REQ-F.1. The docs-only PR doesn't redeploy.
+- **Inference, stated as such:** `Retry-After: 58` (not 60) identifies the
+  exact counter as the refusing layer. The binding path always returns 60.

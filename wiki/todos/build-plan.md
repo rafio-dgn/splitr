@@ -129,7 +129,7 @@ double-settle bug without the DO, then fix it with one. That contrast is the dem
 
 | # | Task | Req |
 |---|---|---|
-| F.1 | Rate-limit binding on the settle-up route; 6 rapid requests → 6th returns **429**. **Write the window/count rationale** | 🟡 2026-09-28: 5/60 s per user (ADR-0029); verified on the production build; production run pending |
+| F.1 | Rate-limit binding on the settle-up route; 6 rapid requests → 6th returns **429**. **Write the window/count rationale** | ✅ 2026-09-28: met on production (201×5, 429), binding + exact counter (ADR-0029) |
 | F.2 | Turnstile on the public `/join/[invite]` form; verify server-side in the Server Action | `REQ-F.2` |
 | F.3 | **Forge a submit; confirm the server rejects it.** Capture the command | `REQ-F.2` |
 | F.4 | Audit lines as parseable JSON; prove `wrangler tail \| grep AUDIT` works | ✅ 2026-09-28: met on production, `wrangler tail | grep AUDIT` 14/14 (ADR-0028) |
