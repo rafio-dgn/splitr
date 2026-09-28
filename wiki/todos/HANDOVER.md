@@ -87,8 +87,10 @@ through the `splitr` AI Gateway, which Raffaele created in the dashboard and
 which must exist before `splitr-ai` deploys. Text is cached for 1 day;
 receipts are never cached or logged. The gateway allows 100 calls a minute,
 and our own `NeuronBudget` DO caps the day at 8,000 neurons. It's verified
-locally through the real gateway. After the merge, Raffaele checks the Logs
-tab. **Next:** F.6 (rotation drill).
+locally through the real gateway, and **met on production**: Raffaele's
+Logs tab shows the calls, cache hits and the rate limit's refusals.
+**Found:** `/search` has no link anywhere in the app (backlog). **Next:** F.6
+(rotation drill).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random

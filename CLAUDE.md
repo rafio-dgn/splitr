@@ -103,16 +103,20 @@ State explicitly which of these you did. If you skipped one, say so and why.
 
 ## 6. Working rules
 
-- **⛔ Never change anything on GitHub.** No repo creation or deletion, no
-  settings, no remotes, no PRs, no issues, no releases, no `gh` commands, no
-  authenticated API calls. Raffaele owns the account and manages it
-  himself. If a task appears to need one of these, **stop and ask him.**
-  Permitted: local `git` in the working tree (status, diff, log, add, commit),
-  `clone`/`fetch`/`pull` on a repository URL **he has given you**, and
-  **push feature branches to `origin`** of **this** repo. Raffaele opens and
-  merges PRs; **agents never push to `main`** (ADR-0024, amended 2026-09-25 with
-  his approval). **Commit and push only when he asks** — never on your own
-  initiative, and never force-push or rewrite history.
+- **⛔ Never change anything on GitHub** beyond the PR flow below. No repo
+  creation or deletion, no settings, no remotes, no issues, no releases, no
+  secrets, no other authenticated API calls. Raffaele owns the account and
+  manages it himself. If a task appears to need one of these, **stop and ask
+  him.** Permitted: local `git` in the working tree (status, diff, log, add,
+  commit), `clone`/`fetch`/`pull` on a repository URL **he has given you**,
+  **push feature branches to `origin`** of **this** repo, and, since
+  2026-09-28 with his approval, **open a PR from that branch to `main`**
+  (`gh pr create`) and **read** PR and CI status (`gh pr view`,
+  `gh pr checks`, `gh run list`/`view`). **Raffaele merges; agents never
+  merge, close, approve or edit his PRs, and never push to `main`**
+  (ADR-0024, amended 2026-09-25 with his approval). **Commit and push only
+  when he asks**: never on your own initiative, and never force-push or
+  rewrite history.
 - **One capability per step** (`REQ-M.2`). Clusters run in order. Never
   parallelise them, never jump ahead.
 - **Every file you write must be reviewable** (`REQ-M.3`). Explain before

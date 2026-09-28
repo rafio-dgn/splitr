@@ -111,6 +111,27 @@ parsing, the boundary (at the cap is refused) and reading the neurons (4 tests).
    `embed-query` rows with `metadata.op`, the second search marked cached, and
    no `read-receipt` rows.
 
-```
-(paste here)
-```
+**Raffaele's run, 2026-09-28** (after PR #22; the deploy finished at 16:11:18 UTC).
+These are read off his screenshots of the dashboard's Logs tab. The dashboard
+shows WEST (UTC+1); the times below are UTC.
+
+| UTC | Model | In | Cost | ms | Status | What it is |
+|---|---|---|---|---|---|---|
+| 19:24:00–19:24:07 | bge-base-en-v1.5 (×7) | — | $0 | 7–20 | ✔ **cached** | repeat searches: cache hits (Raffaele searched 8 times in all: one call per search) |
+| 19:23:57 | bge-base-en-v1.5 | 3 | $0.00000022 | 265 | ✔ | the first search: a miss |
+| 19:19:14 | llama-3.1-8b-instruct (×2) | 352 / 365 | ~$0.000054 / ~$0.000056 | 725 / 636 | ✔ | categorising the two items |
+| 19:19:11 | bge-base-en-v1.5 (×2) | 12 / 18 | $0.00000077 / $0.00000121 | 1057 / 1014 | ✔ | indexing and retrieval for the new expense |
+| 16:10:58–16:11:00 | bge-base-en-v1.5 (×2) | 4 | $0.00000022 | 451 / 1473 | ✔ | the deploy's smoke test |
+| 16:00:41 | bge-base-en-v1.5 (×5 visible) | — | — | 35–74 | ⚠ | **the rate-limit probe's refusals** (§2), as Cloudflare records them |
+| 16:00:40 | bge-base-en-v1.5 (many) | 14 | $0.00000088 | 377–1171 | ✔ | the probe's allowed calls |
+
+- **The rate limit, as saved:** "Limit to 100 requests every 1 minute
+  (**sliding** period)" (Raffaele, from the gateway's settings).
+- **No Llama 4 Scout rows.** No receipt was read in this run, so this shows
+  nothing about receipt logging. The local `getLog` check (§3) is the proof of
+  that.
+- The dashboard banner: *"You're on the free plan with 200K events per day."*
+- `metadata.op` isn't a column in this view. It was confirmed through `getLog`
+  locally (§3).
+- **Found:** search has **no link in the app**. It's reachable only at
+  `/search`, and every script had opened it by URL.
