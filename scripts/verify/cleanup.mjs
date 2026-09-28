@@ -92,7 +92,9 @@ export function cleanup({ local, emails = [], groupIds = [], receiptKeys: upload
 	// except session and account, which cascade from user).
 	const inUsers = userIds.length > 0 ? `IN (${list(userIds)})` : "IN ('')";
 	d1(
-		`DELETE FROM line_item WHERE expense_id IN (SELECT id FROM expense WHERE group_id ${inGroups});
+		`DELETE FROM reminder WHERE group_id ${inGroups} OR debtor_id ${inUsers} OR creditor_id ${inUsers};
+		 DELETE FROM expense_indexed WHERE expense_id IN (SELECT id FROM expense WHERE group_id ${inGroups});
+		 DELETE FROM line_item WHERE expense_id IN (SELECT id FROM expense WHERE group_id ${inGroups});
 		 DELETE FROM expense_share WHERE expense_id IN (SELECT id FROM expense WHERE group_id ${inGroups});
 		 DELETE FROM expense WHERE group_id ${inGroups};
 		 DELETE FROM settlement WHERE group_id ${inGroups};

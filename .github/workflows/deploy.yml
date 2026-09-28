@@ -1,10 +1,10 @@
 # Deploy on merge (ADR-0024, workflow 2). A push to main (a merged PR), or a
 # manual run, deploys production in the only order Splitr works in:
 #
-#   checks → the ledger → the AI Worker → D1 migrations → the app → wait → smoke
+#   checks → the ledger → the AI Worker → the cron → D1 migrations → the app → wait → smoke
 #
 # - The ledger and the AI Worker go first because the app's service bindings
-#   (LEDGER, AI_WORKER) target them.
+#   (LEDGER, AI_WORKER) target them; the cron binds AI_WORKER too.
 # - Migrations go before the app, so new code never meets an older schema. They
 #   must stay backward-compatible with the app version still live, and they
 #   can't be rolled back.
@@ -96,8 +96,9 @@ jobs:
           ledger=$(live -c workers/group-ledger/wrangler.jsonc)
           # The AI Worker didn't exist before its first deploy: "none", not a failure.
           ai=$(live -c workers/ai/wrangler.jsonc 2>/dev/null || echo none)
-          { echo "app=$app"; echo "ledger=$ledger"; echo "ai=$ai"; } >> "$GITHUB_OUTPUT"
-          echo "Live before this deploy: app \`$app\`, ledger \`$ledger\`, ai \`$ai\`"
+          cron=$(live -c workers/cron/wrangler.jsonc 2>/dev/null || echo none)
+          { echo "app=$app"; echo "ledger=$ledger"; echo "ai=$ai"; echo "cron=$cron"; } >> "$GITHUB_OUTPUT"
+          echo "Live before this deploy: app \`$app\`, ledger \`$ledger\`, ai \`$ai\`, cron \`$cron\`"
 
       - name: Deploy the ledger
         run: npx wrangler deploy -c workers/group-ledger/wrangler.jsonc
@@ -107,6 +108,12 @@ jobs:
       # closed), and line items simply stay uncategorised.
       - name: Deploy the AI Worker
         run: npx wrangler deploy -c workers/ai/wrangler.jsonc
+
+      # The nightly sweep (ADR-0026). Its AI_SHARED_SECRET is set once by hand and
+      # survives deploys; without it the sweep still refreshes reminders and
+      # skips the AI jobs.
+      - name: Deploy the cron Worker
+        run: npx wrangler deploy -c workers/cron/wrangler.jsonc
 
       - name: Apply D1 migrations
         run: npx wrangler d1 migrations apply splitr --remote
@@ -128,6 +135,7 @@ jobs:
           APP_BEFORE: ${{ steps.before.outputs.app }}
           LEDGER_BEFORE: ${{ steps.before.outputs.ledger }}
           AI_BEFORE: ${{ steps.before.outputs.ai }}
+          CRON_BEFORE: ${{ steps.before.outputs.cron }}
           OUTCOME: ${{ job.status }}
         run: |
           {
@@ -142,6 +150,9 @@ jobs:
               echo "npx wrangler rollback $LEDGER_BEFORE --name splitr-ledger -m \"smoke failed\""
               if [ -n "$AI_BEFORE" ] && [ "$AI_BEFORE" != "none" ]; then
                 echo "npx wrangler rollback $AI_BEFORE --name splitr-ai -m \"smoke failed\""
+              fi
+              if [ -n "$CRON_BEFORE" ] && [ "$CRON_BEFORE" != "none" ]; then
+                echo "npx wrangler rollback $CRON_BEFORE --name splitr-cron -m \"smoke failed\""
               fi
               echo '```'
             fi

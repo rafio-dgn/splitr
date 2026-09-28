@@ -51,6 +51,8 @@ jobs:
         run: npx tsc --noEmit -p workers/group-ledger/test
       - name: Typecheck the AI Worker
         run: npx tsc --noEmit -p workers/ai
+      - name: Typecheck the cron Worker
+        run: npx tsc --noEmit -p workers/cron
 
       - name: Lint
         run: npx eslint

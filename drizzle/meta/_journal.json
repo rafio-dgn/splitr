@@ -15,6 +15,13 @@
       "when": 1790265352208,
       "tag": "0001_line_item_raw_text",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790588685942,
+      "tag": "0002_cron_reminders_and_index_state",
+      "breakpoints": true
     }
   ]
 }

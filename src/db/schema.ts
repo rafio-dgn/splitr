@@ -384,3 +384,51 @@ export const settlement = sqliteTable(
   ],
 );
 
+
+/**
+ * Which expenses have their search vectors (ADR-0026 §3, ADR-0025 §4). A row
+ * is written once `splitr-ai`'s `index` call succeeds; the nightly cron
+ * re-indexes expenses with **no** row. A separate table, not a column, because
+ * an expense row is never updated (ADR-0018 §3).
+ */
+export const expenseIndexed = sqliteTable("expense_indexed", {
+  expenseId: text("expense_id")
+    .primaryKey()
+    .references(() => expense.id, { onDelete: "restrict" }),
+  indexedAt: integer("indexed_at").notNull().default(nowUnixSeconds),
+});
+
+/**
+ * An in-app settle-up reminder (REQ-E.6, ADR-0026 §2), written only by the
+ * nightly cron, with **UPSERT-on-conflict** on the deterministic key
+ * `(group, debtor, creditor)`. That key and the date-only columns are what make
+ * running the cron twice a no-op. The debtor sees a banner once `owed_since` is
+ * 3 days old; a settled pair's row is deleted.
+ */
+export const reminder = sqliteTable(
+  "reminder",
+  {
+    groupId: text("group_id")
+      .notNull()
+      .references(() => group.id, { onDelete: "restrict" }),
+    debtorId: text("debtor_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    creditorId: text("creditor_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull(),
+    /** `YYYY-MM-DD` (UTC): the first run that saw this pair owing. Kept on conflict. */
+    owedSince: text("owed_since").notNull(),
+    /** `YYYY-MM-DD` (UTC): the last run that confirmed it. A date, so a same-day rerun writes the same value. */
+    checkedOn: text("checked_on").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.groupId, table.debtorId, table.creditorId] }),
+    // "My reminders": the banner's lookup.
+    index("reminder_debtor_idx").on(table.debtorId),
+    check("reminder_amount_positive", sql`${table.amountCents} > 0`),
+    check("reminder_distinct_parties", sql`${table.debtorId} <> ${table.creditorId}`),
+  ],
+);

@@ -24,7 +24,11 @@
 import { Suspense } from "react";
 
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
+import { ReminderBanners } from "@/components/reminder-banners";
 import { EmptyState } from "@/components/ui";
+import { suggestTransfers } from "@/lib/expenses/transfers";
+import { liveReminders } from "@/lib/reminders/live";
+import { storedRemindersFor } from "@/lib/reminders/stored";
 import { isSettled } from "@/lib/expenses/balances";
 import { getGroupBalances } from "@/lib/expenses/group-balances";
 import { resolveGroup } from "@/lib/groups/current-group";
@@ -59,6 +63,8 @@ export default async function GroupDashboardPage({
 	const balances = await getGroupBalances(group);
 	const mine = balances.find((balance) => balance.userId === session.user.id);
 	const settled = isSettled(balances);
+	// ADR-0026 §2: the cron's reminder for this group, only if the live balance still agrees.
+	const reminders = liveReminders(session.user.id, await storedRemindersFor(session.user.id, [group.id]), new Map([[group.id, suggestTransfers(balances)]]));
 
 	return (
 		<div className="flex flex-col gap-12">
@@ -70,6 +76,8 @@ export default async function GroupDashboardPage({
 					You&rsquo;re in. Here&rsquo;s where {group.name} stands.
 				</p>
 			) : null}
+
+			<ReminderBanners reminders={reminders} showGroup={false} />
 
 			{/* A. Where you stand — §4.6 A, with §5.5's empty state. */}
 			<section>
