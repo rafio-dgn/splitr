@@ -7,7 +7,8 @@
 //   HEADFUL=1 node scripts/verify/e2e.mjs <BASE_URL>  watch it
 //
 // Alice signs up, creates a group and copies the invite link. Bob joins through
-// it. Alice adds a dinner, then a receipt she has read, which can't be saved
+// it (locally; on production via D1, because Turnstile refuses automated
+// browsers there: see step 3). Alice adds a dinner, then a receipt she has read, which can't be saved
 // until she confirms the amount. Both open "Settle up"; Bob records it, and
 // Alice's stale form is refused, naming Bob. Then search finds the receipt by
 // one of its items. Cleanup runs even if a step fails.
@@ -19,7 +20,7 @@ import { fileURLToPath } from "node:url";
 import { launchBrowser } from "./browser.mjs";
 import { cleanup } from "./cleanup.mjs";
 import { EXPECTED } from "./fixtures/make-receipt.mjs";
-import { expect, REPO_ROOT, runId, target, testPassword } from "./lib.mjs";
+import { Client, d1, expect, REPO_ROOT, runId, signUp, sqlId, target, testPassword } from "./lib.mjs";
 
 const { baseUrl, local } = target();
 const run = runId("e2e");
@@ -84,14 +85,32 @@ try {
 	const invite = (await alice.$eval("code", (c) => c.textContent ?? "")).trim();
 	expect(invite.includes("/join/"), "the members page shows an invite link", invite);
 
-	// 3. Bob opens it signed out, signs up there, and is in.
-	await open(bob, invite);
-	await fill(bob, 'input[name="name"]', people.bob.name);
-	await fill(bob, 'input[name="email"]', people.bob.email);
-	await fill(bob, 'input[name="password"]', people.bob.password);
-	await bob.locator('button[type="submit"]').click();
-	await waitForPath(bob, new RegExp(`^${groupPath}\\?joined=1$`));
-	expect(true, "Bob joins through the invite link");
+	// 3. Bob joins.
+	//    Locally: through the real invite form (Cloudflare's test keys let an
+	//    automated browser through Turnstile).
+	//    On production: Turnstile refuses automated browsers by design (Error
+	//    600010, ADR-0030), so Bob signs up through the API, his membership is
+	//    inserted in D1, and his browser gets his session. The join form itself is
+	//    covered there by turnstile-forge.mjs. E2E_JOIN=form|d1 overrides.
+	const joinVia = process.env.E2E_JOIN ?? (local ? "form" : "d1");
+	if (joinVia === "form") {
+		await open(bob, invite);
+		await fill(bob, 'input[name="name"]', people.bob.name);
+		await fill(bob, 'input[name="email"]', people.bob.email);
+		await fill(bob, 'input[name="password"]', people.bob.password);
+		await bob.locator('button[type="submit"]').click();
+		await waitForPath(bob, new RegExp(`^${groupPath}\\?joined=1$`));
+		expect(true, "Bob joins through the invite link (the real form, past Turnstile)");
+	} else {
+		const bobApi = new Client(baseUrl);
+		const bobId = await signUp(bobApi, people.bob);
+		const groupId = groupPath.split("/").at(-1);
+		d1(`INSERT INTO group_member (group_id, user_id) VALUES (${sqlId(groupId)}, ${sqlId(bobId)})`, { local });
+		await bob.setCookie(...[...bobApi.cookies].map(([name, value]) => ({ name, value, url: baseUrl })));
+		await open(bob, `${baseUrl}${groupPath}`);
+		await waitForText(bob, `E2E ${run}`);
+		expect(true, "Bob is in the group (signed up by API, membership via D1: production Turnstile refuses automated browsers)");
+	}
 
 	// 4. Alice pays £80 for both of them (payer and split default to her and everyone).
 	await open(alice, `${baseUrl}${groupPath}/expenses/new`);

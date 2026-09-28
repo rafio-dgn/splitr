@@ -1271,3 +1271,16 @@ shape that triggers them. They are listed rather than ticked.
   gave the headless browser no token. It was tested locally against
   Cloudflare's always-block test key.
 - **Decision:** none
+
+## 2026-09-28 — The nightly E2E joins via D1 on production; the forged submit skips the widget
+- **Type:** changed
+- **Scope:** `scripts/verify/{e2e,turnstile-forge}.mjs`, ADR-0030 §4, the REQ-F.2 evidence
+- **What:**
+  - E2E step 3 uses the real form locally and D1 on production (Bob signs up
+    through the API, and his membership is inserted); `E2E_JOIN` overrides.
+  - `turnstile-forge.mjs` calls the Join button's React handler when no token
+    arrives, so the Server Action gets a forged token.
+- **Why:** On production, Turnstile refuses automated browsers (Error 600010
+  on every challenge), so the nightly would have failed tonight at "Bob
+  joins". Raffaele chose the D1 join.
+- **Decision:** [ADR-0030](./decisions/0030-turnstile-on-join.md) §4 (amended)
