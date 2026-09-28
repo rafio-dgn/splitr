@@ -1986,3 +1986,31 @@ does, months later, without the original chat transcript.
 - **Verification:** HTTP and browser checks on the production build, smoke
   still passes, and 75 plus 6 tests pass.
 - **Open questions:** Raffaele's production run of `rate-limit.mjs`.
+
+## 2026-09-28T19:30Z — F.1 failed on production; the diagnosis and the exact counter
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Inputs:**
+  - Raffaele's production run (201 ×6);
+  - the deploy timeline, with the run id decoded to after go-live;
+  - `wrangler versions view` (the binding was live);
+  - Cloudflare's rate-limit docs, via WebFetch, because the installed
+    packages don't document the service's consistency.
+- **My error:** ADR-0029 claimed the 6th would be refused on production. That
+  rested on local tests of a simulator that counts exactly. It's corrected in
+  the ADR.
+- **Decision asked:** three options. Raffaele chose the binding plus an exact
+  counter.
+- **Actions:**
+  - a pure `takeSlot` (5 tests), and the `SettleRateLimiter` DO with its alarm
+    and migration v2 (4 workerd tests, including 20 simultaneous → exactly 5);
+  - the two-layer check, with the refusing layer in the audit line and a real
+    `Retry-After`;
+  - the proof script's `Retry-After` check loosened to 1–60 s (it would have
+    failed falsely against the counter).
+- **Verification:**
+  - 80 pure plus 10 DO tests pass;
+  - locally, the form and HTTP are refused at the 6th, and smoke and the race
+    pass;
+  - `tsc` passes for all programs.
+- **Open questions:** Raffaele's production rerun. It should show 429, with
+  `"by":"exact-counter"` in the tail.

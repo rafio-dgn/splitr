@@ -74,8 +74,10 @@ apart from `REQ-E.7` (spoken).** Manual trigger: `npm run cron:run -- --remote`
 (it asks for the production secret). The Worker-size decision is made too
 (ADR-0027: webpack, 55%). **Cluster F started:** F.4 (`REQ-F.3`, the `[MUST]`) is **met on production**:
 `wrangler tail | grep AUDIT` gave 14/14 parseable lines, with the history
-rebuilt (ADR-0028). **F.1 is built** (ADR-0029: settle-up, 5 per 60 s per user;
-verified on the production build). **Raffaele runs**
+rebuilt (ADR-0028). **F.1 is built** (ADR-0029: settle-up, 5 per 60 s per user). The
+binding alone let a burst of 6 through on production (it's eventually
+consistent), so an exact per-user `SettleRateLimiter` Durable Object now backs
+it (the amendment). **Raffaele runs**
 `node scripts/verify/rate-limit.mjs https://splitr.raffaele-digennaro.workers.dev`
 after the merge. **Next:** F.2 (Turnstile) → F.5 (AI Gateway) → F.6 (rotation drill).
 

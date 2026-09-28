@@ -17,7 +17,8 @@ import { audit } from "../../../src/lib/audit";
 import { loadBalanceInputs } from "../../../src/lib/expenses/balance-inputs";
 import { deriveBalances } from "../../../src/lib/expenses/balances";
 import { newId } from "../../../src/lib/ids";
-import type { LedgerDecision, SettleRequest, SettleResponse } from "../../../src/lib/settlements/ledger-contract";
+import type { LedgerDecision, SettleRequest, SettleResponse, SettleSlot } from "../../../src/lib/settlements/ledger-contract";
+import { SETTLE_WINDOW_MS, takeSlot } from "../../../src/lib/settlements/rate-window";
 import { checkSettlement } from "../../../src/lib/settlements/rules";
 
 /**
@@ -29,6 +30,7 @@ import { checkSettlement } from "../../../src/lib/settlements/rules";
 export interface LedgerEnv {
 	readonly DB: D1Database;
 	readonly GROUP_LEDGER: DurableObjectNamespace<GroupLedger>;
+	readonly SETTLE_RATE: DurableObjectNamespace<SettleRateLimiter>;
 }
 
 /**
@@ -164,7 +166,48 @@ export class GroupLedger extends DurableObject<LedgerEnv> {
 }
 
 /** The RPC surface the app reaches through its service binding. */
+/**
+ * REQ-F.1's exact settle-up limit (ADR-0029 amendment): one instance per user
+ * (`idFromName(userId)`). The rate-limit binding in front of it is
+ * "permissive, eventually consistent" (a burst of 6 all passed on production),
+ * so this is what makes the 6th request a refusal every time.
+ *
+ * It's exact because a Durable Object runs one event at a time, and storage
+ * reads and writes don't let another event in. So no two requests from one
+ * user can both see the same count. The window logic is `takeSlot` (pure,
+ * tested). An alarm clears the storage once the window has passed, so an idle
+ * user costs nothing.
+ */
+export class SettleRateLimiter extends DurableObject<LedgerEnv> {
+	async take(): Promise<SettleSlot> {
+		const now = Date.now();
+		const stored = (await this.ctx.storage.get<number[]>("hits")) ?? [];
+		const slot = takeSlot(stored, now);
+		if (slot.allowed) {
+			await this.ctx.storage.put("hits", slot.hits);
+			await this.ctx.storage.setAlarm(now + SETTLE_WINDOW_MS);
+		}
+		return { allowed: slot.allowed, retryAfterSeconds: slot.retryAfterSeconds };
+	}
+
+	async alarm(): Promise<void> {
+		const stored = (await this.ctx.storage.get<number[]>("hits")) ?? [];
+		const live = stored.filter((t) => t > Date.now() - SETTLE_WINDOW_MS);
+		if (live.length === 0) {
+			await this.ctx.storage.deleteAll();
+		} else {
+			await this.ctx.storage.put("hits", live);
+			await this.ctx.storage.setAlarm(Math.min(...live) + SETTLE_WINDOW_MS);
+		}
+	}
+}
+
 export class LedgerService extends WorkerEntrypoint<LedgerEnv> {
+	/** REQ-F.1: take one of this user's settle-up slots, exactly (see SettleRateLimiter). */
+	async takeSettleSlot(userId: string): Promise<SettleSlot> {
+		return this.env.SETTLE_RATE.get(this.env.SETTLE_RATE.idFromName(userId)).take();
+	}
+
 	async settle(request: SettleRequest): Promise<SettleResponse> {
 		// REQ-E.1: one instance per owning entity. The entity fought over is the group.
 		const id = this.env.GROUP_LEDGER.idFromName(request.groupId);

@@ -1207,3 +1207,19 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-F.1`. Raffaele chose the route, key and limit; the rationale
   is in ADR-0029.
 - **Decision:** [ADR-0029](./decisions/0029-settle-up-rate-limit.md)
+
+## 2026-09-28 — F.1 amended: an exact per-user settle-up counter behind the binding
+- **Type:** fixed
+- **Scope:**
+  - `workers/group-ledger/{wrangler.jsonc,src/index.ts,test/ledger.test.ts}`
+    (the `SettleRateLimiter` DO, migration v2, and 4 workerd tests);
+  - `src/lib/settlements/{rate-window.ts,rate-window.test.ts,ledger-contract.ts,record-settlement.ts}`;
+  - `scripts/verify/rate-limit.mjs`, ADR-0029, and the evidence.
+- **What:** After the binding, the app takes a slot from the user's
+  `SettleRateLimiter` (an exact sliding window, 5 per 60 s). Either layer
+  refusing gives 429, and the audit line says which (`by`). `Retry-After` is
+  the real time until a slot frees up.
+- **Why:** On production, six rapid requests all got 201. The binding is
+  "permissive, eventually consistent" (Cloudflare's docs). Raffaele chose the
+  binding plus an exact counter.
+- **Decision:** [ADR-0029](./decisions/0029-settle-up-rate-limit.md) (amendment)

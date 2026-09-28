@@ -44,11 +44,9 @@ abuse protection, and wrong for an exact quota.
   the refused request never reaches the ledger or D1.
 - **60 s, not 10 s:** a 10 s window allows 30 a minute in sustained bursts,
   which is too permissive for that argument.
-- **It's demonstrable on production with the real setting.** The 6th rapid
-  request is refused, so there's no separate "demo" configuration.
-- **It's approximate by design.** Counting is per location. A user spread
-  across locations could slightly exceed 5, and that's acceptable for abuse
-  protection.
+- **It's demonstrable on production with the real setting**, with no separate
+  "demo" configuration. That needed the exact counter (see the amendment): the
+  binding alone didn't refuse the 6th on production.
 
 *Rejected:*
 - guarding "add expense": busier, but it would need a much higher, receipt-sized
@@ -84,3 +82,52 @@ route call:
 ## Verification
 
 In the evidence: [REQ-F.1](../evidence/REQ-F.1-settle-rate-limit.md).
+
+## Amendment, 2026-09-28: the binding alone isn't enough; an exact per-user counter
+
+**What happened.** Raffaele's first production run of `rate-limit.mjs`
+(started at 12:12:32Z, 90 s after the deploy went live, with the binding
+confirmed live: `env.SETTLE_LIMITER (5 requests/60s)`) gave
+**201 ×6**. Cloudflare's documentation explains why: the Rate Limiting API is
+*"permissive, eventually consistent, and intentionally designed to not be used
+as an accurate accounting system … The underlying counters are cached on the
+same machine that your Worker runs in, and updated asynchronously in the
+background."* A tight burst can pass entirely before the count catches up.
+Local testing couldn't show this, because miniflare's simulator counts
+exactly. **The claim above that "the 6th rapid request is refused on
+production" was wrong,** and this amendment corrects it.
+
+**Decision (Raffaele, a structured question): the binding plus an exact
+counter.**
+- The **binding** stays as the cheap front line, and it's what `REQ-F.1`
+  names.
+- The **exact counter** is a new `SettleRateLimiter` Durable Object in the
+  ledger Worker, **one per user**, running a pure sliding-window `takeSlot` (5
+  per 60 s). A Durable Object handles one event at a time, and storage
+  operations don't let another in, so it can't be outrun. Refused requests
+  don't count, so a flood doesn't extend its own lockout. An alarm clears the
+  storage once the window has passed.
+- **The order** in `recordSettlement`: the binding, then the counter. Either
+  refusing gives 429. The audit line records **which layer** refused
+  (`"by":"binding"` or `"by":"exact-counter"`). `Retry-After` is the real time
+  until a slot frees up (1–60 s).
+- If the ledger is unreachable, the counter is skipped: the settlement itself
+  then fails with 503 and nothing written, so a limiter outage is never the
+  error.
+
+*Rejected:*
+- **the binding only, with a paced demo:** the 6th isn't guaranteed, which
+  isn't what `REQ-F.1` describes;
+- **measuring first:** useful, but it wouldn't change the fact that the binding
+  is designed to be approximate.
+
+**Verification of the amendment:**
+- 5 pure tests for `takeSlot` (the edge at exactly 60 s, a flood not extending
+  the lockout);
+- 4 workerd tests against the real Durable Object, including **20 simultaneous
+  requests from one user → exactly 5 allowed**, plus per-user independence and
+  the alarm clearing storage;
+- locally, both the HTTP route and the form are refused at the 6th;
+- **production: Raffaele reruns `rate-limit.mjs` after the merge.** The 6th
+  should be 429 with `"by":"exact-counter"` in its audit line.
+

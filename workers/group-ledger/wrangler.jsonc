@@ -13,10 +13,18 @@
 	"observability": { "enabled": true },
 
 	"durable_objects": {
-		"bindings": [{ "name": "GROUP_LEDGER", "class_name": "GroupLedger" }]
+		"bindings": [
+			{ "name": "GROUP_LEDGER", "class_name": "GroupLedger" },
+			// REQ-F.1's exact per-user settle-up counter (ADR-0029 amendment).
+			{ "name": "SETTLE_RATE", "class_name": "SettleRateLimiter" }
+		]
 	},
 	// SQLite-backed: the Durable Object storage backend on the Workers Free plan.
-	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["GroupLedger"] }],
+	// v2 adds the rate limiter; a new class needs its own migration tag.
+	"migrations": [
+		{ "tag": "v1", "new_sqlite_classes": ["GroupLedger"] },
+		{ "tag": "v2", "new_sqlite_classes": ["SettleRateLimiter"] }
+	],
 
 	// The same D1 as the app: the ledger reads balances from it and writes the
 	// settlement to it. D1 stays the one source of truth (ADR-0023 §1).

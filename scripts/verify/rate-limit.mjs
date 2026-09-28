@@ -1,5 +1,9 @@
 // REQ-F.1's demonstration (ADR-0029): six rapid settle-up requests, and the
-// sixth returns 429. Settle-up allows 5 per 60 s per signed-in user.
+// sixth returns 429. Settle-up allows 5 per 60 s per signed-in user, through two
+// layers: the rate-limit binding, then an exact per-user counter in the ledger.
+// On production the binding lets tight bursts through (it's eventually
+// consistent), so there the 6th is refused by the counter: its [AUDIT] line
+// says "by":"exact-counter".
 //
 //   node scripts/verify/rate-limit.mjs <BASE_URL>
 //
@@ -37,7 +41,9 @@ try {
 	console.log(`  · Alice's six rapid requests → ${statuses.join(", ")}`);
 	expect(statuses.slice(0, 5).every((s) => s === 201), "requests 1–5 are accepted (201)", statuses);
 	expect(statuses[5] === 429, "the 6th returns 429", statuses);
-	expect(sixth.headers.get("retry-after") === "60", "…with Retry-After: 60", sixth.headers.get("retry-after"));
+	// The binding says 60; the exact counter says when the oldest request leaves the window (1–60 s).
+	const retry = Number(sixth.headers.get("retry-after"));
+	expect(Number.isInteger(retry) && retry >= 1 && retry <= 60, `…with Retry-After: ${retry} s (1–60)`, sixth.headers.get("retry-after"));
 	const { n } = settlementTotals(groupId, { local });
 	expect(n === 5, "D1 holds exactly 5 settlements: the refused request wrote nothing", n);
 
