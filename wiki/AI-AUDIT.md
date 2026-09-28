@@ -2021,3 +2021,27 @@ does, months later, without the original chat transcript.
   REQ-F.1. The docs-only PR doesn't redeploy.
 - **Inference, stated as such:** `Retry-After: 58` (not 60) identifies the
   exact counter as the refusing layer. The binding path always returns 60.
+
+## 2026-09-28T21:00Z — F.2/F.3: Turnstile on the join form
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Decisions asked:** four (scope, widget mode, outage behaviour, E2E). The
+  recommendation was chosen on all four.
+- **Inputs read:**
+  - the join flow: sign-up through Better Auth, *then* the Server Action;
+  - the Next 16 `next/script` docs (`onReady` in client components);
+  - Better Auth's installed plugins (a captcha plugin exists; not chosen).
+- **Actions:**
+  - the pure `verifyTurnstile` (4 tests), the widget component, and the
+    action and form wiring (both join paths);
+  - the proof script (intercept and swap the token, then replay with curl);
+  - the CI placeholder guard, and the `.env.example` notes.
+- **Stated limit:** Cloudflare's test secret accepts any token, so the
+  forged-token refusal is only demonstrable on production. The empty-token
+  forgery was refused locally.
+- **Verification:**
+  - the local forge script passes;
+  - the full E2E passes through the widget;
+  - a screenshot shows the widget in the reserved slot;
+  - 84 pure plus 10 DO tests pass, and `tsc`, ESLint and actionlint are clean.
+- **Open questions:** Raffaele's widget (the site key, which is public, and
+  the secret), then the production run.

@@ -130,8 +130,8 @@ double-settle bug without the DO, then fix it with one. That contrast is the dem
 | # | Task | Req |
 |---|---|---|
 | F.1 | Rate-limit binding on the settle-up route; 6 rapid requests → 6th returns **429**. **Write the window/count rationale** | ✅ 2026-09-28: met on production (201×5, 429), binding + exact counter (ADR-0029) |
-| F.2 | Turnstile on the public `/join/[invite]` form; verify server-side in the Server Action | `REQ-F.2` |
-| F.3 | **Forge a submit; confirm the server rejects it.** Capture the command | `REQ-F.2` |
+| F.2 | Turnstile on the public `/join/[invite]` form; verify server-side in the Server Action | 🟡 2026-09-28: built (ADR-0030); verified locally with test keys; real keys pending |
+| F.3 | **Forge a submit; confirm the server rejects it.** Capture the command | 🟡 2026-09-28: `turnstile-forge.mjs`; curl forgery refused locally; production pending |
 | F.4 | Audit lines as parseable JSON; prove `wrangler tail \| grep AUDIT` works | ✅ 2026-09-28: met on production, `wrangler tail | grep AUDIT` 14/14 (ADR-0028) |
 | F.5 | AI Gateway in front of **every** model call — vision, Llama, embeddings. Caching, logs, rate limits, spend cap | `REQ-F.4` |
 | F.6 | Secret-rotation drill: **wrong way first**, observe the breakage; then dual-key → deploy consumer → update producer → retire old key | `REQ-F.5` |
