@@ -70,11 +70,11 @@ mechanism.
 Vectorize, generate with Llama grounded in your own data.
 
 **Acceptance criteria:**
-- [ ] Retrieves similar records from the Vectorize index (`REQ-D.4`)
-- [ ] Generates with Llama, grounded in the retrieved records
-- [ ] **No public URL** — `workers_dev: false`
-- [ ] A shared-secret check on every request
-- [ ] A fallback so its failure **never blocks the primary write**
+- [x] Retrieves similar records from the Vectorize index (`REQ-D.4`)
+- [x] Generates with Llama, grounded in the retrieved records
+- [x] **No public URL** — `workers_dev: false`
+- [x] A shared-secret check on every request
+- [x] A fallback so its failure **never blocks the primary write**
 
 **Source:** capture §8 · **Status:** 🟡 In progress (2026-09-25). `splitr-ai`
 retrieves (Vectorize, group first, then the seed), generates with Llama 3.1 8B
@@ -83,9 +83,10 @@ shared secret on every call. Verified locally through a real service binding,
 with an eval of 28/30 against 23/30 without RAG
 ([evidence](../../evidence/REQ-E.4-rag-categorisation-eval.md)). The app wiring and
 its write-path fallback are built (step 4): locally, with the AI Worker down,
-saves return 201 in about 60 ms and items stay `uncategorised`. **Left:** the
-first deploy plus the secrets, production verification, and step 5 (moving
-embeddings and OCR).
+saves return 201 in about 60 ms and items stay `uncategorised`. **On production
+(2026-09-28):** 9/9 items categorised, and saves with items take 184 ms
+against 183 ms without. **Every criterion is met.** Left, from ADR-0025 (not
+from `REQ-E.4`): step 5, moving embeddings and OCR behind the AI Worker.
 
 **Notes:** Four sub-requirements in one bullet. The fallback clause is the same
 rule as `REQ-M.7` — the write path must survive the AI Worker being down or slow.

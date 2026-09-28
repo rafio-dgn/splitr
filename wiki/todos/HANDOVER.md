@@ -60,14 +60,11 @@ merge doesn't deploy. **Step 5** (`e2e-nightly.yml`) is on branch
 **all 30 eval labels approved by Raffaele**. Steps 2–3 are done: `splitr-ai`
 (`workers/ai/`) is built and verified locally through a real service binding.
 **Eval: 8B + RAG 28/30**, and Raffaele chose 8B with a 0.6 threshold
-([evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). **Step 4 is built** (branch `e7/wire-categorisation`, with a PR). After its
-merge deploys `splitr-ai`, **Raffaele sets the two secrets** (the same random
-value in both; never in chat):
-`npx wrangler secret put AI_SHARED_SECRETS -c workers/ai/wrangler.jsonc` and
-`npx wrangler secret put AI_SHARED_SECRET`.
-Until then, the app skips categorisation (`skipped:no-secret`). Then verify
-on production: a receipt's items get categorised, and saves with items aren't
-slower than saves without. **Then step 5:** move embeddings and OCR behind
+([evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). **Step 4 is live and verified on production** (2026-09-28): the secrets are
+set, and `scripts/verify/categorise.mjs` gave 9/9 items categorised, with
+saves taking 184 ms with items against 183 ms without
+([evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). **`REQ-E.4` is
+met.** **Then step 5:** move embeddings and OCR behind
 `splitr-ai`, and remove the app's `ai` binding.
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,

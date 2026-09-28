@@ -1810,3 +1810,22 @@ does, months later, without the original chat transcript.
 - **Lesson:** a second case today of a local file hiding what a clean machine
   lacks (after the build credentials). The clean-copy simulation is the check
   that finds these.
+
+## 2026-09-28T09:30Z — Production verification of categorisation
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "PR merged", then "what are you waiting for?" (a
+  10-minute poll looked like a hang; replaced by one check).
+- **Actions:**
+  - Confirmed the deploy passed (36401140161).
+  - Noticed `splitr-ai` had first been created as an empty Worker by
+    `wrangler secret put`.
+  - Wrote `categorise.mjs` and ran it locally twice:
+    - once with a port clash that kept the AI Worker from starting (the check
+      correctly failed: all items uncategorised);
+    - once with 9/9 labels, and the timing check failing by design under
+      `next dev`.
+  - Moved the timing check last so it can't hide the label result.
+  - Raffaele ran it on production: passed.
+- **Verification:** the pasted production output is in the evidence file.
+- **Lesson:** tell the user before a long wait, and prefer one check to a
+  silent loop.
