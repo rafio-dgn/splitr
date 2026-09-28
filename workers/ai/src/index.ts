@@ -11,6 +11,8 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 
 import { MODEL_CATEGORY_KEYS, type ModelCategory } from "../../../src/lib/categories.ts";
 import { categorise, type CategoriseDeps, type Match } from "../../../src/lib/categorise/categorise.ts";
+import type { EmbedResponse, IndexResponse, ReadReceiptResponse } from "../../../src/lib/ai/contract.ts";
+import { embedTexts, indexExpense, readReceiptImage, type OpsDeps } from "../../../src/lib/ai/ops.ts";
 import { CATEGORISE_MODELS, type CategoriseResponse } from "../../../src/lib/categorise/contract.ts";
 import type { Example } from "../../../src/lib/categorise/prompt.ts";
 
@@ -21,25 +23,54 @@ import type { Example } from "../../../src/lib/categorise/prompt.ts";
  */
 export interface AiEnv {
 	readonly AI: Ai;
-	readonly VECTORIZE: VectorizeIndex;
+	/**
+	 * `Vectorize`, the v2 API, because `splitr-search` is a v2 index (its upsert
+	 * returns a `mutationId`). Wrangler labels every Vectorize binding with the v1
+	 * `VectorizeIndex`, the same mismatch `cloudflare-globals.d.ts` fixes for the
+	 * app. `env-check.ts` allows for exactly this one difference.
+	 */
+	readonly VECTORIZE: Vectorize;
 	readonly DB: D1Database;
 	readonly AI_SHARED_SECRETS?: string;
 }
 
 const EMBED_MODEL = "@cf/baai/bge-base-en-v1.5";
+/** Llama 4 Scout with JSON mode: Raffaele's choice from the D.6 spike (ADR-0021). */
+const RECEIPT_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
+
+async function embed(env: AiEnv, texts: readonly string[]): Promise<number[][]> {
+	const result = await env.AI.run(EMBED_MODEL, { text: [...texts] });
+	if (!("data" in result) || !Array.isArray(result.data) || result.data.length !== texts.length) {
+		throw new Error(`embedding returned an unexpected shape for ${texts.length} text(s)`);
+	}
+	return result.data;
+}
+
+function opsDeps(env: AiEnv): OpsDeps {
+	return {
+		embed: (texts) => embed(env, texts),
+		async upsert(vectors) {
+			const mutation = await env.VECTORIZE.upsert(vectors.map((v) => ({ id: v.id, values: v.values, metadata: { ...v.metadata } })));
+			return mutation.mutationId;
+		},
+		async vision(prompt, image, schema) {
+			const result = await env.AI.run(RECEIPT_MODEL, {
+				messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: image } }] }],
+				response_format: { type: "json_schema", json_schema: schema },
+				max_tokens: 1024,
+				temperature: 0,
+			});
+			return typeof result === "object" && result !== null && "response" in result ? result.response : null;
+		},
+	};
+}
 
 const KEYS: ReadonlySet<string> = new Set(MODEL_CATEGORY_KEYS);
 const isModelCategory = (value: unknown): value is ModelCategory => typeof value === "string" && KEYS.has(value);
 
 function deps(env: AiEnv): CategoriseDeps {
 	return {
-		async embed(texts) {
-			const result = await env.AI.run(EMBED_MODEL, { text: [...texts] });
-			if (!("data" in result) || !Array.isArray(result.data) || result.data.length !== texts.length) {
-				throw new Error(`embedding returned an unexpected shape for ${texts.length} text(s)`);
-			}
-			return result.data;
-		},
+		embed: (texts) => embed(env, texts),
 
 		async nearest(vector, groupId, topK) {
 			const found = await env.VECTORIZE.query([...vector], { topK, filter: { groupId }, returnMetadata: "all" });
@@ -104,6 +135,28 @@ export class AiService extends WorkerEntrypoint<AiEnv> {
 			`[ai] categorise status=${response.status}` +
 				("results" in response ? ` items=${response.results.length} ms=${"ms" in response ? response.ms : "-"}` : ""),
 		);
+		return response;
+	}
+
+	/** Texts → vectors, for the search query (ADR-0025 step 5). The app keeps the 3 s budget and the keyword fallback. */
+	async embed(secret: string, request: unknown): Promise<EmbedResponse> {
+		const response = await embedTexts(opsDeps(this.env), secret, request, this.env.AI_SHARED_SECRETS);
+		console.log(`[ai] embed status=${response.status}`);
+		return response;
+	}
+
+	/** A saved expense's search vectors (ADR-0022): built, embedded and upserted here, within 5 s. */
+	async index(secret: string, request: unknown): Promise<IndexResponse> {
+		const response = await indexExpense(opsDeps(this.env), secret, request, this.env.AI_SHARED_SECRETS);
+		console.log(`[ai] index status=${response.status}${response.status === "ok" ? ` vectors=${response.vectors} mutation=${response.mutationId}` : ""}`);
+		return response;
+	}
+
+	/** A receipt photo (a data URI) → a validated draft, or null. The app keeps the 30 s budget. */
+	async readReceipt(secret: string, request: unknown): Promise<ReadReceiptResponse> {
+		const started = Date.now();
+		const response = await readReceiptImage(opsDeps(this.env), secret, request, this.env.AI_SHARED_SECRETS);
+		console.log(`[ai] readReceipt status=${response.status} ms=${Date.now() - started}`);
 		return response;
 	}
 }

@@ -5,5 +5,8 @@
  */
 import type { AiEnv } from "./index";
 
-export type EnvMatchesConfig = Env extends AiEnv ? true : never;
+// Every binding must match, except VECTORIZE's label: Wrangler says v1
+// `VectorizeIndex`, the index is v2 `Vectorize` (see AiEnv). Its presence is
+// still checked.
+export type EnvMatchesConfig = Omit<Env, "VECTORIZE"> extends Omit<AiEnv, "VECTORIZE"> ? ("VECTORIZE" extends keyof Env ? true : never) : never;
 export const envMatchesConfig: EnvMatchesConfig = true;
