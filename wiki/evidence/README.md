@@ -87,3 +87,7 @@ the real pasted output, and the date.
 - [`REQ-F.2-turnstile-forged-submit.md`](./REQ-F.2-turnstile-forged-submit.md):
   Turnstile on `/join`, the intercepted and curl-replayed forged submit, and the
   fail-closed tests (2026-09-28, local).
+- [`REQ-F.4-ai-gateway.md`](./REQ-F.4-ai-gateway.md): every model call
+  through the real `splitr` gateway (log ids for all of them), cache hits for
+  Llama and embeddings, the rate limit refusing 21 of 120, receipt reads not
+  logged, and the neuron cap at 0 (2026-09-28, local).

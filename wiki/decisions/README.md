@@ -61,3 +61,4 @@ obvious in hindsight.
 | [0028](./0028-audit-line-format-and-coverage.md) | `[AUDIT]` line: `timestamp` (ISO) not `ts`, Better Auth audited via its hooks, `detail` makes changes reconstructible, caches deliberately not audited | Accepted |
 | [0029](./0029-settle-up-rate-limit.md) | Rate-limit settle-up: 5 per 60 s per signed-in user, checked first in `recordSettlement`, 429 + Retry-After; the written rationale | Accepted |
 | [0030](./0030-turnstile-on-join.md) | Turnstile on `/join`: Managed, verified in `joinGroupAction`, failing closed; sign-up stays behind Better Auth's own limit; CI refuses placeholder config | Accepted |
+| [0031](./0031-ai-gateway-and-neuron-cap.md) | Every model call through the `splitr` AI Gateway (text cached 1 day, receipts never cached or logged, 100/min); our own 8,000-neuron daily cap, counting cache hits | Accepted |

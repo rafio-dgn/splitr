@@ -83,7 +83,13 @@ the Server Action, failing closed). The widget exists (Managed, on
 `splitr.raffaele-digennaro.workers.dev`): its public site key is in
 `wrangler.jsonc`, and `TURNSTILE_SECRET_KEY` is set. After the merge, run
 `node scripts/verify/turnstile-forge.mjs https://splitr.raffaele-digennaro.workers.dev`.
-**Next:** F.5 (AI Gateway) → F.6 (rotation drill).
+**F.5 is built** (ADR-0031, branch `f5/ai-gateway`): every model call goes
+through the `splitr` AI Gateway, which Raffaele created in the dashboard and
+which must exist before `splitr-ai` deploys. Text is cached for 1 day;
+receipts are never cached or logged. The gateway allows 100 calls a minute,
+and our own `NeuronBudget` DO caps the day at 8,000 neurons. It's verified
+locally through the real gateway. After the merge, Raffaele checks the Logs
+tab. **Next:** F.6 (rotation drill).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random

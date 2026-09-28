@@ -133,7 +133,7 @@ double-settle bug without the DO, then fix it with one. That contrast is the dem
 | F.2 | Turnstile on the public `/join/[invite]` form; verify server-side in the Server Action | 🟡 2026-09-28: built (ADR-0030); verified locally with test keys; real keys pending |
 | F.3 | **Forge a submit; confirm the server rejects it.** Capture the command | 🟡 2026-09-28: `turnstile-forge.mjs`; curl forgery refused locally; production pending |
 | F.4 | Audit lines as parseable JSON; prove `wrangler tail \| grep AUDIT` works | ✅ 2026-09-28: met on production, `wrangler tail | grep AUDIT` 14/14 (ADR-0028) |
-| F.5 | AI Gateway in front of **every** model call — vision, Llama, embeddings. Caching, logs, rate limits, spend cap | `REQ-F.4` |
+| F.5 | AI Gateway in front of **every** model call — vision, Llama, embeddings. Caching, logs, rate limits, spend cap | 🟡 2026-09-28: built (ADR-0031), verified locally through the real `splitr` gateway; the production Logs check is pending the merge |
 | F.6 | Secret-rotation drill: **wrong way first**, observe the breakage; then dual-key → deploy consumer → update producer → retire old key | `REQ-F.5` |
 | F.7 | Write up both rotation outcomes | `REQ-F.5` |
 | F.8 | Answer the two cluster questions | `REQ-F.6` |
