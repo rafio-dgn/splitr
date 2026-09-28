@@ -2045,3 +2045,19 @@ does, months later, without the original chat transcript.
   - 84 pure plus 10 DO tests pass, and `tsc`, ESLint and actionlint are clean.
 - **Open questions:** Raffaele's widget (the site key, which is public, and
   the secret), then the production run.
+
+## 2026-09-28T22:00Z — Turnstile gave the automated browser no token on production
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Inputs:** Raffaele's run (a 60 s timeout), and the deploy timeline (the
+  code was live).
+- **Hypothesis, unconfirmed:** Turnstile's Managed mode challenges the
+  headless browser. It needs evidence.
+- **Actions:**
+  - Added diagnostics (a screenshot, the console, the challenge requests) and
+    a `HEADFUL=1` human-check mode.
+  - Tested the failure path locally by temporarily pointing `.dev.vars` at
+    the always-block test key; the diagnostics printed `Error: 600010`. The
+    file was restored.
+- **Flagged:** tonight's nightly E2E joins through the same widget, so it may
+  fail at "Bob joins". ADR-0030 §4 chose that knowingly: we learn something
+  real.

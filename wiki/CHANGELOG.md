@@ -1260,3 +1260,14 @@ shape that triggers them. They are listed rather than ticked.
   with `wrangler secret list`).
 - **Why:** `REQ-F.2`. CI blocked the placeholder until now.
 - **Decision:** [ADR-0030](./decisions/0030-turnstile-on-join.md)
+
+## 2026-09-28 — turnstile-forge.mjs: diagnostics, and a headful human-check mode
+- **Type:** changed
+- **Scope:** `scripts/verify/turnstile-forge.mjs`, the REQ-F.2 evidence
+- **What:** When no token arrives, the script saves a screenshot and prints
+  the browser console and every challenge request. `HEADFUL=1` shows the
+  window and waits up to 3 minutes for a human to complete Turnstile's check.
+- **Why:** The first production run timed out with no clue why: Turnstile
+  gave the headless browser no token. It was tested locally against
+  Cloudflare's always-block test key.
+- **Decision:** none
