@@ -16,6 +16,7 @@ import { embedTexts, indexExpense, readReceiptImage, type OpsDeps } from "../../
 import { CATEGORISE_MODELS, type CategoriseResponse } from "../../../src/lib/categorise/contract.ts";
 import type { Example } from "../../../src/lib/categorise/prompt.ts";
 import { budgetDay, capFrom, neuronsOf, withinCap } from "../../../src/lib/ai/neuron-budget.ts";
+import { keyLabel } from "../../../src/lib/categorise/secret.ts";
 
 /**
  * Declared by hand, as the ledger's is, because the app's program reads this
@@ -213,7 +214,7 @@ export class AiService extends WorkerEntrypoint<AiEnv> {
 		const response = await categorise(deps(this.env), secret, request, { acceptedSecrets: this.env.AI_SHARED_SECRETS });
 		// One line per call, never the secret. A refusal is logged too: it's a signal.
 		console.log(
-			`[ai] categorise status=${response.status}` +
+			`[ai] categorise status=${response.status} ${keyLabel(secret, this.env.AI_SHARED_SECRETS)}` +
 				("results" in response ? ` items=${response.results.length} ms=${"ms" in response ? response.ms : "-"}` : ""),
 		);
 		return response;
@@ -222,14 +223,14 @@ export class AiService extends WorkerEntrypoint<AiEnv> {
 	/** Texts → vectors, for the search query (ADR-0025 step 5). The app keeps the 3 s budget and the keyword fallback. */
 	async embed(secret: string, request: unknown): Promise<EmbedResponse> {
 		const response = await embedTexts(opsDeps(this.env, "embed-query"), secret, request, this.env.AI_SHARED_SECRETS);
-		console.log(`[ai] embed status=${response.status}`);
+		console.log(`[ai] embed status=${response.status} ${keyLabel(secret, this.env.AI_SHARED_SECRETS)}`);
 		return response;
 	}
 
 	/** A saved expense's search vectors (ADR-0022): built, embedded and upserted here, within 5 s. */
 	async index(secret: string, request: unknown): Promise<IndexResponse> {
 		const response = await indexExpense(opsDeps(this.env, "embed-index"), secret, request, this.env.AI_SHARED_SECRETS);
-		console.log(`[ai] index status=${response.status}${response.status === "ok" ? ` vectors=${response.vectors} mutation=${response.mutationId}` : ""}`);
+		console.log(`[ai] index status=${response.status} ${keyLabel(secret, this.env.AI_SHARED_SECRETS)}${response.status === "ok" ? ` vectors=${response.vectors} mutation=${response.mutationId}` : ""}`);
 		return response;
 	}
 
@@ -237,7 +238,7 @@ export class AiService extends WorkerEntrypoint<AiEnv> {
 	async readReceipt(secret: string, request: unknown): Promise<ReadReceiptResponse> {
 		const started = Date.now();
 		const response = await readReceiptImage(opsDeps(this.env, "read-receipt"), secret, request, this.env.AI_SHARED_SECRETS);
-		console.log(`[ai] readReceipt status=${response.status} ms=${Date.now() - started}`);
+		console.log(`[ai] readReceipt status=${response.status} ${keyLabel(secret, this.env.AI_SHARED_SECRETS)} ms=${Date.now() - started}`);
 		return response;
 	}
 }

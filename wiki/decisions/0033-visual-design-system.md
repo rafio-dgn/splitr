@@ -125,7 +125,7 @@ language.
 ## Verification
 
 - `tsc --noEmit` and ESLint are clean.
-- The unit tests pass: 88/88 pure (89 on the f6 branch), 10/10 ledger.
+- The unit tests pass: 89/89 pure, 10/10 ledger (re-run after merging `main`).
 - `npm run build` succeeds.
 - The full two-browser E2E passes against `localhost:3100`, and cleanup left
   0 rows.

@@ -2167,6 +2167,73 @@ does, months later, without the original chat transcript.
     passed, including the new step.
 - **Open questions:** none.
 
+## 2026-09-28T20:00Z — F.6: design and rehearse the secret-rotation drill (REQ-F.5)
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "merged, go on": the next step, the rotation drill.
+- **Inputs read:**
+  - `REQ-F.5`; ADR-0025 §3 (the secret list);
+  - `secret.ts`, the AI Worker's RPC methods, the cron Worker, `deploy.yml`;
+  - `wrangler secret put --help`, and wrangler's source for stdin handling.
+- **Raffaele's decisions:** production for both halves; the wrong way is
+  swapping the receiver's key only; the proof is a monitor plus a
+  key-position log.
+- **Actions:**
+  - `matchedSecretIndex` and `keyLabel`, with 1 test;
+  - `key=i/n` on the AI Worker's log lines;
+  - `rotation-monitor.mjs`;
+  - ADR-0032, and the runbook with exact commands.
+- **Design points I added, flagged in the ADR:**
+  - the current key K0 can't be read back, so the wrong-way recovery creates
+    K1, which the right way then rotates to K2;
+  - there are two producers, so the window stays open overnight until the
+    cron is seen on K2;
+  - an expense with an item is saved during the breakage, so the cron has
+    work at 02:30.
+- **Alternatives considered:** in the ADR's "Rejected" list.
+- **Assumptions:** that Workers Logs (on for `splitr-ai`) keeps the 02:30 lines
+  long enough for Part 3. Free-plan retention is 3 days, which is enough.
+- **Verification:**
+  - `tsc` (both programs) and ESLint are clean; the secret tests pass (17).
+  - **The first local rehearsal showed nothing:** `wrangler dev` doesn't
+    reload `.dev.vars`. With restarts, it showed a fallback window
+    19:47:25–19:48:00 and `status=refused key=none/1` ×10.
+  - `.dev.vars` was restored (checked with `cmp`).
+- **Open questions:** none. The production runs are Raffaele's.
+
+## 2026-09-28T20:15Z — "The instructions are not clear, and why do I need to do this?"
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Raffaele found the runbook unclear and asked why it's his
+  to run. After I proposed a guided script, he ran the proposed command
+  before it existed (`MODULE_NOT_FOUND`), which I took as a yes.
+- **Answer given:**
+  - *Why:* `REQ-F.5` is an in-scope requirement, and the breakage is part of
+    it.
+  - *Why him:* his rules. Secrets never pass through the AI, and production
+    changes (secrets, D1) are his to run.
+- **Actions:**
+  - `rotation-drill.mjs`, one guided command per day, plus `repair`;
+  - the watchers moved into `rotation-watch.mjs`;
+  - K2 kept in the macOS Keychain.
+- **Alternatives considered:**
+  - keeping the runbook and just rewording it. Rejected: three terminals and
+    shell variables were the real problem;
+  - the AI running the secret commands. Rejected by his rules.
+- **Assumptions:**
+  - the `ps` exposure of `security -w <value>` is acceptable on his
+    single-user Mac (stated in the ADR);
+  - that `wrangler tail` prints "Connected to" on connect. Checked in
+    wrangler's source (`Connected to ${scriptDisplayName}, waiting for
+    logs...`), not yet on a production run. If it doesn't, the script stops
+    after 60 s with a clear error, before changing anything.
+- **Verification:**
+  - a full local rehearsal of day1 and day2 with a stand-in wrangler: every
+    step behaved as described, and cleanup left 0 rows;
+  - everything restored (three `.dev.vars` files checked with `cmp`, the
+    rehearsal Keychain item and state files deleted), and the local servers
+    restarted on their original keys;
+  - `tsc` and ESLint are clean.
+- **Open questions:** none.
+
 ## 2026-09-28T21:00Z — A full UI/UX redesign plan, using ui-ux-pro-max
 - **Agent:** Claude Opus 5.5, main session
 - **Prompt intent:** Raffaele asked for a plan and an artifact covering a

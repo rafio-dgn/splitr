@@ -33,18 +33,33 @@ export function parseSecretList(configured: string | undefined): string[] {
 }
 
 /**
- * True if `given` matches one of the configured secrets. **An empty or missing
- * list refuses everything**: a Worker deployed without its secret must fail
- * closed, not open.
+ * Which configured secret `given` matches: its 0-based position in the list, or
+ * -1 for none. **An empty or missing list refuses everything**: a Worker
+ * deployed without its secret must fail closed, not open.
+ *
+ * The position is what `REQ-F.5`'s drill logs (`key=2/2`, never the key), so
+ * before the old key is retired, the logs show that nothing still sends it.
  */
-export function secretAccepted(given: unknown, configured: string | undefined): boolean {
-	if (typeof given !== "string" || given.length === 0) return false;
+export function matchedSecretIndex(given: unknown, configured: string | undefined): number {
+	if (typeof given !== "string" || given.length === 0) return -1;
 	const candidate = encoder.encode(given);
-	let accepted = false;
-	for (const secret of parseSecretList(configured)) {
-		// The comparison is the LEFT operand, so it always runs: every secret is
-		// compared, even after a match.
-		accepted = equalConstantTime(candidate, encoder.encode(secret)) || accepted;
-	}
-	return accepted;
+	let matched = -1;
+	parseSecretList(configured).forEach((secret, index) => {
+		// Every secret is compared in full, even after a match, so the time
+		// taken depends on the list's lengths, not on which one matched.
+		const equal = equalConstantTime(candidate, encoder.encode(secret));
+		matched = equal && matched === -1 ? index : matched;
+	});
+	return matched;
+}
+
+/** True if `given` matches one of the configured secrets (see `matchedSecretIndex`). */
+export function secretAccepted(given: unknown, configured: string | undefined): boolean {
+	return matchedSecretIndex(given, configured) !== -1;
+}
+
+/** The log label for a call's key: `key=2/2`, or `key=none/2`. The position only, never the secret. */
+export function keyLabel(given: unknown, configured: string | undefined): string {
+	const index = matchedSecretIndex(given, configured);
+	return `key=${index === -1 ? "none" : index + 1}/${parseSecretList(configured).length}`;
 }

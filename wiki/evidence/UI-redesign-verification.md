@@ -10,7 +10,7 @@ nothing that is one.
 |---|---|
 | `npx tsc --noEmit` | clean |
 | `npx eslint src` | clean |
-| `node --test "src/**/*.test.ts"` | 88 / 88 pass on `ui/redesign` (89 / 89 on `f6/rotation-drill`, which adds one test) |
+| `node --test "src/**/*.test.ts"` | 89 / 89 pass (re-run after merging `main`, which brought in f6's extra test) |
 | `npm run test:ledger` | 10 / 10 pass |
 | `npm run build` | succeeds, all 17 routes |
 | `grep -rnE "zinc-\|red-[0-9]\|amber-\|dark:" src` | 0 hits outside the comment in `globals.css` |
