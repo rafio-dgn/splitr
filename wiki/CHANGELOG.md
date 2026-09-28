@@ -1250,3 +1250,13 @@ shape that triggers them. They are listed rather than ticked.
   - CI fails while a `SET-ME` placeholder remains.
 - **Why:** `REQ-F.2`. Raffaele's four choices are in ADR-0030.
 - **Decision:** [ADR-0030](./decisions/0030-turnstile-on-join.md)
+
+## 2026-09-28 — The production Turnstile site key
+- **Type:** changed
+- **Scope:** `wrangler.jsonc` (`TURNSTILE_SITE_KEY`), `wiki/todos/HANDOVER.md`
+- **What:** The `SET-ME` placeholder is replaced by the site key of
+  Raffaele's widget (Managed, `splitr.raffaele-digennaro.workers.dev`). It's
+  public by design. `TURNSTILE_SECRET_KEY` is set as a secret (checked by name
+  with `wrangler secret list`).
+- **Why:** `REQ-F.2`. CI blocked the placeholder until now.
+- **Decision:** [ADR-0030](./decisions/0030-turnstile-on-join.md)

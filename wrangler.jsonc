@@ -152,7 +152,7 @@
 		// every page that shows the widget. Its secret, TURNSTILE_SECRET_KEY, is set
 		// with `wrangler secret put`. Locally, `.dev.vars` overrides both with
 		// Cloudflare's documented test keys.
-		"TURNSTILE_SITE_KEY": "SET-ME-production-site-key"
+		"TURNSTILE_SITE_KEY": "0x4AAAAAAFG7soKOC9r4Ylju"
 	}
 
 	// BETTER_AUTH_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and

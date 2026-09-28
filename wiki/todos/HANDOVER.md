@@ -79,10 +79,9 @@ binding alone let a burst of 6 through on production (it's eventually
 consistent), so an exact per-user `SettleRateLimiter` Durable Object now backs
 it (the amendment). **Met on production:** 201 ×5, then 429 with
 `Retry-After: 58`, from the exact counter. **F.2 is built** (ADR-0030: Turnstile on `/join`, verified in
-the Server Action, failing closed). **Raffaele:** create the Turnstile widget
-(Managed, on `splitr.raffaele-digennaro.workers.dev`), give the agent its
-**public site key** for `wrangler.jsonc` (CI blocks the `SET-ME` placeholder),
-and run `npx wrangler secret put TURNSTILE_SECRET_KEY`. Then run
+the Server Action, failing closed). The widget exists (Managed, on
+`splitr.raffaele-digennaro.workers.dev`): its public site key is in
+`wrangler.jsonc`, and `TURNSTILE_SECRET_KEY` is set. After the merge, run
 `node scripts/verify/turnstile-forge.mjs https://splitr.raffaele-digennaro.workers.dev`.
 **Next:** F.5 (AI Gateway) → F.6 (rotation drill).
 
