@@ -107,3 +107,25 @@ all six live vision models, of which two were measured.
 - **Confirmation still owed:** Raffaele's 3–5 English receipts. If they
   contradict the SROIE result, this choice is revisited.
 
+
+## Addendum (2026-09-28): reading starts automatically
+
+- **Asked and answered:** Raffaele was asked whether the read should start
+  automatically once the photo is uploaded, or stay behind the "Read receipt"
+  button. He chose **automatically**.
+- **Why:** the receipt is Splitr's main way in, and the extra tap made it feel
+  like a document upload.
+- **What changed:** `attachReceipt` in `add-expense-form.tsx` calls
+  `readAttachedReceipt` as soon as the R2 upload succeeds. "Read receipt" now
+  appears only as a retry after a failed read.
+- **What did not change:**
+  - the read only ever fills the form;
+  - the "I've checked the amount" confirmation is still required on both
+    sides (ADR-0016 §2);
+  - a failed read never blocks typing the expense in.
+- **Cost:** about 70 neurons for every photo chosen, even if the person then
+  types the expense in by hand. It counts against the 8,000-neuron daily cap
+  (ADR-0031), so there is headroom for about 110 reads a day.
+- **E2E:** step 5 no longer clicks "Read receipt". It waits for the confirm
+  box, and still checks that the first tap on `input#receipt` opens the file
+  picker.

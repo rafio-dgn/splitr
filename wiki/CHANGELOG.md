@@ -1422,3 +1422,28 @@ shape that triggers them. They are listed rather than ticked.
     confirmations that are now toasts: "joined" and "expense added".
 - **Why:** Raffaele approved the redesign plan and asked for it to be applied.
 - **Decision:** [ADR-0033](./decisions/0033-visual-design-system.md)
+
+## 2026-09-28 — Receipt first, and a mobile pass
+- **Type:** changed
+- **Scope:**
+  - `add-expense-form.tsx`;
+  - `components/{password-input,account-menu}.tsx` (new);
+  - `components/{nav,icons}.tsx`, `(app)/layout.tsx` and
+    `[groupId]/layout.tsx`;
+  - the login, register and join forms;
+  - `(app)/groups/page.tsx`, `expense-feed.tsx` and `globals.css`;
+  - `scripts/verify/e2e.mjs`.
+- **What:**
+  - the receipt leads the add-expense form, as a drop zone with a preview,
+    progress, a scan line, and badges on the fields it filled;
+  - it is read automatically after upload;
+  - a show / hide password toggle;
+  - the account menu closes on an outside tap and on Esc;
+  - Chrome's datalist arrow is hidden;
+  - the `/groups` card overflow on phones is fixed, with `overflow-x: clip`
+    as a safety net;
+  - the group header is hidden on phone action screens;
+  - the E2E no longer clicks "Read receipt".
+- **Why:** Raffaele's review of the redesign.
+- **Decision:** ADR-0021 addendum (automatic read, his choice) and ADR-0033
+  addendum.

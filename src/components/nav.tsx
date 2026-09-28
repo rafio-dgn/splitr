@@ -123,8 +123,9 @@ export function GroupActions({ groupId }: { groupId: string }) {
 				<Icon name="swap" className="size-[18px]" />
 				Settle up
 			</Link>
+			{/* A camera, not a plus: the receipt is the main way to add one. */}
 			<Link href={`/groups/${groupId}/expenses/new`} className={buttonClass()}>
-				<Icon name="plus" className="size-[18px]" />
+				<Icon name="camera" className="size-[18px]" />
 				Add an expense
 			</Link>
 		</nav>
@@ -144,8 +145,19 @@ export function AddExpenseFab({ groupId }: { groupId: string }) {
 			href={`/groups/${groupId}/expenses/new`}
 			className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 flex h-13 items-center gap-2 rounded-full bg-primary px-5 font-bold text-on-primary shadow-float transition-transform duration-150 active:scale-[.97] md:hidden"
 		>
-			<Icon name="plus" className="size-5" />
+			<Icon name="camera" className="size-5" />
 			Add expense
 		</Link>
 	);
+}
+
+/**
+ * The group header's frame. On phones it's hidden on the action screens
+ * (add expense, settle up): there it pushed the receipt below the fold, and
+ * the screen's own heading already names the group (§2.3). The header's
+ * content stays server-rendered; this only decides a class.
+ */
+export function GroupHeaderFrame({ className, children }: { className: string; children: React.ReactNode }) {
+	const path = usePathname();
+	return <div className={`${isActionScreen(path) ? "hidden md:block" : ""} ${className}`}>{children}</div>;
 }

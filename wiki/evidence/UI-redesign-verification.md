@@ -73,3 +73,25 @@ Issues found in that pass, and fixed:
   branch is merged.
 - No screen-reader pass (VoiceOver) and no 200% zoom check. Both are in the
   backlog.
+
+## Addendum (2026-09-28): the receipt-first round
+
+- **Static checks:** `tsc`, ESLint and `npm run build` are clean. The tests
+  pass: 89 pure and 10 ledger.
+- **E2E:** passed against `localhost:3100`, with the read starting on its own.
+  Cleanup left 0 rows.
+- **Behaviour, checked in a 390px browser:**
+  - the account menu opens, and closes on an outside tap;
+  - the eye switches the password field from `password` to `text`, with
+    `aria-pressed=true`;
+  - the receipt flow goes from upload to automatic read to a filled form with
+    three lines.
+- **Horizontal overflow:** `scrollWidth - clientWidth` is 0 on all 11 pages
+  at 360 and 390px, and on the filled receipt form. Before the fix, `/groups`
+  was 540px wide at 360px.
+- **Left behind:** a throwaway check script grabbed the receipt key before the
+  upload had finished, so cleanup couldn't delete one test photo. It is the
+  synthetic fixture receipt, with no personal data, under
+  `receipts/grp_a2523edbac954559b18c07cd3214e1aa/` in the `splitr-receipts`
+  bucket. That is the known orphan case in ADR-0020, and it's in the backlog.
+  The D1 rows were cleaned (0 left).

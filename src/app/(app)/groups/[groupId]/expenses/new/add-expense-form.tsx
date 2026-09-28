@@ -22,12 +22,13 @@
  * a form that is red before it is filled is hostile.
  */
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/icons";
 import {
 	ActionLink,
 	Avatar,
+	Banner,
 	EmptyState,
 	Spinner,
 	buttonClass,
@@ -119,7 +120,9 @@ export function AddExpenseForm({
 	 * person ever touching it: the first click anywhere below showed "Say what
 	 * this was for", which moved the page mid-click and lost the click (found by
 	 * the E2E, 2026-09-25). A blur now counts only once the field was edited or
-	 * holds a value. A submit still marks every field.
+	 * holds a value. A submit still marks every field. (The description lost
+	 * `autoFocus` on 2026-09-28, since the receipt now comes first and a phone
+	 * keyboard would cover it; the guard stays, as any blur can do the same.)
 	 */
 	const edited = useRef<Partial<Record<FieldName, boolean>>>({});
 
@@ -169,6 +172,14 @@ export function AddExpenseForm({
 	>(null);
 	const [totalConfirmed, setTotalConfirmed] = useState(false);
 
+	/** A local preview of the chosen photo, as a blob: URL. Revoked when replaced or unmounted. */
+	const [preview, setPreview] = useState<string | null>(null);
+	useEffect(() => {
+		if (preview === null) return;
+		return () => URL.revokeObjectURL(preview);
+	}, [preview]);
+	const receiptInput = useRef<HTMLInputElement | null>(null);
+
 	async function readAttachedReceipt(key: string): Promise<void> {
 		setReading({ status: "reading" });
 		const outcome = await readReceiptAction(groupId, key);
@@ -189,6 +200,11 @@ export function AddExpenseForm({
 	}
 
 	async function attachReceipt(file: File): Promise<void> {
+		setPreview(URL.createObjectURL(file));
+		// A new photo replaces the old draft: its lines described a different receipt.
+		setDraftItems(null);
+		setTotalConfirmed(false);
+		setReading({ status: "idle" });
 		setReceipt({ status: "uploading", name: file.name });
 		const grant = await requestReceiptUploadAction(groupId, file.type);
 		if (!grant.ok) {
@@ -212,7 +228,12 @@ export function AddExpenseForm({
 				status: "failed",
 				message: "The photo didn't upload. Try again, or save the expense without it.",
 			});
+			return;
 		}
+		// Read it straight away: the photo is the point of the flow, so there's no
+		// separate "Read receipt" tap (2026-09-28). It spends ~70 neurons and
+		// counts against the daily cap (ADR-0031); on failure the button comes back.
+		await readAttachedReceipt(grant.key);
 	}
 
 	function update<K extends FieldName>(
@@ -284,17 +305,215 @@ export function AddExpenseForm({
 			    refused rather than silently treated as pounds. */}
 			<input type="hidden" name="currency" value="GBP" />
 
+			{/* The receipt comes first: it's Splitr's main way in ("Snap the bill").
+			    Choosing a photo uploads it straight to R2 (ADR-0020) and then reads
+			    it automatically (Raffaele's call, 2026-09-28). The read only ever
+			    fills the form, and the amount must still be confirmed by a person
+			    (ADR-0016 §2). A photo is optional, and a failure never blocks the
+			    expense (ADR-0020 §9): typing it in below always works. */}
+			<section
+				aria-labelledby="receipt-heading"
+				className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-rest md:p-5"
+			>
+				<div className="flex items-start justify-between gap-3">
+					<div className="min-w-0">
+						<h2 id="receipt-heading" className="font-display text-lg font-semibold">
+							Snap the receipt
+						</h2>
+						<p className="text-sm text-muted">
+							We read every line and fill this in for you. You check the total.
+						</p>
+					</div>
+					<span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-ink">
+						<Icon name="sparkle" className="size-3.5" />
+						AI
+					</span>
+				</div>
+
+				<div
+					className={`relative overflow-hidden rounded-tile ${
+						preview === null
+							? "border-2 border-dashed border-line-strong bg-surface-2 transition-colors duration-150 hover:border-primary has-focus-visible:border-primary"
+							: "bg-surface-2"
+					}`}
+				>
+					{preview === null ? (
+						<div aria-hidden className="pointer-events-none flex flex-col items-center gap-2 px-4 py-8 text-center">
+							<span className="grid size-14 place-items-center rounded-2xl bg-primary text-on-primary shadow-rest">
+								<Icon name="camera" className="size-7" />
+							</span>
+							<span className="font-semibold">Take a photo, or choose one</span>
+							<span className="max-w-xs text-[13px] text-muted">
+								It goes straight to storage, never through our servers.
+							</span>
+						</div>
+					) : (
+						<div className="flex items-center gap-4 p-3">
+							<div className="relative h-28 w-20 shrink-0 overflow-hidden rounded-lg border border-line bg-surface">
+								{/* A local preview of the chosen file (a blob: URL): nothing is
+								    fetched to show it. */}
+								{/* eslint-disable-next-line @next/next/no-img-element */}
+								<img src={preview} alt="The receipt you chose" className="size-full object-cover" />
+								{reading.status === "reading" ? (
+									<span aria-hidden className="absolute inset-x-0 top-0 h-0.5 animate-scan bg-highlight shadow-[0_0_10px_2px_var(--highlight)]" />
+								) : null}
+							</div>
+							<div className="flex min-w-0 flex-1 flex-col gap-2">
+								<ReceiptSteps
+									uploaded={receipt.status === "attached"}
+									reading={reading.status === "reading"}
+									read={draftItems !== null}
+									confirmed={totalConfirmed}
+								/>
+								<button
+									type="button"
+									onClick={() => receiptInput.current?.click()}
+									disabled={pending || receipt.status === "uploading" || reading.status === "reading"}
+									className={`self-start ${buttonClass({ variant: "ghost", size: "sm" })}`}
+								>
+									<Icon name="camera" className="size-4" />
+									Use a different photo
+								</button>
+							</div>
+						</div>
+					)}
+					{/* The real control. Before a photo is chosen it covers the whole
+					    drop zone, so a tap anywhere opens the camera or picker and a
+					    file can be dropped onto it. The E2E clicks it directly. */}
+					<input
+						id="receipt"
+						ref={receiptInput}
+						type="file"
+						accept="image/jpeg,image/png,image/webp"
+						capture="environment"
+						aria-label="Receipt photo"
+						aria-describedby="receipt-status"
+						disabled={pending || receipt.status === "uploading" || reading.status === "reading"}
+						onChange={(event) => {
+							const file = event.target.files?.[0];
+							if (file !== undefined) {
+								void attachReceipt(file);
+							}
+						}}
+						className={preview === null ? "absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed" : "sr-only"}
+					/>
+				</div>
+				<input type="hidden" name="receiptKey" value={receipt.status === "attached" ? receipt.key : ""} />
+
+				<p id="receipt-status" role="status" className={`${hintClass} empty:hidden`}>
+					{receipt.status === "uploading" ? `Uploading ${receipt.name}…` : null}
+					{receipt.status === "attached" ? `Attached: ${receipt.name}` : null}
+					{receipt.status === "failed" ? receipt.message : null}
+				</p>
+				{errorFor("receiptKey") !== undefined ? (
+					<p role="alert" className={errorTextClass}>
+						{errorFor("receiptKey")}
+					</p>
+				) : null}
+
+				{reading.status === "failed" && receipt.status === "attached" ? (
+					<Banner
+						role="status"
+						action={
+							<button
+								type="button"
+								disabled={pending}
+								onClick={() => void readAttachedReceipt(receipt.key)}
+								className={buttonClass({ variant: "secondary", size: "sm" })}
+							>
+								<Icon name="sparkle" className="size-4" />
+								Read receipt
+							</button>
+						}
+					>
+						{reading.message} You can also type it in below.
+					</Banner>
+				) : null}
+
+				{draftItems !== null ? (
+					<div className="flex flex-col gap-3">
+						<Banner tone="success" icon="sparkle" title="Read from the receipt">
+							Check the description and, above all, the <strong>amount</strong> against the photo. The
+							items are for reference only; they don&rsquo;t change the split.
+						</Banner>
+						<ul className="flex flex-col gap-2">
+							{draftItems.map((item, index) => (
+								<li key={index} className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm first:border-t-0 first:pt-0">
+									<input
+										aria-label={`Item ${index + 1}`}
+										value={item.description}
+										onChange={(event) =>
+											setDraftItems((items) =>
+												(items ?? []).map((it, i) => (i === index ? { ...it, description: event.target.value } : it)),
+											)
+										}
+										className={`${inputClass} min-w-0 flex-1 basis-40`}
+									/>
+									<span className="w-20 text-right font-semibold tabular-nums">{formatGbp(item.amountMinorUnits)}</span>
+									<button
+										type="button"
+										aria-label={`Remove item ${index + 1}`}
+										onClick={() => setDraftItems((items) => (items ?? []).filter((_, i) => i !== index))}
+										className={buttonClass({ variant: "ghost" })}
+									>
+										<Icon name="x" className="size-[18px]" />
+									</button>
+									{item.rawText !== item.description ? (
+										<span className="basis-full pl-1 font-mono text-xs break-all text-muted">Printed as &ldquo;{item.rawText}&rdquo;</span>
+									) : null}
+								</li>
+							))}
+						</ul>
+						<input
+							type="hidden"
+							name="lineItems"
+							value={JSON.stringify(
+								draftItems
+									.filter((item) => item.description.trim() !== "")
+									.map((item) => ({
+										rawText: item.rawText,
+										description: item.description.trim(),
+										amountMinorUnits: item.amountMinorUnits,
+									})),
+							)}
+						/>
+						<label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-tile border border-highlight bg-highlight-soft/40 px-3 text-sm font-semibold">
+							<input
+								type="checkbox"
+								name="amountConfirmed"
+								value="yes"
+								checked={totalConfirmed}
+								onChange={(event) => setTotalConfirmed(event.target.checked)}
+								className="size-5 shrink-0 accent-primary"
+							/>
+							I&rsquo;ve checked the amount against the receipt
+						</label>
+						{errorFor("amountConfirmed") !== undefined ? (
+							<p role="alert" className={errorTextClass}>
+								{errorFor("amountConfirmed")}
+							</p>
+						) : null}
+					</div>
+				) : null}
+			</section>
+
+			<div aria-hidden className="mt-2 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-muted">
+				<span className="h-px flex-1 bg-line" />
+				{draftItems !== null ? "Check the details" : "Or type it in"}
+				<span className="h-px flex-1 bg-line" />
+			</div>
+
 			<Field
 				id="description"
 				label="What was it for?"
 				error={errorFor("description")}
+				aiFilled={draftItems !== null}
 			>
 				<input
 					id="description"
 					name="description"
 					list="recent-descriptions"
 					autoComplete="off"
-					autoFocus
 					value={values.description}
 					disabled={pending}
 					ref={(node) => {
@@ -322,7 +541,7 @@ export function AddExpenseForm({
 				</datalist>
 			</Field>
 
-			<Field id="amount" label="Amount" error={errorFor("amount")}>
+			<Field id="amount" label="Amount" error={errorFor("amount")} aiFilled={draftItems !== null}>
 				{/* The £ sits inside the field: it *is* the currency (§7.3). */}
 				<div className="relative">
 					<span
@@ -479,122 +698,6 @@ export function AddExpenseForm({
 				</p>
 			) : null}
 
-			{/* The receipt photo: optional, and its failure never blocks the expense
-			    (ADR-0020 §9). */}
-			<Field id="receipt" label="Receipt photo (optional)" error={errorFor("receiptKey")}>
-				<input
-					id="receipt"
-					type="file"
-					accept="image/jpeg,image/png,image/webp"
-					capture="environment"
-						disabled={pending || receipt.status === "uploading" || reading.status === "reading"}
-					onChange={(event) => {
-						const file = event.target.files?.[0];
-						if (file !== undefined) {
-							void attachReceipt(file);
-						}
-					}}
-					className="block w-full cursor-pointer text-sm text-muted file:mr-3 file:h-11 file:cursor-pointer file:rounded-full file:border file:border-solid file:border-line-strong file:bg-surface file:px-5 file:font-semibold file:text-ink hover:file:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"
-				/>
-				<input type="hidden" name="receiptKey" value={receipt.status === "attached" ? receipt.key : ""} />
-				<p role="status" className={hintClass}>
-					{receipt.status === "uploading" ? `Uploading ${receipt.name}…` : null}
-					{receipt.status === "attached" ? `Attached: ${receipt.name}` : null}
-					{receipt.status === "failed" ? receipt.message : null}
-				</p>
-				{receipt.status === "attached" ? (
-					<button
-						type="button"
-						disabled={pending || reading.status === "reading"}
-						onClick={() => void readAttachedReceipt(receipt.key)}
-						aria-busy={reading.status === "reading"}
-						className={`self-start ${buttonClass({ variant: "secondary" })}`}
-					>
-						{reading.status === "reading" ? <Spinner /> : <Icon name="sparkle" className="size-[18px]" />}
-						{reading.status === "reading" ? "Reading the receipt…" : "Read receipt"}
-					</button>
-				) : null}
-				{receipt.status === "attached" ? (
-					<ReceiptSteps
-						reading={reading.status === "reading"}
-						read={draftItems !== null}
-						confirmed={totalConfirmed}
-					/>
-				) : null}
-				{reading.status === "failed" ? (
-					<p role="status" className="text-sm">
-						{reading.message}
-					</p>
-				) : null}
-			</Field>
-
-			{draftItems !== null ? (
-				<section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-rest">
-					<p className="text-sm">
-						<strong>Read from the receipt.</strong> Check the description and, above all, the{" "}
-						<strong>amount</strong> against the photo. The items are for reference only; they don&rsquo;t
-						change the split.
-					</p>
-					<ul className="flex flex-col gap-2">
-						{draftItems.map((item, index) => (
-							<li key={index} className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm first:border-t-0 first:pt-0">
-								<input
-									aria-label={`Item ${index + 1}`}
-									value={item.description}
-									onChange={(event) =>
-										setDraftItems((items) =>
-											(items ?? []).map((it, i) => (i === index ? { ...it, description: event.target.value } : it)),
-										)
-									}
-									className={`${inputClass} flex-1 basis-40`}
-								/>
-								<span className="w-20 text-right tabular-nums">{formatGbp(item.amountMinorUnits)}</span>
-								<button
-									type="button"
-									aria-label={`Remove item ${index + 1}`}
-									onClick={() => setDraftItems((items) => (items ?? []).filter((_, i) => i !== index))}
-									className={buttonClass({ variant: "ghost" })}
-								>
-									<Icon name="x" className="size-[18px]" />
-								</button>
-								{item.rawText !== item.description ? (
-									<span className="basis-full pl-1 font-mono text-xs text-muted">Printed as &ldquo;{item.rawText}&rdquo;</span>
-								) : null}
-							</li>
-						))}
-					</ul>
-					<input
-						type="hidden"
-						name="lineItems"
-						value={JSON.stringify(
-							draftItems
-								.filter((item) => item.description.trim() !== "")
-								.map((item) => ({
-									rawText: item.rawText,
-									description: item.description.trim(),
-									amountMinorUnits: item.amountMinorUnits,
-								})),
-						)}
-					/>
-					<label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-tile bg-surface-2 px-3 text-sm font-semibold">
-						<input
-							type="checkbox"
-							name="amountConfirmed"
-							value="yes"
-							checked={totalConfirmed}
-							onChange={(event) => setTotalConfirmed(event.target.checked)}
-							className="size-5 accent-primary"
-						/>
-						I&rsquo;ve checked the amount against the receipt
-					</label>
-					{errorFor("amountConfirmed") !== undefined ? (
-						<p role="alert" className={errorTextClass}>
-							{errorFor("amountConfirmed")}
-						</p>
-					) : null}
-				</section>
-			) : null}
-
 			{/* §5.11 — a whole-form failure. The values stay in the fields: retyping
 			    an itemised expense after a failed round trip is the fastest way to
 			    lose a user. */}
@@ -636,17 +739,26 @@ function Field({
 	id,
 	label,
 	error,
+	aiFilled = false,
 	children,
 }: {
 	id: string;
 	label: string;
 	error: string | undefined;
+	/** Filled in from a read receipt: say so, so the person knows what to check. */
+	aiFilled?: boolean;
 	children: React.ReactNode;
 }) {
 	return (
 		<div className="flex flex-col gap-1.5">
-			<label htmlFor={id} className={labelClass}>
+			<label htmlFor={id} className={`flex items-center gap-2 ${labelClass}`}>
 				{label}
+				{aiFilled ? (
+					<span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-bold text-primary-ink">
+						<Icon name="sparkle" className="size-3" />
+						From the receipt
+					</span>
+				) : null}
 			</label>
 			{children}
 			{/* The error's line is always there, empty until needed, so an error
@@ -666,21 +778,23 @@ function Field({
  * from the form's own state: it adds no new state and no request.
  */
 function ReceiptSteps({
+	uploaded,
 	reading,
 	read,
 	confirmed,
 }: {
+	uploaded: boolean;
 	reading: boolean;
 	read: boolean;
 	confirmed: boolean;
 }) {
 	const steps = [
-		{ label: "Uploaded", state: "done" },
+		{ label: uploaded ? "Uploaded" : "Uploading", state: uploaded ? "done" : "now" },
 		{ label: "Reading the lines", state: read ? "done" : reading ? "now" : "todo" },
 		{ label: "Check the total", state: confirmed ? "done" : read ? "now" : "todo" },
 	] as const;
 	return (
-		<ol className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]" aria-label="Receipt progress">
+		<ol className="flex flex-col gap-1.5 text-[13px]" aria-label="Receipt progress">
 			{steps.map((step, index) => (
 				<li key={step.label} className="flex items-center gap-2">
 					<span
@@ -694,7 +808,7 @@ function ReceiptSteps({
 					>
 						{step.state === "done" ? (
 							<Icon name="check" className="size-3.5" />
-						) : step.state === "now" && step.label === "Reading the lines" ? (
+						) : step.state === "now" && step.label !== "Check the total" ? (
 							<Spinner className="size-3" />
 						) : (
 							index + 1

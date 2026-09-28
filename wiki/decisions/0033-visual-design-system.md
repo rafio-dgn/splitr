@@ -131,3 +131,41 @@ language.
   0 rows.
 - Screenshots were taken at 1280px and 390px, in light and dark.
 - See [the evidence](../evidence/UI-redesign-verification.md).
+
+## Addendum (2026-09-28): receipt-first, and a mobile pass
+
+Raffaele's review: the receipt read "looks like a simple document to upload",
+when it's the main feature. He also asked for four other fixes.
+
+- **The receipt leads the add-expense form.**
+  - "Snap the receipt" is a drop zone at the top. The file input covers it, so
+    a tap anywhere opens the camera or picker, and a file can be dropped on it.
+  - Once a photo is chosen, the zone shows a local preview (a `blob:` URL),
+    three progress steps, a highlighter line sweeping the photo while it's
+    read, and "Use a different photo".
+  - The read lines and the confirm box follow. Description and amount get a
+    "From the receipt" badge.
+  - "Or type it in" divides the drop zone from the fields.
+  - The description lost `autoFocus`, which opened the phone keyboard over the
+    camera.
+  - The camera icon also replaces the plus on "Add an expense" and on the
+    floating button.
+  - On phones, the group header is hidden on action screens, where it pushed
+    the receipt below the fold.
+  - Reading now starts on its own: see the
+    [ADR-0021 addendum](./0021-receipt-reading-approach.md).
+- **Show / hide password.** `components/password-input.tsx` is used on login,
+  register and join. Its toggle is a `type="button"` with `aria-pressed`.
+  Those fields now have an explicit `<label htmlFor>`, because a button inside
+  a `<label>` would add "Show password" to the field's accessible name.
+- **The account menu closes on an outside tap, on Esc and on navigation.**
+  `components/account-menu.tsx`, still a native `<details>`.
+- **The "dropdown" on the description was not a mistake.** It is the
+  `<datalist>` of recent descriptions (REQ-D.2, ADR-0019), so it stays. Only
+  Chrome's arrow is hidden, since it made a free-text field look like a
+  select. Suggestions still appear as you type.
+- **Mobile horizontal scroll.** Measured on 11 pages at 360 and 390px. The one
+  cause was `/groups`: a long group name widened its card to 540px, because a
+  grid item is `min-width: auto`. The fix is `min-w-0` on the card. Also,
+  `overflow-x: clip` on `html` and `body` as a safety net (`clip`, not
+  `hidden`, so the sticky header still works).

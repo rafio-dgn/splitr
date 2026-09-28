@@ -8,7 +8,7 @@
 //
 // Alice signs up, creates a group and copies the invite link. Bob joins through
 // it (locally; on production via D1, because Turnstile refuses automated
-// browsers there: see step 3). Alice adds a dinner, then a receipt she has read, which can't be saved
+// browsers there: see step 3). Alice adds a dinner, then a receipt, read automatically, which can't be saved
 // until she confirms the amount. Both open "Settle up"; Bob records it, and
 // Alice's stale form is refused, naming Bob. Then search finds the receipt by
 // one of its items. Cleanup runs even if a step fails.
@@ -138,7 +138,8 @@ try {
 	// Its R2 key, for cleanup, in case the run fails before the expense is saved.
 	uploadedReceipts.push(await alice.$eval('input[name="receiptKey"]', (i) => i.value));
 	expect(true, "the photo uploads straight to R2");
-	await alice.locator("button::-p-text(Read receipt)").click();
+	// Reading starts on its own once the upload finishes (2026-09-28): there is
+	// no "Read receipt" tap any more, unless a read fails and offers a retry.
 	await alice.waitForSelector('input[name="amountConfirmed"]', { timeout: 90_000 });
 	const read = await alice.evaluate(() => ({
 		description: document.querySelector('input[name="description"]').value,
@@ -149,7 +150,7 @@ try {
 	// The model's accuracy is the vision eval's job (D.6), not this test's. A
 	// misread is reported, and the "human" corrects it, which is the design.
 	console.log(`  · read: "${read.description}", £${read.amount}, ${read.items} item(s)${read.amount === expectedAmount ? "" : `  (⚠ expected £${expectedAmount})`}`);
-	expect(read.items > 0, "Read receipt fills the form with line items", read);
+	expect(read.items > 0, "the receipt is read on its own and fills the form with line items", read);
 	const submit = 'button[type="submit"]';
 	expect(await alice.$eval(submit, (b) => b.disabled), "Add expense is disabled until the amount is confirmed");
 	if (read.amount !== expectedAmount) await fill(alice, 'input[name="amount"]', expectedAmount);
