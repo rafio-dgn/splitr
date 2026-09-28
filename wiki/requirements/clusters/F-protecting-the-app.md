@@ -121,6 +121,11 @@ producer, retire the old key.
 
 **Source:** capture §9 · **Status:** ✅ **In scope** ([ADR-0005](../../decisions/0005-optional-scope.md))
 
+**In progress (2026-09-28):** designed in
+[ADR-0032](../../decisions/0032-secret-rotation-drill.md) and rehearsed
+locally; the production runbook and its results are in the
+[evidence](../../evidence/REQ-F.5-secret-rotation.md).
+
 **Notes:** Breaking it deliberately is part of the requirement — the lesson is the
 failure mode. Dual-key means the consumer accepts an **array** of valid secrets
 during the window.
