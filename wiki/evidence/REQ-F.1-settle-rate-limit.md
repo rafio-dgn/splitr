@@ -96,3 +96,29 @@ rate-limit passed
 In workerd, against the real Durable Object:
 **20 simultaneous requests from one user → exactly 5 allowed.**
 
+## Production, after the fix (2026-09-28, Raffaele): met
+
+```
+$ node scripts/verify/rate-limit.mjs https://splitr.raffaele-digennaro.workers.dev
+rate-limit rl-mulaaoll-6a202f → https://splitr.raffaele-digennaro.workers.dev
+  ✔ sign-up alice.rl-mulaaoll-6a202f@example.test → 200
+  ✔ sign-up bob.rl-mulaaoll-6a202f@example.test → 200
+  ✔ expense "RL dinner" £80.00 → 201
+  · Alice's six rapid requests → 201, 201, 201, 201, 201, 429
+  ✔ requests 1–5 are accepted (201)
+  ✔ the 6th returns 429
+  ✔ …with Retry-After: 58 s (1–60)
+  ✔ D1 holds exactly 5 settlements: the refused request wrote nothing
+  ✔ Bob's request in the same minute is accepted: the limit is per user
+cleanup: 2 user(s), 1 group(s), 1 expense(s), 1 vector id(s), 0 receipt(s)
+cleanup: done, D1 re-checked (0 rows left)
+
+rate-limit passed
+```
+
+**`Retry-After: 58` shows which layer refused.** The binding always answers
+60. The exact counter answers with the real time until its oldest slot
+frees up. So on production the burst got past the binding (as in run 1), and
+the per-user `SettleRateLimiter` refused the 6th. The two-layer design worked
+exactly as the amendment intended.
+
