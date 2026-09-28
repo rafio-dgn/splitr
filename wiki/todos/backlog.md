@@ -367,7 +367,7 @@ requirement work, not new scope; they sit here only so they are not lost.
 
 ## Raised in Cluster E — 2026-09-25
 
-- [ ] `size` **The Worker is at 83% of the free 3 MiB (2,543 KiB gzipped).**
+- [x] `size` (**Fixed 2026-09-28 by ADR-0027:** `next build --webpack`, from 2,546 to 1,679 KiB, 55%.) **The Worker is at 83% of the free 3 MiB (2,543 KiB gzipped).**
       Bisected: the cause is code, not dependencies. The settlements Route
       Handler's new dependency graph got its own full copy of Better Auth (a
       third 573 KiB route chunk). Fixes, in order of preference: (1) merge the
@@ -436,7 +436,10 @@ requirement work, not new scope; they sit here only so they are not lost.
 - [ ] `X.5` **Update the architecture diagram:** add `splitr-ai` (the AI_WORKER
       service binding; AI, Vectorize and read-only D1 behind it), remove the
       app's `ai` binding, and add the CI/CD flow.
-- [ ] `size` **Step 5 didn't change the app's size** (still 2,543 KiB, 83%).
+- [x] `size` **Step 5 didn't change the app's size** (still 2,543 KiB, 83%).
       The Better Auth copies remain the lever (see the `size` item above).
       `splitr-ai` is 126 KiB.
+- [ ] `dx` **Better Auth rate-limits sign-ups (3 per 10 s per IP) in
+      production builds.** Verification scripts run back to back from one
+      machine can hit 429. Leave about 15 s between them, or add a pause.
 

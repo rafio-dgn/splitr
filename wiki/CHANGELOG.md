@@ -1147,3 +1147,14 @@ shape that triggers them. They are listed rather than ticked.
   ticked, and E.8/E.9 are done.
 - **Why:** `REQ-E.6`'s double-run proof.
 - **Decision:** none
+
+## 2026-09-28 — The production build uses webpack: the Worker goes from 83% to 55% of the limit
+- **Type:** changed
+- **Scope:** `package.json` (`build`), `scripts/ci/size-budget.mjs` (comment), `README.md`, ADR-0027
+- **What:** `"build": "next build --webpack"`. That's 1,679 KiB gzipped,
+  against 2,546 with Turbopack. Merging the Route Handlers was measured too
+  (2,346) and not chosen.
+- **Why:** Turbopack bundled a separate copy of Better Auth per Route Handler;
+  webpack shares it. It was decided before Cluster F, as ADR-0024 asked.
+  Raffaele's choice, after the spike.
+- **Decision:** [ADR-0027](./decisions/0027-webpack-production-build.md)

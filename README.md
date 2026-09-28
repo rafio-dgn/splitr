@@ -390,6 +390,11 @@ npx wrangler dev -c workers/group-ledger/wrangler.jsonc --port 8791 --persist-to
 npx wrangler dev -c workers/ai/wrangler.jsonc --port 8793 --persist-to .wrangler/state
 ```
 
+Bundlers: `next dev` uses Turbopack, and the production build uses **webpack**
+(`next build --webpack`, ADR-0027), because webpack shares chunks across Route
+Handlers and keeps the Worker at 55% of the free 3 MiB instead of 83%. For an
+exact local match, run `next dev --webpack`.
+
 Local dev quirk: in `next dev`, a call through a service binding blocks the
 response until it returns, so saving an expense with line items takes about 1 s
 longer locally than in production (measured 2026-09-25). The deployed Worker

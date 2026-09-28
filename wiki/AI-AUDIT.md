@@ -1921,3 +1921,24 @@ does, months later, without the original chat transcript.
   redeploy.
 - **Verification:** none beyond the pasted output. Production D1 isn't
   readable by the agent.
+
+## 2026-09-28T16:00Z — The Worker-size spike and decision (ADR-0027)
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "Measure both fixes, then pick" (a structured question),
+  then "Webpack build".
+- **Actions:**
+  - Measured on one commit: the baseline (2,546), merged Route Handlers
+    (2,346) and webpack (1,679).
+  - Verified the webpack build in the local Workers runtime with smoke, race,
+    the E2E and categorise.
+  - Shipped the one-line change with ADR-0027.
+- **Mistakes caught:**
+  1. `opennextjs-cloudflare preview` doesn't build, so the first "webpack"
+     test served a leftover Turbopack build. `wrangler deploy --dry-run`
+     showed 2,345 KiB, and the checks were rerun on a confirmed webpack build.
+  2. A branch-switch command stopped halfway, leaving the work in a stash. I
+     inspected it and restored it before continuing.
+- **Found:** Better Auth's production sign-up rate limit (3 per 10 s per IP)
+  gave `race.mjs` a 429 straight after `smoke.mjs`. Added to the backlog.
+- **Verification:** the tables in ADR-0027. The branch is stacked on PR #12,
+  to avoid a doc conflict.

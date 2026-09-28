@@ -6,7 +6,8 @@
 // The free plan refuses a Worker above 3 MiB gzipped (3,072 KiB). This fails
 // above 2,900 KiB and warns above 2,700, so a PR that adds a lot shows up
 // before a deploy does. On 2026-09-25 one Route Handler added 192 KiB (a third
-// copy of Better Auth); the app was at 2,543 KiB.
+// copy of Better Auth), and the app reached 2,543 KiB. Since ADR-0027 it's built
+// with webpack, which shares those chunks: 1,679 KiB on 2026-09-28.
 //
 // The size is wrangler's own figure from `deploy --dry-run`, which uploads
 // nothing and needs no Cloudflare credentials. In GitHub Actions the result
