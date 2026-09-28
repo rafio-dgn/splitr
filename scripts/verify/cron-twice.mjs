@@ -7,7 +7,7 @@
 // a line item left `uncategorised`, and an expense whose indexing was never
 // recorded. After run 1 all three must be fixed (a reminder, the category, the
 // index); after run 2 the snapshot must be byte-identical. It cleans up even on failure.
-import { runCron } from "../cron-run.mjs";
+import { productionSecret, runCron } from "../cron-run.mjs";
 import { cleanup } from "./cleanup.mjs";
 import { addExpense, Client, d1, expect, insertGroup, runId, signUp, sleep, sqlId, target, testPassword, todayUtc } from "./lib.mjs";
 
@@ -17,6 +17,8 @@ const emails = [`alice.${run}@example.test`, `bob.${run}@example.test`];
 const groupIds = [];
 let failed = false;
 
+// Asked once, up front, for both runs (see scripts/cron-run.mjs on why remote mode needs it).
+const secret = local ? undefined : await productionSecret();
 console.log(`cron-twice ${run} → ${baseUrl}${local ? "" : " (the sweep runs on PRODUCTION)"}`);
 try {
 	const alice = new Client(baseUrl);
@@ -63,7 +65,7 @@ try {
 		return { reminders, items, indexed };
 	};
 
-	const first = await runCron({ remote: !local });
+	const first = await runCron({ remote: !local, secret });
 	console.log(`  · run 1: ${JSON.stringify(first)}`);
 	const after1 = snapshot();
 	expect(
@@ -74,7 +76,7 @@ try {
 	expect(after1.items.every((i) => i.category !== "uncategorised"), `run 1 backfilled the category (${after1.items.map((i) => i.category).join(", ")})`, after1.items);
 	expect(after1.indexed.some((x) => x.expense_id === expenseId), "run 1 re-indexed the expense", after1.indexed);
 
-	const second = await runCron({ remote: !local });
+	const second = await runCron({ remote: !local, secret });
 	console.log(`  · run 2: ${JSON.stringify(second)}`);
 	const after2 = snapshot();
 	expect(JSON.stringify(after2) === JSON.stringify(after1), "run 2 left the group's data byte-identical", { after1, after2 });

@@ -75,3 +75,23 @@ paid at noon stops being nagged about at once, not at 02:30.
 npx wrangler secret put AI_SHARED_SECRET -c workers/cron/wrangler.jsonc    # the same value as the app's
 node scripts/verify/cron-twice.mjs https://splitr.raffaele-digennaro.workers.dev
 ```
+
+## Production, run 1 (2026-09-28, Raffaele): a manual-trigger bug, found
+
+```
+  · run 1: {"today":"2026-09-28","groups":1,"reminderPairs":1,"groupsFailed":0,"backfill":{"items":1,"expenses":1},"reindex":{"tried":1,"indexed":0}}
+  ✔ run 1 wrote the reminder: Alice owes Bob £40
+✘ run 1 backfilled the category (uncategorised)
+```
+
+The reminder UPSERT worked on production. Both AI jobs were *attempted* (so
+a secret was present) and refused. Cause, from wrangler 4.140's source
+(`getVarsForDev`): `wrangler dev --remote` loads `workers/cron/.dev.vars`,
+which is the **local** dev secret. **The check caught it,** and cleanup still
+left nothing behind. The fix is in ADR-0026 §4. Verified locally:
+
+```
+wrong secret via --env-file: { categorise: 'rejected:refused' }
+right secret via --env-file: { categorise: 'accepted' }
+category now: [{'category': 'groceries'}]
+```

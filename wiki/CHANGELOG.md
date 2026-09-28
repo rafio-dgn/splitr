@@ -1125,3 +1125,15 @@ shape that triggers them. They are listed rather than ticked.
     foreign keys.
 - **Why:** `REQ-E.6`. Raffaele's four choices are in ADR-0026.
 - **Decision:** [ADR-0026](./decisions/0026-nightly-cron-worker.md)
+
+## 2026-09-28 — Fixed: the cron's remote manual trigger sent the local dev secret
+- **Type:** fixed
+- **Scope:** `scripts/cron-run.mjs`, `scripts/verify/cron-twice.mjs`, ADR-0026, the REQ-E.6 evidence
+- **What:** `--remote` takes the production `AI_SHARED_SECRET` (from
+  `CRON_AI_SHARED_SECRET`, or a hidden prompt) and passes it in a temporary
+  0600 file via `--env-file`, deleted afterwards. That also stops `.dev.vars`
+  loading.
+- **Why:** Raffaele's first production double run: `wrangler dev --remote`
+  loaded the local `.dev.vars`, and `splitr-ai` refused the AI jobs. The
+  scheduled run was never affected.
+- **Decision:** [ADR-0026](./decisions/0026-nightly-cron-worker.md) §4 (note)

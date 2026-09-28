@@ -78,6 +78,18 @@ script without `--remote` runs against the local D1.
 *Rejected:* a secret-protected app route (a new public surface), and relying
 on the dashboard (not scriptable for the demo).
 
+**Found on the first production run (2026-09-28):** `wrangler dev` loads
+the `.dev.vars` beside the config **even with `--remote`**, and a remote
+session doesn't get the deployed secrets. So the manual trigger sent the local
+dev secret, and `splitr-ai` refused both AI jobs. The reminders were written;
+the AI jobs were correctly left undone. **The scheduled run is unaffected.**
+
+The fix: `--remote` now takes the production secret from
+`CRON_AI_SHARED_SECRET` or a hidden prompt, and passes it in a temporary 0600
+file via `--env-file`, which also stops `.dev.vars` loading. The file is then
+deleted. Proven locally: a wrong secret passed that way is refused even though
+`.dev.vars` holds the right one, and the right one is accepted.
+
 ## Idempotency: how "run twice, identical" holds
 
 - **Deterministic keys:**

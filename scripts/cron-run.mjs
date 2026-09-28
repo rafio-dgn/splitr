@@ -5,17 +5,73 @@
 //   npm run cron:run              local: the local D1, and the local splitr-ai if it's running
 //   npm run cron:run -- --remote  production: the real code on Cloudflare, with the real bindings
 //
+// **The secret in remote mode.** `wrangler dev` loads the `.dev.vars` beside the
+// config even with `--remote`, and a remote session doesn't get the deployed
+// secrets. The first production run (2026-09-28) therefore sent the LOCAL dev
+// secret, and splitr-ai refused both AI jobs. So `--remote` takes the production
+// `AI_SHARED_SECRET` from `CRON_AI_SHARED_SECRET`, or asks for it (hidden). It
+// writes it to a temporary 0600 file, passed with `--env-file` (which also stops
+// `.dev.vars` loading), and deletes it afterwards. The secret never touches the
+// repo or the command line.
+//
 // Also imported by scripts/verify/cron-twice.mjs.
 import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO_ROOT = fileURLToPath(new URL("../", import.meta.url));
 const PORT = 8794;
 
-/** Runs the sweep once. Resolves with its summary (the `[cron] sweep {…}` JSON). */
-export function runCron({ remote = false } = {}) {
+/** The production secret, from the environment or a hidden prompt. Never echoed. */
+export async function productionSecret() {
+	const fromEnv = process.env.CRON_AI_SHARED_SECRET;
+	if (fromEnv) return fromEnv;
+	if (!process.stdin.isTTY) throw new Error("--remote needs the production AI_SHARED_SECRET: set CRON_AI_SHARED_SECRET, or run it in a terminal to be asked");
+	process.stdout.write("Production AI_SHARED_SECRET (hidden, the same value as the app's): ");
+	process.stdin.setRawMode(true);
+	process.stdin.resume();
+	let value = "";
+	return new Promise((resolve, reject) => {
+		const onData = (buf) => {
+			for (const ch of buf.toString("utf8")) {
+				if (ch === "\r" || ch === "\n") {
+					process.stdin.setRawMode(false);
+					process.stdin.pause();
+					process.stdin.off("data", onData);
+					process.stdout.write("\n");
+					return value ? resolve(value) : reject(new Error("no secret given"));
+				}
+				if (ch === "\u0003") return reject(new Error("cancelled"));
+				value = ch === "\u007f" ? value.slice(0, -1) : value + ch;
+			}
+		};
+		process.stdin.on("data", onData);
+	});
+}
+
+/** Runs the sweep once. Resolves with its summary (the `[cron] sweep {…}` JSON). `secret` is required with `remote`. */
+export async function runCron({ remote = false, secret } = {}) {
 	const args = ["wrangler", "dev", "-c", "workers/cron/wrangler.jsonc", "--test-scheduled", "--port", String(PORT), "--inspector-port", "9234"];
-	args.push(...(remote ? ["--remote"] : ["--persist-to", ".wrangler/state"]));
+	let secretDir = null;
+	if (remote) {
+		if (!secret) throw new Error("runCron({ remote: true }) needs the production secret");
+		secretDir = mkdtempSync(join(tmpdir(), "splitr-cron-"));
+		const envFile = join(secretDir, "prod.env");
+		writeFileSync(envFile, `AI_SHARED_SECRET=${secret}\n`, { mode: 0o600 });
+		args.push("--remote", "--env-file", envFile);
+	} else {
+		args.push("--persist-to", ".wrangler/state");
+	}
+	try {
+		return await sweepOnce(args);
+	} finally {
+		if (secretDir !== null) rmSync(secretDir, { recursive: true, force: true });
+	}
+}
+
+function sweepOnce(args) {
 	const child = spawn("npx", args, { cwd: REPO_ROOT, stdio: ["ignore", "pipe", "pipe"], detached: true });
 	let log = "";
 	return new Promise((resolve, reject) => {
@@ -48,9 +104,10 @@ export function runCron({ remote = false } = {}) {
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
 	const remote = process.argv.includes("--remote");
-	console.log(`running the sweep ${remote ? "on PRODUCTION (remote bindings)" : "locally"}…`);
 	try {
-		console.log(JSON.stringify(await runCron({ remote }), null, 2));
+		const secret = remote ? await productionSecret() : undefined;
+		console.log(`running the sweep ${remote ? "on PRODUCTION (remote bindings)" : "locally"}…`);
+		console.log(JSON.stringify(await runCron({ remote, secret }), null, 2));
 	} catch (error) {
 		console.error(error.message);
 		process.exit(1);

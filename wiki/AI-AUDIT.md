@@ -1893,3 +1893,23 @@ does, months later, without the original chat transcript.
   - `tsc` passes for all four programs; ESLint and actionlint are clean.
 - **Open questions:** Raffaele sets `AI_SHARED_SECRET` on `splitr-cron`, and
   runs `cron-twice.mjs` on production.
+
+## 2026-09-28T14:30Z — The cron's production double run failed; the diagnosis and the fix
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Inputs:** Raffaele's pasted output (reminder ✔, backfill ✘, reindex 0/1),
+  and wrangler's `getVarsForDev` source.
+- **Reasoning:** the AI jobs were attempted, so the secret was present, but
+  refused, so its value was wrong. Remote dev loads `.dev.vars` beside the
+  config, and doesn't get deployed secrets.
+- **Actions:** the `--remote` secret handling (env var or hidden prompt, a
+  temporary 0600 file via `--env-file`, deleted afterwards), and an ADR note.
+- **Alternatives considered:**
+  - Adding the dev secret to production's key list: rejected, because it
+    mixes a dev value into production.
+  - `--var` on the command line: rejected, because the secret would be
+    visible in `ps`.
+- **Verification:** locally, a wrong `--env-file` secret was refused despite
+  a correct `.dev.vars`, and the right one was accepted and backfilled. This
+  also reproduces the production failure mode.
+- **Not verified by me:** the production rerun, which is Raffaele's (remote
+  access, and the secret).
