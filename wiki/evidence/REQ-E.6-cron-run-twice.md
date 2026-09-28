@@ -95,3 +95,32 @@ wrong secret via --env-file: { categorise: 'rejected:refused' }
 right secret via --env-file: { categorise: 'accepted' }
 category now: [{'category': 'groceries'}]
 ```
+
+## Production, after the fix (2026-09-28, Raffaele): run twice, identical
+
+```
+$ node scripts/verify/cron-twice.mjs https://splitr.raffaele-digennaro.workers.dev
+cron-twice cron-mul3gsa4-9b90fc → https://splitr.raffaele-digennaro.workers.dev (the sweep runs on PRODUCTION)
+  ✔ sign-up alice.cron-mul3gsa4-9b90fc@example.test → 200
+  ✔ sign-up bob.cron-mul3gsa4-9b90fc@example.test → 200
+  ✔ expense with a line item → 201
+  ✔ expense "Cron taxi" £0.02 → 201
+  · simulated: the item is uncategorised, and the expense is unindexed
+  · run 1: {"today":"2026-09-28","groups":1,"reminderPairs":1,"groupsFailed":0,"backfill":{"items":1,"expenses":1},"reindex":{"tried":1,"indexed":1}}
+  ✔ run 1 wrote the reminder: Alice owes Bob £40
+  ✔ run 1 backfilled the category (groceries)
+  ✔ run 1 re-indexed the expense
+  · run 2: {"today":"2026-09-28","groups":1,"reminderPairs":1,"groupsFailed":0,"backfill":{"items":0,"expenses":0},"reindex":{"tried":0,"indexed":0}}
+  ✔ run 2 left the group's data byte-identical
+  · the snapshot both times: {"reminders":[{"debtor_id":"MP2G…","creditor_id":"9NXT…","amount_cents":4000,"currency":"GBP","owed_since":"2026-09-28","checked_on":"2026-09-28"}],"items":[{"id":"li_9f2d…","category":"groceries"}],"indexed":[{"expense_id":"exp_1573…"},{"expense_id":"exp_5b6f…"}]}
+cleanup: 2 user(s), 1 group(s), 2 expense(s), 3 vector id(s), 0 receipt(s)
+cleanup: done, D1 re-checked (0 rows left)
+
+cron-twice passed
+```
+
+**Every `REQ-E.6` criterion is met, on production.** It's the real
+`splitr-cron` code with the real bindings, triggered by hand with no public
+endpoint. Run 1 repaired everything, and run 2 found nothing to do and changed
+nothing.
+
