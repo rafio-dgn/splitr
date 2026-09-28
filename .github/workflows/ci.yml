@@ -36,6 +36,15 @@ jobs:
 
       - run: npm ci
 
+      # A placeholder in a deployed config must never reach production (the
+      # Turnstile site key started as one, ADR-0030). Fails until it's replaced.
+      - name: No placeholder config
+        run: |
+          if grep -n "SET-ME" wrangler.jsonc workers/*/wrangler.jsonc; then
+            echo "::error::A wrangler.jsonc still contains a SET-ME placeholder (see the lines above)."
+            exit 1
+          fi
+
       # Generated, gitignored types: the bindings (both programs) and the route
       # types. tsc fails without them.
       - name: Generate types

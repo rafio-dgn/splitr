@@ -11,6 +11,8 @@
  * anything, because showing "Join" before "join *what*" is a dark pattern by
  * accident (§5.1).
  */
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+
 import { ActionLink, EmptyState, ScreenHeading } from "@/components/ui";
 import { getGroupForViewer, getInvite } from "@/lib/groups/membership";
 import { getSession } from "@/lib/session";
@@ -25,6 +27,9 @@ export default async function JoinPage({
 	// `getSession()`, not `requireSession()`. A redirect here would be the bug.
 	const session = await getSession();
 	const invite = await getInvite(inviteCode);
+	// REQ-F.2: the widget's site key is public (a `vars` entry, not a secret).
+	const { env } = await getCloudflareContext({ async: true });
+	const turnstileSiteKey = env.TURNSTILE_SITE_KEY;
 
 	if (invite === null) {
 		// §5.1: a single-record lookup has no list to be empty, so its empty *is*
@@ -75,7 +80,7 @@ export default async function JoinPage({
 						splitting here.
 					</p>
 				</ScreenHeading>
-				<JoinAsMember inviteCode={invite.code} groupName={invite.groupName} />
+				<JoinAsMember inviteCode={invite.code} groupName={invite.groupName} turnstileSiteKey={turnstileSiteKey} />
 			</main>
 		);
 	}
@@ -92,7 +97,7 @@ export default async function JoinPage({
 				</p>
 			</ScreenHeading>
 
-			<JoinForm inviteCode={invite.code} groupName={invite.groupName} />
+			<JoinForm inviteCode={invite.code} groupName={invite.groupName} turnstileSiteKey={turnstileSiteKey} />
 		</main>
 	);
 }

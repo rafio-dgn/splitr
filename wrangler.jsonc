@@ -147,7 +147,12 @@
 		// R2_SECRET_ACCESS_KEY, are secrets: `wrangler secret put`, and
 		// `.dev.vars` locally.
 		"R2_ACCOUNT_ID": "3082c7652ac1003a678a5bc45ca0054f",
-		"R2_BUCKET": "splitr-receipts"
+		"R2_BUCKET": "splitr-receipts",
+		// REQ-F.2 (ADR-0030): the Turnstile widget's site key is PUBLIC; it's in
+		// every page that shows the widget. Its secret, TURNSTILE_SECRET_KEY, is set
+		// with `wrangler secret put`. Locally, `.dev.vars` overrides both with
+		// Cloudflare's documented test keys.
+		"TURNSTILE_SITE_KEY": "SET-ME-production-site-key"
 	}
 
 	// BETTER_AUTH_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and
