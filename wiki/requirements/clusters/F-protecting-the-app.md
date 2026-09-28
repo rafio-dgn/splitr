@@ -64,7 +64,11 @@ return parseable lines.
 - [ ] **Demonstrated:** `wrangler tail | grep AUDIT` yields parseable output
 - [ ] Every change to a record is traceable from logs alone
 
-**Source:** capture §9, §8, §13 · **Status:** **`[MUST]`** — see the note above
+**Source:** capture §9, §8, §13 · **Status:** **`[MUST]`** — 🟡 Built and
+verified locally (2026-09-28): exact field names, full coverage (ADR-0028),
+and 14/14 lines parseable with the smoke run's history rebuilt from the logs
+([evidence](../../evidence/REQ-F.3-audit-json.md)). **Left:** the production
+`wrangler tail` run.
 
 **Notes:** This is the one Cluster F item that is not optional. The five named
 fields are exact; use them as the field names.

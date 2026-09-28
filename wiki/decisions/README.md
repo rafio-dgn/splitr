@@ -58,3 +58,4 @@ obvious in hindsight.
 | [0025](./0025-rag-worker-eval-seed-secret-fallback.md) | The RAG AI Worker: a 3×10 eval set you label, a ~50-item seed corpus in the same index, an RPC secret checked against a list, per-call budgets with no inline retries | Accepted |
 | [0026](./0026-nightly-cron-worker.md) | The nightly sweep: `splitr-cron`, in-app reminders (≥ 3 days, confirmed live), `expense_indexed`, a manual trigger with no public endpoint | Accepted |
 | [0027](./0027-webpack-production-build.md) | Build production with webpack: 2,546 → 1,679 KiB (83% → 55%), measured against merging the Route Handlers (2,346) | Accepted |
+| [0028](./0028-audit-line-format-and-coverage.md) | `[AUDIT]` line: `timestamp` (ISO) not `ts`, Better Auth audited via its hooks, `detail` makes changes reconstructible, caches deliberately not audited | Accepted |

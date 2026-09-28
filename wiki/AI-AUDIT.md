@@ -1942,3 +1942,30 @@ does, months later, without the original chat transcript.
   gave `race.mjs` a 429 straight after `smoke.mjs`. Added to the backlog.
 - **Verification:** the tables in ADR-0027. The branch is stacked on PR #12,
   to avoid a doc conflict.
+
+## 2026-09-28T17:00Z — F.4: audit JSON (REQ-F.3)
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "PRs merged, please continue" (Cluster F, starting with
+  F.4).
+- **Actions:**
+  - An inventory of writers against audit calls (the system grep: the shell's
+    ugrep broke on bracketed paths).
+  - Renamed the field; audited Better Auth through `databaseHooks`, checking
+    its types in `@better-auth/core`.
+  - Closed the gaps, and added reconstructible details.
+  - Wrote the tail checker and tested it locally from saved logs.
+  - Updated the audit-log skill.
+- **Found and fixed on the way:**
+  - The skill's rule "never log full session ids" was broken by my first
+    hook, so sessions are now previewed.
+  - `expense.add` couldn't rebuild a balance (counts only).
+  - The skill's example and naming didn't match the code.
+- **Alternatives considered:** in ADR-0028.
+- **Verification:**
+  - 3 new tests (75 pure plus 6 DO in total), and `tsc` passes for all four
+    programs.
+  - The local tail check: 14/14 parseable, with history rebuilt.
+  - The webpack deploy (36411405752) passed smoke on production.
+- **Open questions:** Raffaele runs `audit-tail.mjs` on production.
+  ADR-0028's decisions were the AI's, within REQ-F.3's wording, so they're
+  flagged for his review.

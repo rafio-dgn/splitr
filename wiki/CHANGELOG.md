@@ -1158,3 +1158,23 @@ shape that triggers them. They are listed rather than ticked.
   webpack shares it. It was decided before Cluster F, as ADR-0024 asked.
   Raffaele's choice, after the spike.
 - **Decision:** [ADR-0027](./decisions/0027-webpack-production-build.md)
+
+## 2026-09-28 — F.4 (`REQ-F.3`): the audit line's exact fields, full coverage, and the tail check
+- **Type:** changed, added
+- **Scope:**
+  - `src/lib/audit.ts` (+ tests) and `src/lib/auth.ts` (`databaseHooks`);
+  - `src/lib/search/index-expense.ts`, `src/lib/expenses/add-expense.ts`,
+    `src/lib/groups/create-group.ts`, `src/lib/receipts/receipts.ts`;
+  - `src/lib/categorise/after-save.ts`, `src/lib/cron/sweep.ts`;
+  - `scripts/verify/audit-tail.mjs`, `.claude/skills/audit-log/SKILL.md`;
+  - ADR-0027 (the production note) and ADR-0028.
+- **What:**
+  - `ts` becomes `timestamp` (ISO), with the five fields first.
+  - Better Auth's writes are audited through its hooks (ids only; sessions
+    previewed).
+  - New lines: `expense.index`, `receipt.delete`, a per-group
+    `reminder.refresh`, and a successful `expense.reindex`.
+  - The details now make changes reconstructible (who paid, shares, labels).
+  - A `wrangler tail | grep AUDIT` checker that rebuilds a run's history.
+- **Why:** `REQ-F.3` (`[MUST]`) and `REQ-F.6` Q2.
+- **Decision:** [ADR-0028](./decisions/0028-audit-line-format-and-coverage.md)
