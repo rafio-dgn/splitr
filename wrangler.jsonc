@@ -85,10 +85,10 @@
 		}
 	],
 
-	// Workers AI, for reading receipts with Llama 4 Scout (D.6, ADR-0021).
-	// It's temporary here: ADR-0016 §6 moves every model call behind the AI
-	// Worker at Cluster E, and this binding is removed then.
-	"ai": { "binding": "AI" },
+	// No `ai` binding: since ADR-0025 step 5 every model call (categorising,
+	// search embeddings, reading receipts) goes through `splitr-ai` over the
+	// AI_WORKER binding above (ADR-0016 §6). One place for the secret, the
+	// fallbacks, and (at F.5) AI Gateway.
 
 	// Semantic search (REQ-D.4, ADR-0022): one vector per line item, plus one per
 	// itemless expense, holding ids only (the text shown comes from D1). Remote

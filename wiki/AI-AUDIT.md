@@ -1829,3 +1829,34 @@ does, months later, without the original chat transcript.
 - **Verification:** the pasted production output is in the evidence file.
 - **Lesson:** tell the user before a long wait, and prefer one check to a
   silent loop.
+
+## 2026-09-28T11:00Z — E.7 step 5: every model call behind the AI Worker
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "merged, continue" (PR #8).
+- **Actions:**
+  - Pure operations in `src/lib/ai/ops.ts` with fakes (10 tests), and three
+    RPC methods on `splitr-ai`.
+  - The app's three call sites moved to the Worker, and a fallback note added
+    to the search page.
+  - The `ai` binding removed from `wrangler.jsonc`.
+- **Alternatives considered:**
+  - Moving Vectorize querying into the Worker too: rejected, because it isn't
+    a model call; the app keeps its query and its D1 re-check.
+  - Passing R2 keys for the Worker to read: rejected, because the Worker would
+    need R2. The app sends the data URI (≤14.5 MB, within the RPC limits).
+  - Budgets all in the Worker: rejected for the two a person waits on (search
+    and receipt), which are measured where the wait is felt, in the app.
+- **Found:**
+  - The AI Worker's Vectorize was typed v1 (its upsert has no `mutationId`);
+    it's now typed v2, and env-check allows exactly that difference.
+  - The RPC stub's union-of-promises type needed an `async` wrapper for
+    `withBudget` (no cast).
+- **Verification:**
+  - `tsc` passes for all programs, with no `AI` left in the app's types.
+    ESLint is clean, and 57 pure plus 6 DO tests pass.
+  - The full E2E passes locally, with the Worker log showing every call.
+  - With the AI Worker stopped: saves return 201, and search falls back to
+    keyword with the note (109 ms).
+  - Size: the app is unchanged at 2,543 KiB, and `splitr-ai` is 126 KiB.
+- **Not verified:** the receipt-read fallback in a browser with the Worker
+  down (the code path is shared with the tested ones).

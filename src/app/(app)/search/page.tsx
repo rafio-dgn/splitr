@@ -79,6 +79,13 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
 						{modeLink("meaning", "By meaning")} · {modeLink("keyword", "By keyword")}
 						{result.truncated ? " · Searching your first 50 groups only." : null}
 					</p>
+					{"fellBackToKeyword" in result && result.fellBackToKeyword ? (
+						// ADR-0025 §4: the query couldn't be understood by meaning in time. Say so,
+						// rather than pass keyword matches off as meaning matches.
+						<p role="status" className="text-sm text-amber-700 dark:text-amber-400">
+							Search by meaning isn&rsquo;t available right now, so these are keyword matches.
+						</p>
+					) : null}
 					{result.hits.length === 0 ? (
 						// §5.13, second empty: a query that found nothing.
 						<EmptyState title={`Nothing matches “${query}”`}>

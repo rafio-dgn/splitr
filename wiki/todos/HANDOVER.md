@@ -64,8 +64,10 @@ merge doesn't deploy. **Step 5** (`e2e-nightly.yml`) is on branch
 set, and `scripts/verify/categorise.mjs` gave 9/9 items categorised, with
 saves taking 184 ms with items against 183 ms without
 ([evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). **`REQ-E.4` is
-met.** **Then step 5:** move embeddings and OCR behind
-`splitr-ai`, and remove the app's `ai` binding.
+met.** **Step 5 is done too** (2026-09-28): every model call goes through
+`splitr-ai`, the app has no `ai` binding, search falls back to keyword with a
+note, and E.7 is complete. **Next: E.8/E.9**, the nightly cron (reminders, the
+`uncategorised` backfill, re-embedding missed expenses; run twice, idempotent).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random

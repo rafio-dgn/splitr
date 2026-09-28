@@ -7,7 +7,9 @@
  *   the bytes through the Worker. That's allowed: ADR-0020's rule is about the
  *   *upload*, which still goes straight to R2.
  * - The model is **Llama 4 Scout** with **JSON mode**, Raffaele's choice from
- *   the spike: 5/6 totals and 12/12 valid JSON.
+ *   the spike: 5/6 totals and 12/12 valid JSON. Since ADR-0025 step 5 it runs
+ *   in `splitr-ai`, which also validates the draft; the prompt is in
+ *   `src/lib/ai/ops.ts`.
  * - **Any failure is a `null` draft**, never an error the page must handle:
  *   the form simply stays as it was, and the user types the expense (REQ-M.7).
  */
@@ -15,26 +17,15 @@ import "server-only";
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-import { RECEIPT_JSON_SCHEMA, toReceiptDraft, type ReceiptDraft } from "./draft";
+import { withBudget } from "@/lib/ai/budget";
+import type { ReadReceiptResponse } from "@/lib/ai/contract";
+import { aiWorker } from "@/lib/ai/worker";
+
+import type { ReceiptDraft } from "./draft";
 import { checkUploadedReceipt } from "./receipts";
 
-export const RECEIPT_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
-
-/** Past this, the user is better off typing. A slow read must not feel like a hang. */
+/** Past this, the user is better off typing. A slow read must not feel like a hang (ADR-0025 §4). */
 const TIMEOUT_MS = 30_000;
-
-/**
- * Prompt v1 from the spike (`scripts/vision-spike/run.mjs`), which gave
- * Scout its best item score (14/14). v2's extra rules didn't improve Scout,
- * and they broke the smaller model. JSON mode now carries the shape.
- */
-const PROMPT = `You are reading a photo of a shop or restaurant receipt.
-Return ONLY a JSON object with "merchant", "date" (YYYY-MM-DD or null), "total" and "items".
-Rules:
-- "total" is the final amount paid, as printed, after tax, discounts and rounding.
-- "items" are the purchased lines only. Do NOT include subtotal, tax, GST, rounding, cash, change, card or payment lines.
-- Each item has "raw" (the line's text exactly as printed), "description" (the same item in plain English, with abbreviations expanded) and "amount" (the line's total price as printed).
-- Use plain numbers without currency symbols.`;
 
 export type ReadReceiptResult =
 	| { readonly ok: true; readonly draft: ReceiptDraft; readonly ms: number }
@@ -57,28 +48,23 @@ export async function readReceipt(groupId: string, key: string): Promise<ReadRec
 	const type = object.httpMetadata?.contentType ?? "image/jpeg";
 	const image = `data:${type};base64,${Buffer.from(await object.arrayBuffer()).toString("base64")}`;
 
+	// The model runs in splitr-ai (ADR-0016 §6, ADR-0025 step 5); the budget stays
+	// here, because it's what the person waiting experiences.
+	const ai = await aiWorker();
+	if (ai === null) {
+		return { ok: false, reason: "unavailable", ms: elapsed() };
+	}
 	try {
-		const answer = await Promise.race([
-			env.AI.run(RECEIPT_MODEL, {
-				messages: [
-					{
-						role: "user",
-						content: [
-							{ type: "text", text: PROMPT },
-							{ type: "image_url", image_url: { url: image } },
-						],
-					},
-				],
-				response_format: { type: "json_schema", json_schema: RECEIPT_JSON_SCHEMA },
-				max_tokens: 1024,
-				temperature: 0,
-			}),
-			new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), TIMEOUT_MS)),
-		]);
-		if (answer === "timeout") {
+		const call = async (): Promise<ReadReceiptResponse> => ai.worker.readReceipt(ai.secret, { image });
+		const answer = await withBudget(call(), TIMEOUT_MS);
+		if (!answer.ok) {
 			return { ok: false, reason: "timeout", ms: elapsed() };
 		}
-		const draft = toReceiptDraft(answer.response);
+		if (answer.value.status !== "ok") {
+			console.log(`[receipt] read-${answer.value.status}`);
+			return { ok: false, reason: "unavailable", ms: elapsed() };
+		}
+		const { draft } = answer.value;
 		return draft === null ? { ok: false, reason: "unreadable", ms: elapsed() } : { ok: true, draft, ms: elapsed() };
 	} catch (error) {
 		console.log(`[receipt] read-failed ${String(error).slice(0, 160)}`);

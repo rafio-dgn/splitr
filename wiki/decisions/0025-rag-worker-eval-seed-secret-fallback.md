@@ -127,6 +127,21 @@ threshold sweep: 0.5 and 0.6 both 8/10, 0.7 gave 6/10 and 0.8 gave 5/10.
 follows the group less. Full output:
 [the evidence](../evidence/REQ-E.4-rag-categorisation-eval.md).
 
+## Steps 4 and 5 done (2026-09-28)
+
+- **Step 4:** categorisation runs after the save, verified on production (9/9,
+  with saves taking 184 ms with items against 183 ms without).
+- **Step 5:** `splitr-ai` also serves `embed` (the search query, with a 3 s
+  budget in the app and a keyword fallback plus a note), `index` (a 5 s budget
+  in the Worker) and `readReceipt` (a 30 s budget in the app, falling back to
+  the manual form). **The app has no `ai` binding.** ADR-0016 §6 is fulfilled.
+- One type detail on the way: the AI Worker declares its Vectorize binding as
+  the v2 `Vectorize`, because `splitr-search` is a v2 index and Wrangler
+  labels every binding v1 `VectorizeIndex`. `env-check.ts` allows for exactly
+  that one difference.
+
+Evidence: [REQ-E.4](../evidence/REQ-E.4-rag-categorisation-eval.md).
+
 ## Consequences
 
 - **The eval can show RAG losing,** and that would be reported, not hidden

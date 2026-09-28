@@ -29,6 +29,8 @@ declare global {
 	type R2Bucket = CF.R2Bucket;
 	type Ai<AiModelList extends CF.AiModelListType = CF.AiModels> = CF.Ai<AiModelList>;
 	type VectorizeIndex = CF.Vectorize;
+	/** The v2 class by its own name, which `workers/ai/src/index.ts` uses (the app's program reads it too). */
+	type Vectorize = CF.Vectorize;
 	type Fetcher<T extends CF.Rpc.EntrypointBranded | undefined = undefined> = CF.Fetcher<T>;
 	type ImagesBinding = CF.ImagesBinding;
 	type Queue<Body = unknown> = CF.Queue<Body>;

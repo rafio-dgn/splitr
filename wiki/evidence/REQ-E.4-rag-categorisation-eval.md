@@ -169,3 +169,58 @@ categorise check passed
   items costs nothing extra, because the AI runs in `waitUntil`.
 - **The `next dev` artefact is confirmed local-only.** The same script run
   locally gave 9/9 labels, but 1,316 ms against 69 ms for the saves.
+
+## Step 5: every model call behind `splitr-ai` (2026-09-28, local)
+
+The app has **no `ai` binding** any more. `splitr-ai` gained three RPC
+methods, each checking the secret first:
+- `embed`, for the search query;
+- `index`, which builds, embeds and upserts an expense's vectors with the same
+  `vectorSpecs`;
+- `readReceipt`, which runs Scout in JSON mode and validates the draft.
+
+After the binding was removed and the types regenerated, `tsc` still passed:
+no model call is left in the app.
+
+**The full E2E through the new path** (local; the AI Worker's own log counts
+the calls):
+
+```
+  ✔ the photo uploads straight to R2
+  · read: "CORNER CAFE", £9.50, 3 item(s)
+  ✔ Read receipt fills the form with line items
+  …
+  ✔ search "croissant" finds "CORNER CAFE"
+e2e passed
+
+  10 [ai] embed status=ok
+   1 [ai] readReceipt status=ok ms=4106
+   1 [ai] index status=ok vectors=3 …
+   1 [ai] index status=ok vectors=1 …
+   1 [ai] categorise status=ok items=3 ms=2158
+```
+
+**The fallbacks (ADR-0025 §4), with the AI Worker not running:**
+
+```
+  ✔ expense "Pad Thai at Bangkok Kitchen" £12.00 → 201
+search with the AI Worker down → 200 in 109 ms | fallback note shown: true | keyword hit found: true
+[search] index-failed exp_42e5… Error: Worker "splitr-ai" not found.
+[search] query-embed unreachable, falling back to keyword: Error: Worker "splitr-ai" not found.
+```
+
+The receipt-read fallback (the manual form) wasn't browser-tested with the
+Worker down. It's the same `catch` → `unavailable` path, and the form's
+existing message covers it.
+
+**Size:** the app is unchanged at 2,543 KiB gzipped (the model calls were a
+few lines), and `splitr-ai` is 126 KiB gzipped.
+
+**Unit tests:** 10 more (`src/lib/ai/ops.test.ts`):
+- every method refuses a wrong secret before touching a binding;
+- `index` builds ADR-0022's exact vectors and metadata;
+- a timeout gives `timeout`, and a throwing binding gives `failed`;
+- `readReceipt` refuses a non-`data:` image, and returns `draft: null` for an
+  unusable answer.
+
+In total, 57 pure tests plus 6 DO tests pass.

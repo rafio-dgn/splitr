@@ -1,41 +1,35 @@
 /**
  * Writing an expense's search vectors (REQ-D.4, ADR-0022), after the save.
  *
- * It runs in `ctx.waitUntil`, after the response: **the expense's save never
- * waits on it and can never fail because of it** (REQ-M.7). Embedding is one
- * batched `bge` call for all of the expense's vectors. A failure is logged,
- * and the expense stays unsearchable until a backfill (E.8), which is a worse
- * search, never a lost expense.
+ * Since ADR-0025 step 5 the embedding and the upsert happen in `splitr-ai`,
+ * which builds the vectors with the same `vectorSpecs`. This file only hands
+ * the saved expense over, in `ctx.waitUntil`, after the response: **the
+ * expense's save never waits on it and can never fail because of it**
+ * (REQ-M.7). A failure is logged, and the expense stays unsearchable until the
+ * nightly re-embed (E.8): a worse search, never a lost expense.
  */
 import "server-only";
 
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { aiWorker } from "@/lib/ai/worker";
 
-import { vectorSpecs, type IndexableExpense } from "./vector-text";
-
-export const EMBED_MODEL = "@cf/baai/bge-base-en-v1.5";
-
-/** Texts → 768-dimension vectors, in one call. */
-export async function embed(texts: readonly string[]): Promise<number[][]> {
-	const { env } = await getCloudflareContext({ async: true });
-	const result = await env.AI.run(EMBED_MODEL, { text: [...texts] });
-	if (!("data" in result) || !Array.isArray(result.data) || result.data.length !== texts.length) {
-		throw new Error(`embedding returned an unexpected shape for ${texts.length} text(s)`);
-	}
-	return result.data;
-}
+import type { IndexableExpense } from "./vector-text";
 
 export async function indexExpense(expense: IndexableExpense): Promise<void> {
-	const { env, ctx } = await getCloudflareContext({ async: true });
-	const specs = vectorSpecs(expense);
-	ctx.waitUntil(
+	const ai = await aiWorker();
+	if (ai === null) {
+		console.log(`[search] index-skipped ${expense.id} no AI secret`);
+		return;
+	}
+	ai.ctx.waitUntil(
 		(async () => {
 			try {
-				const vectors = await embed(specs.map((spec) => spec.text));
-				const mutation = await env.VECTORIZE.upsert(
-					specs.map((spec, i) => ({ id: spec.id, values: vectors[i] ?? [], metadata: { ...spec.metadata } })),
-				);
-				console.log(`[search] indexed ${expense.id} vectors=${specs.length} mutation=${mutation.mutationId}`);
+				const res = await ai.worker.index(ai.secret, {
+					id: expense.id,
+					groupId: expense.groupId,
+					description: expense.description,
+					items: expense.items.map((i) => ({ id: i.id, description: i.description })),
+				});
+				console.log(`[search] index ${expense.id} status=${res.status}${res.status === "ok" ? ` vectors=${res.vectors} mutation=${res.mutationId}` : ""}`);
 			} catch (error) {
 				console.log(`[search] index-failed ${expense.id} ${String(error).slice(0, 160)}`);
 			}

@@ -16,7 +16,9 @@ import { getDb } from "@/db";
 import { expense, group, lineItem } from "@/db/schema";
 import { getGroupsForViewer } from "@/lib/groups/membership";
 
-import { embed } from "./index-expense";
+import { withBudget } from "@/lib/ai/budget";
+import type { EmbedResponse } from "@/lib/ai/contract";
+import { aiWorker } from "@/lib/ai/worker";
 import { MAX_GROUPS_PER_SEARCH } from "./vector-text";
 
 export interface SearchHit {
@@ -36,6 +38,37 @@ export interface SearchResult {
 	readonly hits: readonly SearchHit[];
 	/** More than MAX_GROUPS_PER_SEARCH groups: only the first were searched. */
 	readonly truncated: boolean;
+	/**
+	 * Set when a search by meaning couldn't embed the query in time, so these are
+	 * keyword results instead (ADR-0025 §4). The page says so.
+	 */
+	readonly fellBackToKeyword?: true;
+}
+
+/** ADR-0025 §4: the viewer is waiting, so the query's embedding gets 3 s, then keyword search answers. */
+const QUERY_EMBED_BUDGET_MS = 3_000;
+
+/** The query's vector from `splitr-ai`, or `null` on any failure: no secret, refused, failed, or over budget. */
+async function embedQuery(query: string): Promise<number[] | null> {
+	const ai = await aiWorker();
+	if (ai === null) return null;
+	try {
+		// The async wrapper gives the RPC stub's union-of-promises type one plain type.
+		const call = async (): Promise<EmbedResponse> => ai.worker.embed(ai.secret, { texts: [query] });
+		const res = await withBudget(call(), QUERY_EMBED_BUDGET_MS);
+		if (!res.ok) {
+			console.log("[search] query-embed timeout, falling back to keyword");
+			return null;
+		}
+		if (res.value.status !== "ok") {
+			console.log(`[search] query-embed ${res.value.status}, falling back to keyword`);
+			return null;
+		}
+		return res.value.vectors[0] ?? null;
+	} catch (error) {
+		console.log(`[search] query-embed unreachable, falling back to keyword: ${String(error).slice(0, 120)}`);
+		return null;
+	}
 }
 
 async function viewerGroups(viewerId: string): Promise<{ ids: string[]; truncated: boolean }> {
@@ -69,9 +102,13 @@ export async function searchByMeaning(viewerId: string, query: string): Promise<
 	const { ids, truncated } = await viewerGroups(viewerId);
 	if (ids.length === 0) return { hits: [], truncated };
 
+	const vector = await embedQuery(query);
+	if (vector === null) {
+		// A worse answer beats an error page (ADR-0025 §4).
+		return { ...(await searchByKeyword(viewerId, query)), fellBackToKeyword: true };
+	}
 	const { env } = await getCloudflareContext({ async: true });
-	const [vector] = await embed([query]);
-	const { matches } = await env.VECTORIZE.query(vector ?? [], {
+	const { matches } = await env.VECTORIZE.query(vector, {
 		topK: 20,
 		filter: { groupId: { $in: ids } },
 		returnMetadata: "all",
