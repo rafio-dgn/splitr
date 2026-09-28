@@ -72,7 +72,10 @@ on run 2 with zero AI calls
 ([evidence](../evidence/REQ-E.6-cron-run-twice.md)). **Cluster E is complete,
 apart from `REQ-E.7` (spoken).** Manual trigger: `npm run cron:run -- --remote`
 (it asks for the production secret). The Worker-size decision is made too
-(ADR-0027: webpack, 55%). **Next: Cluster F** (F.4 → F.1 → F.2 → F.5 → F.6).
+(ADR-0027: webpack, 55%). **Cluster F started:** F.4 (`REQ-F.3`, the `[MUST]`) is built and verified
+locally (ADR-0028). **Raffaele runs** `node scripts/verify/audit-tail.mjs
+https://splitr.raffaele-digennaro.workers.dev` after the merge. **Next:** F.1
+(rate limit) → F.2 (Turnstile) → F.5 (AI Gateway) → F.6 (rotation drill).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random

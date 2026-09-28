@@ -21,6 +21,7 @@ import { nextCookies } from "better-auth/next-js";
 
 import { getDb, type Db } from "@/db";
 import * as schema from "@/db/schema";
+import { audit } from "@/lib/audit";
 
 /**
  * Is this URL a loopback address — i.e. a developer's own machine?
@@ -135,6 +136,27 @@ function createAuth(db: Db) {
 			enabled: true,
 			// Library-enforced. We do not implement any part of this.
 			minPasswordLength: 12,
+		},
+		// REQ-F.3: Better Auth writes its own tables (sign-up, sign-in, sign-out,
+		// password changes), so those mutations are audited through its own
+		// lifecycle hooks, and nothing of the auth itself is reimplemented
+		// (REQ-B.5). Ids only: never an email, a token or a password.
+		databaseHooks: {
+			user: {
+				create: { after: async (u) => audit({ actor: u.id, action: "auth.user.create", target: u.id, outcome: "accepted", persisted: true }) },
+				update: { after: async (u) => audit({ actor: u.id, action: "auth.user.update", target: u.id, outcome: "accepted", persisted: true }) },
+				delete: { after: async (u) => audit({ actor: u.id, action: "auth.user.delete", target: u.id, outcome: "accepted", persisted: true }) },
+			},
+			session: {
+				// A session is logged by an 8-character preview of its id, never in full (the audit-log rule).
+				create: { after: async (s) => audit({ actor: s.userId, action: "auth.session.create", target: `session:${s.id.slice(0, 8)}`, outcome: "accepted", persisted: true }) },
+				delete: { after: async (s) => audit({ actor: s.userId, action: "auth.session.delete", target: `session:${s.id.slice(0, 8)}`, outcome: "accepted", persisted: true }) },
+			},
+			account: {
+				create: { after: async (a) => audit({ actor: a.userId, action: "auth.account.create", target: a.id, outcome: "accepted", persisted: true, detail: { provider: a.providerId } }) },
+				update: { after: async (a) => audit({ actor: a.userId, action: "auth.account.update", target: a.id, outcome: "accepted", persisted: true, detail: { provider: a.providerId } }) },
+				delete: { after: async (a) => audit({ actor: a.userId, action: "auth.account.delete", target: a.id, outcome: "accepted", persisted: true, detail: { provider: a.providerId } }) },
+			},
 		},
 		// `nextCookies()` must be the last plugin: it flushes Set-Cookie headers
 		// produced inside Server Actions, which Next.js otherwise drops.

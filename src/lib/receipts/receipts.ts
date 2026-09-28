@@ -16,6 +16,7 @@ import "server-only";
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { AwsClient } from "aws4fetch";
+import { audit } from "@/lib/audit";
 
 /** The only types a receipt may be, and the extension its key gets. */
 export const RECEIPT_TYPES = {
@@ -120,7 +121,10 @@ export async function checkUploadedReceipt(groupId: string, key: string): Promis
 	const type = head.httpMetadata?.contentType ?? "";
 	if (head.size > MAX_RECEIPT_BYTES || !isReceiptType(type)) {
 		await bucket.delete(key);
-		return { ok: false, reason: head.size > MAX_RECEIPT_BYTES ? "too-large" : "wrong-type" };
+		const reason = head.size > MAX_RECEIPT_BYTES ? "too-large" : "wrong-type";
+		// REQ-F.3: a delete is a mutation. The uploader isn't known here, so the actor is the check itself.
+		audit({ actor: "system:receipt-check", action: "receipt.delete", target: key, outcome: `accepted:${reason}`, persisted: true, detail: { group: groupId, bytes: head.size } });
+		return { ok: false, reason };
 	}
 	return { ok: true };
 }

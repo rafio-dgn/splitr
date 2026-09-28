@@ -81,6 +81,15 @@ export async function sweep(deps: SweepDeps, nowMs: number): Promise<SweepSummar
 			}));
 			await deps.replaceReminders(group.id, group.currency, rows, today);
 			reminderPairs += rows.length;
+			// REQ-F.3: the group's reminders were replaced; the pairs say what they are now.
+			deps.audit({
+				actor: CRON_ACTOR,
+				action: "reminder.refresh",
+				target: group.id,
+				outcome: "accepted",
+				persisted: true,
+				detail: { day: today, pairs: rows.length, owing: rows.map((r) => `${r.debtorId}>${r.creditorId}:${r.amountMinorUnits}`).join(",") },
+			});
 		} catch (error) {
 			groupsFailed++;
 			deps.audit({ actor: CRON_ACTOR, action: "reminder.refresh", target: group.id, outcome: `error:${String(error).slice(0, 100)}`, persisted: false });
@@ -114,6 +123,7 @@ export async function sweep(deps: SweepDeps, nowMs: number): Promise<SweepSummar
 				if (res.status === "ok") {
 					await deps.markIndexed(expense.id);
 					indexed++;
+					deps.audit({ actor: CRON_ACTOR, action: "expense.reindex", target: expense.id, outcome: "accepted", persisted: true, detail: { group: expense.groupId, vectors: res.vectors } });
 				} else {
 					deps.audit({ actor: CRON_ACTOR, action: "expense.reindex", target: expense.id, outcome: `rejected:${res.status}`, persisted: false });
 				}

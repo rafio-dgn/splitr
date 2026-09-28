@@ -72,6 +72,8 @@ export async function categoriseAfterSave(deps: AfterSaveDeps, saved: SavedExpen
 			items: saved.items.length,
 			categorised: written,
 			uncategorised: saved.items.length - updates.length,
+			// REQ-F.3: which label each item got, so the change is traceable from logs alone.
+			labels: updates.map((u) => `${u.id}=${u.category}`).join(","),
 		},
 	});
 }

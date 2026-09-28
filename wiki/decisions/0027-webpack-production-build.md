@@ -63,6 +63,9 @@ removes the cause (duplicated shared chunks) rather than one symptom.
 
 ## Verification
 
+- **On production:** the merge's deploy (run 36411405752) built with webpack,
+  and its post-deploy smoke test passed on the live site.
+
 - The sizes above, from `node scripts/ci/size-budget.mjs` after
   `opennextjs-cloudflare build`. The webpack build prints
   `▲ Next.js 16.3.5 (webpack)`, and `wrangler deploy --dry-run` shows

@@ -78,3 +78,6 @@ the real pasted output, and the date.
 - [`REQ-E.6-cron-run-twice.md`](./REQ-E.6-cron-run-twice.md): the nightly sweep
   run twice, byte-identical (2026-09-28, local), plus the in-app reminder
   checked in a browser.
+- [`REQ-F.3-audit-json.md`](./REQ-F.3-audit-json.md): the `[AUDIT]` coverage
+  inventory, the line format, and a smoke run's history rebuilt from logs
+  alone (2026-09-28, local).
