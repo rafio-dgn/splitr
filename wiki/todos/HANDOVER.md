@@ -89,7 +89,7 @@ receipts are never cached or logged. The gateway allows 100 calls a minute,
 and our own `NeuronBudget` DO caps the day at 8,000 neurons. It's verified
 locally through the real gateway, and **met on production**: Raffaele's
 Logs tab shows the calls, cache hits and the rate limit's refusals.
-**Found:** `/search` has no link anywhere in the app (backlog). **Next:** F.6
+**Found:** `/search` had no link anywhere in the app; it's in the top bar now, and the E2E clicks it (branch `b/search-link`). **Next:** F.6
 (rotation drill).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,

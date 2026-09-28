@@ -43,6 +43,13 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 						>
 							Your groups
 						</Link>
+						{/* The only way in to search (REQ-D.4): until 2026-09-28 it was reachable by URL alone. */}
+						<Link
+							href="/search"
+							className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+						>
+							Search
+						</Link>
 					</div>
 					<div className="flex items-center gap-4 text-sm">
 						<span className="hidden text-zinc-500 sm:inline">

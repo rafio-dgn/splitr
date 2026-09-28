@@ -1342,3 +1342,14 @@ shape that triggers them. They are listed rather than ticked.
   per search, with no extra calls, and the backlog question is closed.
 - **Why:** `REQ-F.4`, a finding closed.
 - **Decision:** none
+
+## 2026-09-28 — A "Search" link in the top bar
+- **Type:** fixed
+- **Scope:** `src/app/(app)/layout.tsx`, `scripts/verify/e2e.mjs` (step 7), `wiki/todos/{backlog,HANDOVER}.md`
+- **What:** Search is linked from the top bar, beside "Your groups". The E2E
+  now reaches it the way a person does: it clicks the link, types in the form
+  and submits, before polling for the result.
+- **Why:** Found while checking F.5 on production: `/search` (`REQ-D.4`) was
+  reachable only by URL, and every script had opened it directly. Raffaele
+  OK'd the fix.
+- **Decision:** none
