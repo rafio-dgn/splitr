@@ -1334,3 +1334,11 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** Raffaele said yes (2026-09-28), after I pointed out that PR #22 had
   broken the old rule.
 - **Decision:** none (it amends the working rule in ADR-0024's 2026-09-25 amendment)
+
+## 2026-09-28 — Eight searches, eight calls
+- **Type:** docs
+- **Scope:** the REQ-F.4 evidence, `wiki/todos/backlog.md`
+- **What:** Raffaele confirmed he searched 8 times. The 8 embeddings are one
+  per search, with no extra calls, and the backlog question is closed.
+- **Why:** `REQ-F.4`, a finding closed.
+- **Decision:** none

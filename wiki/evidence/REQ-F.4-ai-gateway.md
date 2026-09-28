@@ -117,7 +117,7 @@ shows WEST (UTC+1); the times below are UTC.
 
 | UTC | Model | In | Cost | ms | Status | What it is |
 |---|---|---|---|---|---|---|
-| 19:24:00–19:24:07 | bge-base-en-v1.5 (×7) | — | $0 | 7–20 | ✔ **cached** | repeat searches: cache hits |
+| 19:24:00–19:24:07 | bge-base-en-v1.5 (×7) | — | $0 | 7–20 | ✔ **cached** | repeat searches: cache hits (Raffaele searched 8 times in all: one call per search) |
 | 19:23:57 | bge-base-en-v1.5 | 3 | $0.00000022 | 265 | ✔ | the first search: a miss |
 | 19:19:14 | llama-3.1-8b-instruct (×2) | 352 / 365 | ~$0.000054 / ~$0.000056 | 725 / 636 | ✔ | categorising the two items |
 | 19:19:11 | bge-base-en-v1.5 (×2) | 12 / 18 | $0.00000077 / $0.00000121 | 1057 / 1014 | ✔ | indexing and retrieval for the new expense |

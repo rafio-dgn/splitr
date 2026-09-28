@@ -57,10 +57,9 @@
       script opened it directly. The proposal: a "Search" link beside "Groups"
       in the top bar, plus an E2E check that search is reached by clicking.
       Waiting for Raffaele's yes.
-- [ ] `question` **Eight search embeddings for what may have been two
-      searches** (production, 19:23:57–19:24:07 UTC): one miss, then seven
-      cache hits. If Raffaele searched only twice, the page makes extra calls
-      (link prefetch is a guess, not checked).
+- [x] ~~`question` **Eight search embeddings for what may have been two
+      searches**~~ → **Raffaele searched 8 times** (2026-09-28): one call per
+      search, no extra calls.
 
 ## Queued
 
