@@ -150,6 +150,13 @@ export function SettleForm({
 					{state.formErrors[0]}
 				</p>
 			) : null}
+			{/* (e) REQ-F.1: too many settle-up attempts in a minute. Nothing was read or written. */}
+			{state.status === "rate-limited" ? (
+				<p role="alert" className="text-sm text-red-600">
+					That&rsquo;s a lot of settle-up attempts in a short time. Nothing was recorded. Wait a minute, then try
+					again.
+				</p>
+			) : null}
 			{/* (d) The only genuine error, and it says nothing happened. */}
 			{state.status === "failed" ? (
 				<p role="alert" className="text-sm text-red-600">

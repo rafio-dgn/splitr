@@ -85,6 +85,17 @@
 		}
 	],
 
+	// REQ-F.1 (ADR-0029): settle-up is limited to 5 requests per 60 s per signed-in
+	// user. The binding counts per Cloudflare location and is approximate, so it's
+	// abuse protection, not an exact quota. Only 10 s or 60 s windows exist.
+	"ratelimits": [
+		{
+			"name": "SETTLE_LIMITER",
+			"namespace_id": "1001",
+			"simple": { "limit": 5, "period": 60 }
+		}
+	],
+
 	// No `ai` binding: since ADR-0025 step 5 every model call (categorising,
 	// search embeddings, reading receipts) goes through `splitr-ai` over the
 	// AI_WORKER binding above (ADR-0016 §6). One place for the secret, the

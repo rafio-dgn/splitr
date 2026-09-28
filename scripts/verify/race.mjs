@@ -1,7 +1,7 @@
 // The demo's live "after" (REQ-E.1, ADR-0023): the same double settlement,
 // several rounds, one winner each time, printed like the evidence file.
 //
-//   node scripts/verify/race.mjs <BASE_URL> [--rounds 5] [--keep]
+//   node scripts/verify/race.mjs <BASE_URL> [--rounds 5] [--keep]      (at most 5: the rate limit)
 //
 // --keep leaves the group in place and prints both logins, so the result can
 // be shown in a browser. Remove it afterwards with `cleanup.mjs <BASE_URL>`.
@@ -12,8 +12,11 @@ const { baseUrl, local, flags } = target();
 const roundsAt = flags.indexOf("--rounds");
 const rounds = roundsAt === -1 ? 5 : Number(flags[roundsAt + 1]);
 const keep = flags.includes("--keep");
-if (!Number.isInteger(rounds) || rounds < 1 || rounds > 20) {
-	console.error("--rounds takes a whole number from 1 to 20");
+// Each round is one settle-up request per person, and settle-up allows 5 per
+// minute per user (REQ-F.1, ADR-0029). A 6th round within a minute would be
+// refused with 429, which is correct, but it isn't the race.
+if (!Number.isInteger(rounds) || rounds < 1 || rounds > 5) {
+	console.error("--rounds takes a whole number from 1 to 5 (settle-up allows 5 per minute per user)");
 	process.exit(2);
 }
 

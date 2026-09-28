@@ -24,6 +24,10 @@ import { parseRecordSettlement, type SettlementFieldErrors } from "@/lib/schemas
 
 import type { LedgerDecision } from "./ledger-contract";
 
+/** Mirrors `wrangler.jsonc` → `ratelimits` → SETTLE_LIMITER, for the audit line and Retry-After. */
+const SETTLE_LIMIT = 5;
+const SETTLE_PERIOD_SECONDS = 60;
+
 export interface Actor {
 	readonly id: string;
 }
@@ -32,6 +36,8 @@ export type RecordSettlementResult =
 	| LedgerDecision
 	| { readonly status: "invalid"; readonly fieldErrors: SettlementFieldErrors; readonly formErrors: readonly string[] }
 	| { readonly status: "not-found" }
+	/** REQ-F.1: over 5 settle-up requests in 60 s for this user. Nothing was read or written. */
+	| { readonly status: "rate-limited"; readonly retryAfterSeconds: number }
 	/** (d) in §6.3: the only genuine error. The ledger was unreachable, and nothing was written. */
 	| { readonly status: "failed" };
 
@@ -52,6 +58,16 @@ export async function recordSettlement(
 	actor: Actor,
 	idempotencyKey: string | null,
 ): Promise<RecordSettlementOutcome> {
+	// REQ-F.1 (ADR-0029), before anything else: a flood (valid or not) costs one
+	// counter check each and never reaches the ledger or D1. The key is the
+	// signed-in user, so flatmates on one Wi-Fi don't share a budget.
+	const { env } = await getCloudflareContext({ async: true });
+	const { success } = await env.SETTLE_LIMITER.limit({ key: `settle:${actor.id}` });
+	if (!success) {
+		audit({ actor: actor.id, action: "settlement.record", target: "unknown", outcome: "refused:rate-limited", persisted: false, detail: { limit: SETTLE_LIMIT, periodSeconds: SETTLE_PERIOD_SECONDS } });
+		return local({ status: "rate-limited", retryAfterSeconds: SETTLE_PERIOD_SECONDS });
+	}
+
 	const parsed = parseRecordSettlement(rawInput);
 	if (!parsed.ok) {
 		audit({ actor: actor.id, action: "settlement.record", target: "unknown", outcome: "rejected:invalid-shape", persisted: false });
@@ -91,7 +107,6 @@ export async function recordSettlement(
 	// section: read the balances, check, write (ADR-0023). The DO emits the
 	// [AUDIT] line after its D1 write (REQ-E.3).
 	try {
-		const { env } = await getCloudflareContext({ async: true });
 		const response = await env.LEDGER.settle({
 			groupId: group.id,
 			fromUserId: attempt.fromUserId,

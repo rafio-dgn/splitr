@@ -31,6 +31,8 @@ declare global {
 	type VectorizeIndex = CF.Vectorize;
 	/** The v2 class by its own name, which `workers/ai/src/index.ts` uses (the app's program reads it too). */
 	type Vectorize = CF.Vectorize;
+	/** REQ-F.1's rate-limit binding. It was missing here, so SETTLE_LIMITER was silently `any` until a probe caught it (2026-09-28). */
+	type RateLimit = CF.RateLimit;
 	type Fetcher<T extends CF.Rpc.EntrypointBranded | undefined = undefined> = CF.Fetcher<T>;
 	type ImagesBinding = CF.ImagesBinding;
 	type Queue<Body = unknown> = CF.Queue<Body>;

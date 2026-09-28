@@ -47,6 +47,9 @@ export async function POST(
 				return 409;
 			case "invalid":
 				return 400;
+			// REQ-F.1: too many settle-up requests for this user.
+			case "rate-limited":
+				return 429;
 			case "not-found":
 				return 404;
 			case "failed":
@@ -57,6 +60,9 @@ export async function POST(
 	const headers: Record<string, string> = { "content-type": "application/json", "cache-control": "no-store" };
 	if (idempotencyKey !== null) {
 		headers["idempotency-replayed"] = String(replayed);
+	}
+	if (result.status === "rate-limited") {
+		headers["retry-after"] = String(result.retryAfterSeconds);
 	}
 	// The ledger's exact body when there is one, so a replay is byte-for-byte
 	// the original response (REQ-E.2), not a re-serialisation of it.
