@@ -62,3 +62,4 @@ obvious in hindsight.
 | [0029](./0029-settle-up-rate-limit.md) | Rate-limit settle-up: 5 per 60 s per signed-in user, checked first in `recordSettlement`, 429 + Retry-After; the written rationale | Accepted |
 | [0030](./0030-turnstile-on-join.md) | Turnstile on `/join`: Managed, verified in `joinGroupAction`, failing closed; sign-up stays behind Better Auth's own limit; CI refuses placeholder config | Accepted |
 | [0031](./0031-ai-gateway-and-neuron-cap.md) | Every model call through the `splitr` AI Gateway (text cached 1 day, receipts never cached or logged, 100/min); our own 8,000-neuron daily cap, counting cache hits | Accepted |
+| [0032](./0032-secret-rotation-drill.md) | The secret-rotation drill on production: break it by swapping the receiver's key, then K1 → K2 with a dual-key window, the cron proven on K2 overnight before K1 is retired; a 2 s search monitor and a key-position log | Accepted |

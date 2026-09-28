@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 
 import { categorise, type CategoriseDeps, type Match } from "./categorise.ts";
 import { buildMessages, parseCategory, type Example } from "./prompt.ts";
-import { parseSecretList, secretAccepted } from "./secret.ts";
+import { keyLabel, matchedSecretIndex, parseSecretList, secretAccepted } from "./secret.ts";
 
 const SECRET = "s3cret-current";
 
@@ -63,6 +63,14 @@ describe("secret check (ADR-0025 §3)", () => {
 		assert.equal(secretAccepted("x", undefined), false);
 		assert.equal(secretAccepted("x", ""), false);
 		assert.deepEqual(parseSecretList(" a, ,b,"), ["a", "b"]);
+	});
+	it("says which key matched, for the F.5 logs: the position, never the secret", () => {
+		assert.equal(matchedSecretIndex("old", "old,new"), 0);
+		assert.equal(matchedSecretIndex("new", "old,new"), 1);
+		assert.equal(matchedSecretIndex("stale", "old,new"), -1);
+		assert.equal(keyLabel("new", "old,new"), "key=2/2");
+		assert.equal(keyLabel("old", "new"), "key=none/1");
+		assert.equal(keyLabel("x", undefined), "key=none/0");
 	});
 });
 

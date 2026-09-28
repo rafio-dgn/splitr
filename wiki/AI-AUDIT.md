@@ -2166,3 +2166,36 @@ does, months later, without the original chat transcript.
     gateway. That was a local artefact: after a clean restart, the full E2E
     passed, including the new step.
 - **Open questions:** none.
+
+## 2026-09-28T20:00Z — F.6: design and rehearse the secret-rotation drill (REQ-F.5)
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "merged, go on": the next step, the rotation drill.
+- **Inputs read:**
+  - `REQ-F.5`; ADR-0025 §3 (the secret list);
+  - `secret.ts`, the AI Worker's RPC methods, the cron Worker, `deploy.yml`;
+  - `wrangler secret put --help`, and wrangler's source for stdin handling.
+- **Raffaele's decisions:** production for both halves; the wrong way is
+  swapping the receiver's key only; the proof is a monitor plus a
+  key-position log.
+- **Actions:**
+  - `matchedSecretIndex` and `keyLabel`, with 1 test;
+  - `key=i/n` on the AI Worker's log lines;
+  - `rotation-monitor.mjs`;
+  - ADR-0032, and the runbook with exact commands.
+- **Design points I added, flagged in the ADR:**
+  - the current key K0 can't be read back, so the wrong-way recovery creates
+    K1, which the right way then rotates to K2;
+  - there are two producers, so the window stays open overnight until the
+    cron is seen on K2;
+  - an expense with an item is saved during the breakage, so the cron has
+    work at 02:30.
+- **Alternatives considered:** in the ADR's "Rejected" list.
+- **Assumptions:** that Workers Logs (on for `splitr-ai`) keeps the 02:30 lines
+  long enough for Part 3. Free-plan retention is 3 days, which is enough.
+- **Verification:**
+  - `tsc` (both programs) and ESLint are clean; the secret tests pass (17).
+  - **The first local rehearsal showed nothing:** `wrangler dev` doesn't
+    reload `.dev.vars`. With restarts, it showed a fallback window
+    19:47:25–19:48:00 and `status=refused key=none/1` ×10.
+  - `.dev.vars` was restored (checked with `cmp`).
+- **Open questions:** none. The production runs are Raffaele's.

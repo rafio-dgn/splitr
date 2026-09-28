@@ -1353,3 +1353,20 @@ shape that triggers them. They are listed rather than ticked.
   reachable only by URL, and every script had opened it directly. Raffaele
   OK'd the fix.
 - **Decision:** none
+
+## 2026-09-28 — The secret-rotation drill: the monitor, the key-position log, the runbook
+- **Type:** added
+- **Scope:**
+  - `src/lib/categorise/secret.ts` (`matchedSecretIndex`, `keyLabel`) and its test;
+  - `workers/ai/src/index.ts` (`key=i/n` on every `[ai]` call line);
+  - `scripts/verify/rotation-monitor.mjs`;
+  - ADR-0032, the REQ-F.5 evidence (the runbook), and the requirement, build plan, handover and study guide.
+- **What:**
+  - `splitr-ai` logs which key in `AI_SHARED_SECRETS` each call matched: the
+    position, never the key.
+  - A monitor searches on production every 2 s and reports every keyword
+    fallback window.
+  - A three-part runbook: the wrong way, then K1 → K2 with a window, then
+    retiring K1 once the cron is seen on K2.
+- **Why:** `REQ-F.5`. Raffaele's three choices are in ADR-0032.
+- **Decision:** [ADR-0032](./decisions/0032-secret-rotation-drill.md)
