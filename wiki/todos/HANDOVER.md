@@ -71,8 +71,8 @@ runs at 02:30 UTC, and `cron-twice.mjs` on production gave byte-identical data
 on run 2 with zero AI calls
 ([evidence](../evidence/REQ-E.6-cron-run-twice.md)). **Cluster E is complete,
 apart from `REQ-E.7` (spoken).** Manual trigger: `npm run cron:run -- --remote`
-(it asks for the production secret). **Next:** the
-Worker-size decision, then Cluster F.
+(it asks for the production secret). The Worker-size decision is made too
+(ADR-0027: webpack, 55%). **Next: Cluster F** (F.4 → F.1 → F.2 → F.5 → F.6).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random
@@ -174,9 +174,8 @@ once, ADR-0022's evidence).
   deployed URL.
 - **The EdgeLedger seal leak:** `wiki/techstack/` and `wiki/context/glossary.md`
   contain EdgeLedger-derived details. Move them or accept them.
-- **The Worker size (83% of 3 MiB):** a third copy of Better Auth, bundled for
-  the settlements Route Handler. The fix options are in the backlog; decide
-  before Cluster F.
+- ~~**The Worker size**~~: decided 2026-09-28, webpack build (ADR-0027),
+  83% → 55%.
 - **Tell the course owners** that `REQ-C.3`'s model is dead (error 5028)?
 
 ## How things were verified, and what to re-create
