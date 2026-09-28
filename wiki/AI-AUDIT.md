@@ -2324,3 +2324,43 @@ does, months later, without the original chat transcript.
   - Raffaele to review the look.
   - A VoiceOver pass and a 200% zoom check.
   - `apple-icon` and OG image on Workers.
+
+## 2026-09-29T00:30Z — Receipt first, password eye, the menu closing on an outside tap, the datalist, mobile overflow
+- **Agent:** Claude Opus 5.5, main session
+- **Prompt intent:** the receipt read should feel like the main feature, not
+  an upload. Also:
+  - an eye on password fields;
+  - dropdowns that close on an outside click;
+  - remove the dropdown on the bill's name if it's there by mistake;
+  - fix mobile, which feels horizontally scrollable.
+- **Inputs read:**
+  - `add-expense-form.tsx`, the auth and join forms, and the `(app)` layout;
+  - the E2E's receipt step;
+  - ADR-0019, ADR-0020 and ADR-0021;
+  - the memory rule that AI decisions go to Raffaele.
+- **Actions:**
+  - asked Raffaele one structured question (read automatically, or keep the
+    button). He chose automatically;
+  - built the receipt-first form, `PasswordInput` and `AccountMenu`;
+  - the mobile fixes and the E2E update;
+  - addenda on ADR-0021, ADR-0033 and the evidence file;
+  - updated the backlog and the study guide.
+- **Alternatives considered:**
+  - removing the datalist. Rejected: it's REQ-D.2's recent descriptions, not a
+    mistake. Only the arrow is hidden.
+  - hiding the file input behind a styled button. Rejected: the E2E clicks
+    `input#receipt`, so the input itself covers the drop zone.
+  - `overflow-x: hidden`. Rejected: it breaks `position: sticky`, so the
+    safety net uses `clip`.
+- **Assumptions:** the menu in the top bar is the app's only dropdown. Native
+  `<select>`s already close on an outside click.
+- **Verification:**
+  - `tsc`, ESLint and the build are clean. 89 pure and 10 ledger tests pass;
+  - the E2E passed;
+  - browser checks at 390px: the menu, the eye, the receipt flow, and an
+    overflow sweep of 11 pages at 360 and 390px (0px everywhere);
+  - screenshots reviewed.
+  - A mistake of mine: a throwaway script's cleanup ran before the upload had
+    finished, which left one fixture photo in R2. D1 was cleaned; the photo
+    is logged in the backlog.
+- **Open questions:** none new.

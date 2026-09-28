@@ -476,3 +476,10 @@ and asked for it to be applied. It is applied and verified; see
 - [ ] `proposed` Mobile tab bar: add a third tab ("You": account and sign
       out) if an account page is ever built. Today the account menu lives in
       the header.
+- [ ] `cleanup` One orphan test photo (the synthetic fixture receipt) is in
+      R2 under `receipts/grp_a2523edbac954559b18c07cd3214e1aa/`. A check
+      script grabbed its key too early. Delete it from the dashboard, or leave
+      it for the orphan sweep (ADR-0020). Either way it's harmless.
+- [x] ~~Receipt-first add-expense, automatic read, password eye, the menu
+      closing on an outside tap, the datalist arrow, the mobile overflow~~
+      (2026-09-28, ADR-0033 and ADR-0021 addenda).

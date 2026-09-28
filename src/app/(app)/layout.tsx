@@ -19,12 +19,10 @@
  */
 import Link from "next/link";
 
-import { Icon } from "@/components/icons";
+import { AccountMenu } from "@/components/account-menu";
 import { Logo } from "@/components/logo";
 import { MainNav, MobileNav } from "@/components/nav";
-import { SignOutButton } from "@/components/sign-out-button";
 import { Toaster } from "@/components/toaster";
-import { Avatar } from "@/components/ui";
 import { readFlash } from "@/lib/flash";
 import { requireSession } from "@/lib/session";
 
@@ -53,22 +51,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 					    and the E2E still reaches it through `header a[href="/search"]`. */}
 					<MainNav />
 					<div className="flex-1" />
-					{/* The account menu: a native <details>, so it opens with no
-					    JavaScript of ours and closes with Esc in every browser. */}
-					<details className="group relative">
-						<summary className="flex h-10 cursor-pointer list-none items-center gap-1.5 rounded-full pr-2 pl-1 hover:bg-surface-2 [&::-webkit-details-marker]:hidden">
-							<Avatar id={session.user.id} name={session.user.name} size="lg" />
-							<Icon name="chevronDown" className="size-4 text-muted transition-transform duration-150 group-open:rotate-180" />
-							<span className="sr-only">Your account</span>
-						</summary>
-						<div className="absolute right-0 mt-2 flex w-64 flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-float">
-							<div className="min-w-0">
-								<p className="truncate font-semibold">{session.user.name}</p>
-								<p className="truncate text-sm text-muted">{session.user.email}</p>
-							</div>
-							<SignOutButton />
-						</div>
-					</details>
+					{/* The account menu (a native <details>, closed on an outside tap
+					    or Esc by components/account-menu.tsx). */}
+					<AccountMenu id={session.user.id} name={session.user.name} email={session.user.email} />
 				</div>
 			</header>
 			{/* Bottom padding on phones reserves the tab bar's height, so it never

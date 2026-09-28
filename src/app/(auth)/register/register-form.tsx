@@ -16,6 +16,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { PasswordInput } from "@/components/password-input";
 import { Spinner, buttonClass, errorTextClass, hintClass, inputClass, labelClass } from "@/components/ui";
 import { signUp } from "@/lib/auth-client";
 
@@ -77,19 +78,15 @@ export function RegisterForm() {
 				/>
 			</label>
 
-			<label className={`flex flex-col gap-1.5 ${labelClass}`}>
-				Password
-				<input
-					name="password"
-					type="password"
-					autoComplete="new-password"
-					required
-					minLength={12}
-					disabled={busy}
-					className={inputClass}
-				/>
-				<span className={`font-normal ${hintClass}`}>At least 12 characters.</span>
-			</label>
+			<div className="flex flex-col gap-1.5">
+				<label htmlFor="password" className={labelClass}>
+					Password
+				</label>
+				<PasswordInput id="password" autoComplete="new-password" minLength={12} disabled={busy} describedBy="password-hint" />
+				<span id="password-hint" className={hintClass}>
+					At least 12 characters.
+				</span>
+			</div>
 
 			{error !== null ? (
 				<p role="alert" className={errorTextClass}>

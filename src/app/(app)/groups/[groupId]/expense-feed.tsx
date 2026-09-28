@@ -34,6 +34,7 @@ export async function ExpenseFeed({ groupId }: { groupId: string }) {
 	if (expenses.length === 0) {
 		return (
 			<EmptyState
+				icon="camera"
 				title="No expenses yet"
 				action={
 					<ActionLink href={`/groups/${groupId}/expenses/new`}>

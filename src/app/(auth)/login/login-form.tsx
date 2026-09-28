@@ -14,6 +14,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { PasswordInput } from "@/components/password-input";
 import { Spinner, buttonClass, errorTextClass, inputClass, labelClass } from "@/components/ui";
 import { signIn } from "@/lib/auth-client";
 
@@ -57,17 +58,12 @@ export function LoginForm() {
 				/>
 			</label>
 
-			<label className={`flex flex-col gap-1.5 ${labelClass}`}>
-				Password
-				<input
-					name="password"
-					type="password"
-					autoComplete="current-password"
-					required
-					disabled={busy}
-					className={inputClass}
-				/>
-			</label>
+			<div className="flex flex-col gap-1.5">
+				<label htmlFor="password" className={labelClass}>
+					Password
+				</label>
+				<PasswordInput id="password" autoComplete="current-password" disabled={busy} />
+			</div>
 
 			{error !== null ? (
 				<p role="alert" className={errorTextClass}>

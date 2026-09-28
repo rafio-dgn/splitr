@@ -90,7 +90,9 @@ export default async function GroupsPage() {
 			) : (
 				<ul className="grid gap-3 md:grid-cols-2">
 					{cards.map((card) => (
-						<li key={card.id}>
+						// `min-w-0`: a grid item is `min-width: auto` by default, so a long
+						// group name widened the card past the screen instead of truncating.
+						<li key={card.id} className="min-w-0">
 							<Link
 								href={`/groups/${card.id}`}
 								className="flex items-center gap-4 rounded-card border border-line bg-surface px-4 py-4 shadow-rest transition-[border-color,box-shadow,transform] duration-200 ease-out-soft hover:-translate-y-px hover:border-line-strong hover:shadow-float md:px-5"

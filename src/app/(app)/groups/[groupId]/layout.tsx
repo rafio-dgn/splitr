@@ -18,7 +18,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Icon } from "@/components/icons";
-import { AddExpenseFab, GroupActions, GroupTabs } from "@/components/nav";
+import { AddExpenseFab, GroupActions, GroupHeaderFrame, GroupTabs } from "@/components/nav";
 import { AvatarStack, cardClass } from "@/components/ui";
 import { resolveGroup } from "@/lib/groups/current-group";
 import { requireSession } from "@/lib/session";
@@ -38,7 +38,7 @@ export default async function GroupLayout({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<div className={`px-5 pt-5 md:px-6 md:pt-6 ${cardClass}`}>
+			<GroupHeaderFrame className={`px-5 pt-5 md:px-6 md:pt-6 ${cardClass}`}>
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-3">
 					<span
 						aria-hidden
@@ -72,7 +72,7 @@ export default async function GroupLayout({
 				<div className="mt-4">
 					<GroupTabs groupId={group.id} />
 				</div>
-			</div>
+			</GroupHeaderFrame>
 			{children}
 			<AddExpenseFab groupId={group.id} />
 		</div>
