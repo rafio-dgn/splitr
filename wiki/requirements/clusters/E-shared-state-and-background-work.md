@@ -114,15 +114,15 @@ not over HTTP.
 twice and confirm the result is identical.
 
 **Acceptance criteria:**
-- [ ] A `scheduled()` handler exists, wired to a cron trigger
-- [ ] Writes use UPSERT-on-conflict
-- [ ] **Demonstrated:** run twice, results identical
-- [ ] A manual trigger exists so this can be shown without waiting for the cron
+- [x] A `scheduled()` handler exists, wired to a cron trigger
+- [x] Writes use UPSERT-on-conflict
+- [x] **Demonstrated:** run twice, results identical
+- [x] A manual trigger exists so this can be shown without waiting for the cron
 
-**Source:** capture §8 · **Status:** 🟡 Built and proven locally (2026-09-28):
-`splitr-cron`, UPSERT reminders, run twice → byte-identical
-([evidence](../../evidence/REQ-E.6-cron-run-twice.md)). **Left:** the
-production double run, after the merge and the cron's secret.
+**Source:** capture §8 · **Status:** ✅ **Met on production** (2026-09-28):
+`splitr-cron`, with UPSERT reminders. Run twice on production gave
+byte-identical data, and run 2 made zero AI calls
+([evidence](../../evidence/REQ-E.6-cron-run-twice.md)).
 
 **Notes:** The double-run proof is the requirement. Deterministic composite keys
 are what make the UPSERT idempotent. Remember `ctx.waitUntil` (`REQ-C.5` Q3).

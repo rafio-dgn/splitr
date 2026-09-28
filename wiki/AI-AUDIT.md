@@ -1913,3 +1913,11 @@ does, months later, without the original chat transcript.
   also reproduces the production failure mode.
 - **Not verified by me:** the production rerun, which is Raffaele's (remote
   access, and the secret).
+
+## 2026-09-28T15:00Z — Recorded REQ-E.6 on production
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Actions:** pasted Raffaele's output verbatim (ids shortened) into the
+  evidence, ticked REQ-E.6, and marked E.8/E.9 done. The docs-only PR doesn't
+  redeploy.
+- **Verification:** none beyond the pasted output. Production D1 isn't
+  readable by the agent.

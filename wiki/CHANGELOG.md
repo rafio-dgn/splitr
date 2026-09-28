@@ -1137,3 +1137,13 @@ shape that triggers them. They are listed rather than ticked.
   loaded the local `.dev.vars`, and `splitr-ai` refused the AI jobs. The
   scheduled run was never affected.
 - **Decision:** [ADR-0026](./decisions/0026-nightly-cron-worker.md) §4 (note)
+
+## 2026-09-28 — `REQ-E.6` met on production
+- **Type:** docs
+- **Scope:** the REQ-E.6 evidence and status, `wiki/todos/{build-plan,HANDOVER,STUDY-GUIDE}.md`
+- **What:** Raffaele's production run of `cron-twice.mjs` after PR #11.
+  Run 1 wrote the reminder, backfilled the category and re-indexed the
+  expense; run 2 was byte-identical, with zero AI calls. All 4 criteria are
+  ticked, and E.8/E.9 are done.
+- **Why:** `REQ-E.6`'s double-run proof.
+- **Decision:** none

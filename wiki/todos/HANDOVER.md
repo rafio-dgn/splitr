@@ -66,13 +66,12 @@ saves taking 184 ms with items against 183 ms without
 ([evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). **`REQ-E.4` is
 met.** **Step 5 is done too** (2026-09-28): every model call goes through
 `splitr-ai`, the app has no `ai` binding, search falls back to keyword with a
-note, and E.7 is complete. **E.8/E.9 are built** ([ADR-0026](../decisions/0026-nightly-cron-worker.md)):
-`splitr-cron`, in-app reminders, migration 0002, and a local run-twice proof.
-After the merge, **Raffaele**:
-1. sets `AI_SHARED_SECRET` on `splitr-cron` (the same value as the app's);
-2. runs `node scripts/verify/cron-twice.mjs https://splitr.raffaele-digennaro.workers.dev`.
-
-Then Cluster E is done, apart from `REQ-E.7` (spoken). **Next:** the
+note, and E.7 is complete. **E.8/E.9 are done and proven on production** (2026-09-28): `splitr-cron`
+runs at 02:30 UTC, and `cron-twice.mjs` on production gave byte-identical data
+on run 2 with zero AI calls
+([evidence](../evidence/REQ-E.6-cron-run-twice.md)). **Cluster E is complete,
+apart from `REQ-E.7` (spoken).** Manual trigger: `npm run cron:run -- --remote`
+(it asks for the production secret). **Next:** the
 Worker-size decision, then Cluster F.
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
