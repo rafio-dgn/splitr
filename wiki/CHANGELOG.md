@@ -1179,6 +1179,16 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-F.3` (`[MUST]`) and `REQ-F.6` Q2.
 - **Decision:** [ADR-0028](./decisions/0028-audit-line-format-and-coverage.md)
 
+## 2026-09-28 — `REQ-F.3` met on production
+- **Type:** docs
+- **Scope:** the REQ-F.3 evidence and status, `wiki/todos/{build-plan,HANDOVER}.md`
+- **What:** Raffaele's production run of `audit-tail.mjs`:
+  `wrangler tail | grep AUDIT` gave 14/14 parseable lines with the five
+  fields, and the smoke run's history was rebuilt from logs alone. All 5
+  criteria are ticked.
+- **Why:** `REQ-F.3` (`[MUST]`).
+- **Decision:** none
+
 ## 2026-09-28 — F.1 (`REQ-F.1`): settle-up rate limit, 5 per 60 s per user
 - **Type:** added
 - **Scope:**
