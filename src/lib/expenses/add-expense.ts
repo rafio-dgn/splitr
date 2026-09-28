@@ -238,6 +238,10 @@ export async function addExpense(
 			currency: expense.currency,
 			participants: expense.participantIds.length,
 			lineItems: expense.lineItems?.length ?? 0,
+			// REQ-F.3: enough to rebuild the balance from logs alone: who paid, and each share.
+			paidBy: expense.paidById,
+			shares: shares.map((s) => `${s.userId}:${s.shareMinorUnits}`).join(","),
+			spentOn: expense.spentAt,
 		},
 	});
 
@@ -253,7 +257,7 @@ export async function addExpense(
 		groupId: group.id,
 		description: expense.description,
 		items: items.map((item) => ({ id: item.id, description: item.description })),
-	}).catch(() => undefined);
+	}, actor.id).catch(() => undefined);
 
 	// 9. Categorise the line items (REQ-E.4, ADR-0025), after the response as
 	//    well. A failure leaves them `uncategorised` for the nightly backfill.

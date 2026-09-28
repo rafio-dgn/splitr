@@ -93,6 +93,7 @@ export async function createGroup(
 		target: groupId,
 		outcome: "accepted",
 		persisted: true,
+		detail: { name: parsed.value.name, currency: DEFAULT_CURRENCY },
 	});
 	return { status: "created", groupId };
 }

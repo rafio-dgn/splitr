@@ -14,10 +14,12 @@ import "server-only";
 import { getDb } from "@/db";
 import { expenseIndexed } from "@/db/schema";
 import { aiWorker } from "@/lib/ai/worker";
+import { audit } from "@/lib/audit";
 
 import type { IndexableExpense } from "./vector-text";
 
-export async function indexExpense(expense: IndexableExpense): Promise<void> {
+/** `actorId`: who saved the expense, for the audit line (REQ-F.3). */
+export async function indexExpense(expense: IndexableExpense, actorId: string): Promise<void> {
 	const ai = await aiWorker();
 	if (ai === null) {
 		console.log(`[search] index-skipped ${expense.id} no AI secret`);
@@ -39,8 +41,17 @@ export async function indexExpense(expense: IndexableExpense): Promise<void> {
 					const db = await getDb();
 					await db.insert(expenseIndexed).values({ expenseId: expense.id }).onConflictDoNothing();
 				}
+				audit({
+					actor: actorId,
+					action: "expense.index",
+					target: expense.id,
+					outcome: res.status === "ok" ? "accepted" : `rejected:${res.status}`,
+					persisted: res.status === "ok",
+					detail: res.status === "ok" ? { group: expense.groupId, vectors: res.vectors, mutation: res.mutationId } : { group: expense.groupId },
+				});
 			} catch (error) {
 				console.log(`[search] index-failed ${expense.id} ${String(error).slice(0, 160)}`);
+				audit({ actor: actorId, action: "expense.index", target: expense.id, outcome: `error:${String(error).slice(0, 100)}`, persisted: false });
 			}
 		})(),
 	);
