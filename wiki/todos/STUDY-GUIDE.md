@@ -80,6 +80,7 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [D.6 vision spike and receipt reading](../evidence/D.6-vision-spike.md) | Scout chosen on evidence; "Read receipt" works in production; the confirm gate is enforced on the server | "The AI suggests, the human confirms the money, and I proved a UI bug can't skip that" |
 | [REQ-D.5 schema change](../evidence/REQ-D.5-unanticipated-schema-change.md) | `raw_text` added by a second migration, with the first untouched | "A test result forced it: 2/10 on receipt shorthand" |
 | [REQ-D.4 semantic search](../evidence/REQ-D.4-semantic-search.md) | Search by meaning 11/11, keyword 1/11 (3/11 any-word) | "'The thing for the kitchen': keyword says Bangkok Street *Kitchen*, meaning says IKEA" |
+| [**Turnstile forged submit**](../evidence/REQ-F.2-turnstile-forged-submit.md) | REQ-F.2: a forged join, **skipping the widget as an attacker would**, is refused by the server in the page and by curl; and Turnstile refuses automated browsers outright | "The widget in the page protects nothing; the check in the Server Action does" |
 | [**Rate limit**](../evidence/REQ-F.1-settle-rate-limit.md) | REQ-F.1: 201×5, then **429** with Retry-After; D1 holds exactly 5; Bob is unaffected (per user). The form shows the message | "The 6th request never touches the ledger: the check comes first" |
 | [**Audit JSON**](../evidence/REQ-F.3-audit-json.md) | REQ-F.3: every `[AUDIT]` line parses with the five fields; a smoke run's whole history (expenses, the race's refused loser, the replay) is rebuilt from logs alone | "Could you trace every change from logs alone? Yes: here's the smoke group, line by line" |
 | [**Cron run twice**](../evidence/REQ-E.6-cron-run-twice.md) | REQ-E.6: **on production**, run 2 is byte-identical and does no AI work; the reminder banner disappears the moment a debt is settled. The first production run caught a `--remote` secret bug |  "The same inputs give the same keys and the same dates, so the second run has nothing to change" |
@@ -224,6 +225,7 @@ these are here so you don't have to reconstruct them later.
   Fixing the order (request first) made `ci.yml` need no secrets at all
   (ADR-0024, step-2 addendum).
 
+- **Turnstile refused my test browser, even with a human clicking.** It probes for automation (`Error 600010`). So the forgery proof had to skip the widget, as a real attacker does, and a DOM click on a disabled React button is ignored, so it calls the handler directly.
 - **The rate-limit binding worked locally and not on production.** Locally it's simulated exactly; on the real network it's "permissive, eventually consistent". The same lesson as ever: a guarantee has to be tested where it will run.
 - **`next dev` lied three times** (the service-binding block, `.dev.vars` in remote mode, and the rate limit not counting the form path). Each time, the fix was to test the production build in the Workers runtime.
 - **Local dev lied about `waitUntil`.** With the AI Worker up, local saves
