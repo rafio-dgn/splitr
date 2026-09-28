@@ -1284,3 +1284,13 @@ shape that triggers them. They are listed rather than ticked.
   on every challenge), so the nightly would have failed tonight at "Bob
   joins". Raffaele chose the D1 join.
 - **Decision:** [ADR-0030](./decisions/0030-turnstile-on-join.md) §4 (amended)
+
+## 2026-09-28 — `REQ-F.2` met on production
+- **Type:** docs
+- **Scope:** the REQ-F.2 evidence and status, `wiki/todos/{build-plan,HANDOVER,STUDY-GUIDE}.md`
+- **What:** Raffaele's production run of `turnstile-forge.mjs`. Skipping the
+  widget, the forged submit was refused in the page and by curl (empty and
+  forged tokens), with no membership written. All 4 criteria are ticked, and
+  F.2/F.3 are done.
+- **Why:** `REQ-F.2`.
+- **Decision:** none

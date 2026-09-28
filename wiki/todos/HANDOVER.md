@@ -78,12 +78,11 @@ rebuilt (ADR-0028). **F.1 is built** (ADR-0029: settle-up, 5 per 60 s per user).
 binding alone let a burst of 6 through on production (it's eventually
 consistent), so an exact per-user `SettleRateLimiter` Durable Object now backs
 it (the amendment). **Met on production:** 201 ×5, then 429 with
-`Retry-After: 58`, from the exact counter. **F.2 is built** (ADR-0030: Turnstile on `/join`, verified in
-the Server Action, failing closed). The widget exists (Managed, on
-`splitr.raffaele-digennaro.workers.dev`): its public site key is in
-`wrangler.jsonc`, and `TURNSTILE_SECRET_KEY` is set. After the merge, run
-`node scripts/verify/turnstile-forge.mjs https://splitr.raffaele-digennaro.workers.dev`.
-**Next:** F.5 (AI Gateway) → F.6 (rotation drill).
+`Retry-After: 58`, from the exact counter. **F.2 is met on production** (ADR-0030): Turnstile on `/join`,
+verified in the Server Action, failing closed; a forged submit was refused in
+the page and by curl. Production Turnstile refuses automated browsers
+(`Error 600010`), so the nightly E2E joins via D1 there (ADR-0030 §4,
+amended). **Next:** F.5 (AI Gateway) → F.6 (rotation drill).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random
