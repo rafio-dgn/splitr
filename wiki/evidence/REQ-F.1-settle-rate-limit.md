@@ -61,3 +61,38 @@ node scripts/verify/rate-limit.mjs https://splitr.raffaele-digennaro.workers.dev
 ```
 
 Leave a minute after any other script that settles as the same user.
+
+## Production, run 1 (2026-09-28, Raffaele): the binding alone let a burst through
+
+```
+$ node scripts/verify/rate-limit.mjs https://splitr.raffaele-digennaro.workers.dev
+  · Alice's six rapid requests → 201, 201, 201, 201, 201, 201
+✘ the 6th returns 429
+```
+
+- The deploy had finished 90 s before the run (the id `rl-mul7ju9i` decodes
+  to 12:12:32Z, and the version was created at 12:11:00Z).
+- `wrangler versions view` showed the binding live:
+  `env.SETTLE_LIMITER (5 requests/60s)`.
+- **Cause, from Cloudflare's docs:** the binding is "permissive, eventually
+  consistent", with counters cached per machine and updated asynchronously.
+- **Fix:** an exact per-user counter (the `SettleRateLimiter` Durable Object)
+  behind the binding (ADR-0029 amendment).
+
+After the fix, locally (both paths, refused at the 6th):
+
+```
+== form, under next dev
+submit 1–5: Settled
+submit 6: RATE-LIMITED message shown
+== HTTP
+  · Alice's six rapid requests → 201, 201, 201, 201, 201, 429
+  ✔ …with Retry-After: 60 s (1–60)
+  ✔ D1 holds exactly 5 settlements: the refused request wrote nothing
+  ✔ Bob's request in the same minute is accepted: the limit is per user
+rate-limit passed
+```
+
+In workerd, against the real Durable Object:
+**20 simultaneous requests from one user → exactly 5 allowed.**
+

@@ -26,8 +26,10 @@ write the rationale.
 - [x] The **rationale is written down**
 
 **Source:** capture §9 · **Status:** 🟡 Built and verified on the production build (2026-09-28):
-**5 per 60 s per user** on settle-up, with the rationale in ADR-0029. 201×5 then 429, on HTTP and on the form
-([evidence](../../evidence/REQ-F.1-settle-rate-limit.md)). **Left:** the production run.
+**5 per 60 s per user** on settle-up, with the rationale in ADR-0029. The first production run showed the binding
+alone lets a burst through (it's eventually consistent), so an **exact per-user counter** (a Durable Object)
+now sits behind it (ADR-0029 amendment)
+([evidence](../../evidence/REQ-F.1-settle-rate-limit.md)). **Left:** the production rerun.
 
 **Notes:** The written rationale is part of the requirement. "Five per minute"
 without a reason does not satisfy it.
