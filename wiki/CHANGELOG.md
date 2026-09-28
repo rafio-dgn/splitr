@@ -1178,3 +1178,22 @@ shape that triggers them. They are listed rather than ticked.
   - A `wrangler tail | grep AUDIT` checker that rebuilds a run's history.
 - **Why:** `REQ-F.3` (`[MUST]`) and `REQ-F.6` Q2.
 - **Decision:** [ADR-0028](./decisions/0028-audit-line-format-and-coverage.md)
+
+## 2026-09-28 — F.1 (`REQ-F.1`): settle-up rate limit, 5 per 60 s per user
+- **Type:** added
+- **Scope:**
+  - `wrangler.jsonc` (`ratelimits`), `cloudflare-globals.d.ts` (`RateLimit`);
+  - `src/lib/settlements/record-settlement.ts`, the settlements route, and
+    the settle form;
+  - `scripts/verify/{rate-limit,race}.mjs`;
+  - ADR-0029 and the evidence.
+- **What:**
+  - `SETTLE_LIMITER`, checked first in `recordSettlement`: a
+    `rate-limited` result becomes 429 with `Retry-After: 60`, a form
+    message, and a `refused:rate-limited` audit line.
+  - A proof script (6 rapid requests → the 6th is 429, D1 holds 5, and
+    another user is unaffected).
+  - `race.mjs` is capped at 5 rounds.
+- **Why:** `REQ-F.1`. Raffaele chose the route, key and limit; the rationale
+  is in ADR-0029.
+- **Decision:** [ADR-0029](./decisions/0029-settle-up-rate-limit.md)

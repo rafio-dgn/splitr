@@ -74,8 +74,10 @@ apart from `REQ-E.7` (spoken).** Manual trigger: `npm run cron:run -- --remote`
 (it asks for the production secret). The Worker-size decision is made too
 (ADR-0027: webpack, 55%). **Cluster F started:** F.4 (`REQ-F.3`, the `[MUST]`) is built and verified
 locally (ADR-0028). **Raffaele runs** `node scripts/verify/audit-tail.mjs
-https://splitr.raffaele-digennaro.workers.dev` after the merge. **Next:** F.1
-(rate limit) → F.2 (Turnstile) → F.5 (AI Gateway) → F.6 (rotation drill).
+https://splitr.raffaele-digennaro.workers.dev` after the merge. **F.1 is built** (ADR-0029: settle-up, 5 per 60 s per user;
+verified on the production build). **Raffaele runs**
+`node scripts/verify/rate-limit.mjs https://splitr.raffaele-digennaro.workers.dev`
+after the merge. **Next:** F.2 (Turnstile) → F.5 (AI Gateway) → F.6 (rotation drill).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random
