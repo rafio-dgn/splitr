@@ -41,15 +41,15 @@ without a reason does not satisfy it.
 Server Action; forge a submit and confirm the server rejects it.
 
 **Acceptance criteria:**
-- [ ] Turnstile widget on a public form
-- [ ] Token verified **server-side**, inside the Server Action
-- [ ] **Demonstrated:** a forged submit is rejected by the server
-- [ ] The forged-submit command is recorded as evidence
+- [x] Turnstile widget on a public form
+- [x] Token verified **server-side**, inside the Server Action
+- [x] **Demonstrated:** a forged submit is rejected by the server
+- [x] The forged-submit command is recorded as evidence
 
-**Source:** capture §9 · **Status:** 🟡 Built and verified locally (2026-09-28, ADR-0030): the widget on `/join`,
-verified in `joinGroupAction`, failing closed. A curl-forged submit (empty token) was refused, with no membership
-written ([evidence](../../evidence/REQ-F.2-turnstile-forged-submit.md)). **Left:** Raffaele's widget keys, then the
-production run, where the forged *token* must be refused too.
+**Source:** capture §9 · **Status:** ✅ **Met on production** (2026-09-28, ADR-0030): the widget on `/join`,
+verified in `joinGroupAction` with the real secret, failing closed. A forged submit (skipping the widget) was refused
+in the page and by curl with an empty and a forged token, with no membership written
+([evidence](../../evidence/REQ-F.2-turnstile-forged-submit.md)).
 
 **Notes:** Requires a genuinely public, unauthenticated form — see the reference
 architecture's "public intake form" (§2.5). If the chosen project has no public

@@ -121,3 +121,42 @@ turnstile-forge passed
 [AUDIT] {…"action":"group.join",…"outcome":"refused:turnstile:missing-token","persisted":false,…}
 [AUDIT] {…"action":"group.join",…"outcome":"refused:turnstile:rejected","persisted":false,"detail":{"codes":"invalid-input-response"}}
 ```
+
+## Production, run 3 (2026-09-28, Raffaele): met, with the real secret
+
+```
+$ node scripts/verify/turnstile-forge.mjs https://splitr.raffaele-digennaro.workers.dev
+turnstile-forge ts-muleit7l-4e8c68 → https://splitr.raffaele-digennaro.workers.dev
+  ✔ sign-up owner.ts-muleit7l-4e8c68@example.test → 200
+  ✔ sign-up joiner.ts-muleit7l-4e8c68@example.test → 200
+  · bypass: called the button's React onClick directly
+  · no Turnstile token (on production the automated browser is refused), so the client-side gate was bypassed
+  ✔ the Server Action request was intercepted (no real token existed; sent "forged-by-script-ts-muleit7l-4e8c68")
+  ✔ the page says "We couldn't confirm you're human"
+  ✔ no membership was written
+
+  $ curl -X POST https://splitr.raffaele-digennaro.workers.dev/join/4b84eefd0d -H 'Next-Action: 6068b852afa0b47c2dc2758e7754a7457f603a0f91' -H 'Cookie: <the joiner's session>' --data '["4b84eefd0d",""]'
+    → HTTP 200, body: 0:{"a":"$@1","f":"","q":"","i":false,"b":"czEd_wSm30vvYbDuXLarM"}
+1:{"status":"not-verified"}
+  ✔ curl with an EMPTY token → the server answers not-verified
+  ✔ …and writes no membership
+
+  $ curl -X POST https://splitr.raffaele-digennaro.workers.dev/join/4b84eefd0d -H 'Next-Action: 6068b852afa0b47c2dc2758e7754a7457f603a0f91' -H 'Cookie: <the joiner's session>' --data '["4b84eefd0d","forged-by-script-ts-muleit7l-4e8c68"]'
+    → HTTP 200, body: 0:{"a":"$@1","f":"","q":"","i":false,"b":"czEd_wSm30vvYbDuXLarM"}
+1:{"status":"not-verified"}
+  ✔ curl with a FORGED token → the server answers not-verified
+  ✔ …and writes no membership
+cleanup: 2 user(s), 1 group(s), 0 expense(s), 0 vector id(s), 0 receipt(s)
+cleanup: done, D1 re-checked (0 rows left)
+
+turnstile-forge passed
+```
+
+**Every `REQ-F.2` criterion is met on production.** The widget is on the
+public join form. The token is verified in the Server Action with the real
+secret. A forged submit is refused three ways: in the page past the widget,
+by curl with an empty token, and by curl with a forged token. No
+membership was written, and **the forged-submit command is recorded** above,
+with its `Next-Action` id. (The id rotates between builds, ADR-0010, so the
+script captures it fresh each run.)
+
