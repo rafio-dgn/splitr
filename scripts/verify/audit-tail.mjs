@@ -9,11 +9,24 @@
 //       with smoke.mjs's saved output, it rebuilds that run's history too
 //
 // Every [AUDIT] line must parse as JSON and carry actor, action, target,
-// timestamp and outcome (REQ-F.3's exact names). Then the smoke run's own
-// lines are printed in time order: its history, rebuilt from logs alone.
+// timestamp and outcome (REQ-F.3's exact names). Then two histories are
+// printed in time order, each rebuilt from logs alone:
+// - the smoke run's group: expenses, the settle race's winner and refused
+//   loser, the replay. Smoke creates its group straight in D1 (a script can't
+//   get a second member past Turnstile on production), so this history
+//   starts at its first expense, not at the group's creation;
+// - a group created through the app's own form, in a browser (REQ-F.6 Q2's
+//   "every change to a record"). Its history must start at `group.create`.
+//
+// AUDIT_LOCAL_LOGS=<file>,<file> reads what those local log files gain during
+// the run instead of `wrangler tail`, to rehearse against `next dev`.
 import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
+import { launchBrowser } from "./browser.mjs";
+import { cleanup } from "./cleanup.mjs";
+import { Client, runId, signUp, testPassword, todayUtc } from "./lib.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUIRED = ["actor", "action", "target", "timestamp", "outcome"];
@@ -47,6 +60,42 @@ function tail(worker) {
 	return { child, output: () => out, stop: () => { try { process.kill(-child.pid, "SIGTERM"); } catch { /* gone */ } } };
 }
 
+/** What a local log file gains from now on: `wrangler tail`'s stand-in for a rehearsal. */
+function fileTail(path) {
+	const from = statSync(path).size;
+	return { output: () => readFileSync(path).subarray(from).toString(), stop: () => {} };
+}
+
+/**
+ * A group made the way a person makes one: the "New group" form, in a
+ * browser. Then an expense with one item, through the API. Returns the group's
+ * id and the user, for the history and the cleanup.
+ */
+async function groupThroughTheApp(baseUrl) {
+	const run = runId("trace");
+	const email = `trace.${run}@example.test`;
+	const client = new Client(baseUrl);
+	const userId = await signUp(client, { name: "Trace Demo", email, password: testPassword() });
+	const browser = await launchBrowser();
+	let groupId;
+	try {
+		const page = await browser.newPage();
+		await page.setCookie(...[...client.cookies].map(([name, value]) => ({ name, value, url: baseUrl })));
+		await page.goto(`${baseUrl}/groups/new`, { waitUntil: "networkidle2" });
+		await page.locator("input#name").fill(`Trace ${run}`);
+		await page.locator('button[type="submit"]').click();
+		await page.waitForFunction(() => /^\/groups\/grp_[0-9a-f]{32}$/.test(location.pathname), { timeout: 30_000 });
+		groupId = (await page.evaluate(() => location.pathname)).split("/").at(-1);
+	} finally {
+		await browser.close();
+	}
+	const res = await client.request("POST", `/api/groups/${groupId}/expenses`, {
+		json: { description: "Trace demo lunch", amount: "6.00", currency: "GBP", spentAt: todayUtc(), paidById: userId, participantIds: [userId], amountConfirmed: "yes", lineItems: [{ rawText: "FLAT WHITE", description: "Flat white", amountMinorUnits: 600 }] },
+	});
+	console.log(`  trace │ a group created through the "New group" form (${groupId.slice(0, 12)}…), then an expense with one item → ${res.status}`);
+	return { groupId, email };
+}
+
 function runSmoke(baseUrl) {
 	return new Promise((resolve) => {
 		const child = spawn("node", ["scripts/verify/smoke.mjs", baseUrl], { cwd: REPO_ROOT, stdio: ["ignore", "pipe", "pipe"] });
@@ -59,6 +108,7 @@ function runSmoke(baseUrl) {
 
 let text;
 let smokeIds = [];
+let trace = null;
 if (fromFile !== null) {
 	text = readFileSync(fromFile, "utf8");
 	const smokeOut = args.includes("--smoke-out") ? readFileSync(args[args.indexOf("--smoke-out") + 1], "utf8") : "";
@@ -69,14 +119,25 @@ if (fromFile !== null) {
 		console.error("usage: node scripts/verify/audit-tail.mjs <BASE_URL> | --from-file <log>");
 		process.exit(2);
 	}
-	console.log(`tailing splitr and splitr-ledger, then running smoke against ${baseUrl}…`);
-	const tails = [tail("splitr"), tail("splitr-ledger")];
-	await new Promise((r) => setTimeout(r, 12_000)); // Let both tails connect first.
+	const localLogs = process.env.AUDIT_LOCAL_LOGS?.split(",").filter(Boolean) ?? [];
+	console.log(`${localLogs.length > 0 ? `reading ${localLogs.join(", ")}` : "tailing splitr and splitr-ledger"}, then running smoke and the trace against ${baseUrl}…`);
+	const tails = localLogs.length > 0 ? localLogs.map(fileTail) : [tail("splitr"), tail("splitr-ledger")];
+	if (localLogs.length === 0) await new Promise((r) => setTimeout(r, 12_000)); // Let both tails connect first.
 	const smoke = await runSmoke(baseUrl);
 	console.log(smoke.out.split("\n").filter((l) => /✔|✘|passed|FAILED/.test(l)).map((l) => `  smoke │ ${l.trim()}`).join("\n"));
-	await new Promise((r) => setTimeout(r, 10_000)); // Tail delivers a few seconds late.
+	try {
+		trace = await groupThroughTheApp(baseUrl);
+	} catch (error) {
+		console.log(`  trace │ ✘ ${error.message}`);
+	}
+	// Tail delivers a few seconds late, and indexing and categorising run after the response.
+	await new Promise((r) => setTimeout(r, 20_000));
 	for (const t of tails) t.stop();
 	text = tails.map((t) => t.output()).join("\n");
+	if (trace !== null) {
+		const url = new URL(baseUrl);
+		cleanup({ local: url.hostname === "localhost" || url.hostname === "127.0.0.1", emails: [trace.email], groupIds: [trace.groupId] });
+	}
 	// The run's own ids: its group, from smoke's output.
 	smokeIds = [...smoke.out.matchAll(/grp_[0-9a-f]{32}/g)].map((m) => m[0]);
 }
@@ -97,9 +158,21 @@ if (history.length > 0) {
 		console.log(`  ${e.timestamp}  ${e.action.padEnd(22)} ${e.outcome.padEnd(26)} target=${e.target.slice(0, 40)}${e.detail ? ` ${JSON.stringify(e.detail).slice(0, 110)}` : ""}`);
 	}
 }
+// The group made through the app: its whole history, from its creation.
+let traceOk = true;
+if (fromFile === null) {
+	const traced = trace === null ? [] : parsed.filter((e) => JSON.stringify(e).includes(trace.groupId)).sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+	traceOk = traced[0]?.action === "group.create";
+	console.log(`\na group created through the app, its history from the logs alone (${traced.length} entries):`);
+	for (const e of traced) {
+		console.log(`  ${e.timestamp}  ${e.action.padEnd(22)} ${e.outcome.padEnd(26)} target=${e.target.slice(0, 40)}${e.detail ? ` ${JSON.stringify(e.detail).slice(0, 110)}` : ""}`);
+	}
+	console.log(traceOk ? "  ✔ it starts at group.create: every change, from the record's creation" : "  ✘ it doesn't start at group.create");
+}
+
 const actions = [...new Set(parsed.map((e) => e.action))].sort();
 console.log(`\nactions seen: ${actions.join(", ")}`);
 
-const ok = lines.length > 0 && bad.length === 0;
+const ok = lines.length > 0 && bad.length === 0 && traceOk;
 console.log(ok ? "\naudit-tail passed" : "\nAUDIT-TAIL FAILED");
 process.exit(ok ? 0 : 1);

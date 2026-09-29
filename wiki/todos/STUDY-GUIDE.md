@@ -168,14 +168,17 @@ from; **the answers must be yours.**
        another store.
      - **Changes made around the app aren't in its logs** (ADR-0028 §4): test
        cleanup, migrations, secret changes, and **the test scripts' own
-       setup**. Smoke creates its group straight in D1, so the rebuilt history
-       starts at `expense.add`, not `group.create`. A group made through the
-       app has a `group.create` line.
+       setup**. Smoke creates its group straight in D1, so *its* history
+       starts at `expense.add`. That's why `audit-tail` also makes a group
+       **through the app's form**, whose history starts at `group.create`
+       (group.create → expense.add → expense.index → line_item.categorise).
      - **Caches aren't records**, so they aren't audited: the KV autofill list,
        and the ledger's idempotency cache.
-   - **For a live demo of a record's full history,** create a group through the
-     app, add an expense, settle, and find its lines by the group id in
-     `splitr` → Observability (or in a `wrangler tail`).
+   - **For a live demo:** run `audit-tail.mjs` on production. It prints both
+     histories: a record's full history from its creation, and the smoke
+     group's, with the refused race loser. Or, by hand: create a group in the
+     app, add an expense, and find its lines by the group id in `splitr` →
+     Observability.
 
 ## 5. Deliverables that are documents, not code
 

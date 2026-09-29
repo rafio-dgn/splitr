@@ -107,3 +107,39 @@ audit-tail passed
 - The session target is logged as a preview (`session:1M52qEeq`), as the rule
   requires.
 
+## A record's whole history, from its creation (2026-09-29, REQ-F.6 Q2)
+
+**Why this was added.** Smoke creates its group straight in D1: on
+production, a script can't get a second member past Turnstile. So the smoke
+history above starts at `expense.add`, not at the group's creation (ADR-0028
+§4: changes made around the app aren't in its logs). `audit-tail.mjs` now also
+creates a group **through the app's own "New group" form**, in a browser, and
+adds an expense with one item. That group's history must start at
+`group.create`, or the run fails.
+
+**Local rehearsal** (`AUDIT_LOCAL_LOGS` reading `next dev`'s and the ledger's
+logs in place of `wrangler tail`):
+
+```
+parseable, with all five fields: 21/21
+the smoke group's history, from the logs alone (8 entries): … (as above: both expenses, the race's winner and refused loser, the replay)
+
+a group created through the app, its history from the logs alone (4 entries):
+  07:47:02.614Z  group.create           accepted  target=grp_a54a…  {"name":"Trace trace-mumdi7q4-6a5165","currency":"GBP"}
+  07:47:03.102Z  expense.add            accepted  target=exp_47ee…  {"group":"grp_a54a…","amountMinorUnits":600,…}
+  07:47:07.537Z  expense.index          accepted  target=exp_47ee…  {"group":"grp_a54a…","vectors":1,…}
+  07:47:07.542Z  line_item.categorise   accepted  target=exp_47ee…  {"group":"grp_a54a…","model":"8b","ms":2278,"items":1,"categorised":1,…}
+  ✔ it starts at group.create: every change, from the record's creation
+audit-tail passed
+```
+
+**On production (Raffaele, after the merge):**
+
+```
+node scripts/verify/audit-tail.mjs https://splitr.raffaele-digennaro.workers.dev
+```
+
+```
+(paste here)
+```
+

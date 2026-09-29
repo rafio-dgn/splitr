@@ -2469,3 +2469,32 @@ does, months later, without the original chat transcript.
 - **Verification:** every Mermaid block rendered with Mermaid 11 in headless
   Chrome through puppeteer-core: 11/11.
 - **Open questions:** the `audit-tail` group-via-the-app change (from F.8).
+
+## 2026-09-29T08:55Z — audit-tail: a record's history from its creation; EdgeLedger stays unread
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Raffaele's "ok" was ambiguous between two questions, so
+  I asked both as structured questions.
+  - **audit-tail:** "Yes, change it."
+  - **EdgeLedger:** "the projects should not be mixed and no way we can do
+    something on the reference project. We need to only read it. So keep
+    everything on splitr."
+- **How I read the EdgeLedger answer:** a rule, not a go-ahead. EdgeLedger is
+  read-only; nothing is ever built, changed or copied there; every piece of
+  work stays in Splitr. **It was not read.** When to read it (now, or after
+  X.1/X.3) is still to be asked in plain words.
+- **Actions:** added `groupThroughTheApp()` to `audit-tail.mjs` (puppeteer on
+  `/groups/new`, then an expense with an item via the API), a second history
+  that must start at `group.create`, and the `AUDIT_LOCAL_LOGS` rehearsal
+  mode.
+- **Alternatives considered:**
+  - a two-member group through the app. Impossible on production: Turnstile
+    blocks automated joins (ADR-0030);
+  - a new `POST /api/groups` route for scripts. Rejected: a new public
+    endpoint only for tests.
+- **Verification:** a local rehearsal passed:
+  - 21/21 lines parse;
+  - the trace ran group.create → expense.add → expense.index →
+    line_item.categorise;
+  - cleanup left 0 rows;
+  - ESLint is clean.
+- **Open questions:** Raffaele's production run; when to read EdgeLedger.
