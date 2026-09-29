@@ -113,18 +113,22 @@ break; then the right way — dual-key window, deploy the consumer first, update
 producer, retire the old key.
 
 **Acceptance criteria:**
-- [ ] Rotation performed **the wrong way first**, and the breakage observed
-- [ ] Then correctly: dual-key window → deploy consumer → update producer →
+- [x] Rotation performed **the wrong way first**, and the breakage observed
+- [x] Then correctly: dual-key window → deploy consumer → update producer →
       retire old key
-- [ ] No downtime during the correct rotation
-- [ ] Both outcomes written up
+- [x] No downtime during the correct rotation
+- [x] Both outcomes written up
 
 **Source:** capture §9 · **Status:** ✅ **In scope** ([ADR-0005](../../decisions/0005-optional-scope.md))
 
-**In progress (2026-09-28):** designed in
-[ADR-0032](../../decisions/0032-secret-rotation-drill.md) and rehearsed
-locally; the production runbook and its results are in the
-[evidence](../../evidence/REQ-F.5-secret-rotation.md).
+**Met on production (2026-09-28/29)**, following
+[ADR-0032](../../decisions/0032-secret-rotation-drill.md):
+- the wrong way: a 35 s keyword-only window, with every AI call
+  `key=none/1`;
+- the right way: 0 of 132 and 0 of 55 searches fell back, with the cron
+  proven on the new key overnight.
+
+The write-up is in the [evidence](../../evidence/REQ-F.5-secret-rotation.md).
 
 **Notes:** Breaking it deliberately is part of the requirement — the lesson is the
 failure mode. Dual-key means the consumer accepts an **array** of valid secrets
@@ -142,7 +146,10 @@ during the window.
 - [ ] Both answered without notes
 - [ ] Q2 answerable **yes**, with a demonstration
 
-**Source:** capture §9 · **Status:** Not started
+**Source:** capture §9 · **Status:** 🟡 **The material is ready (2026-09-29)**, in
+[STUDY-GUIDE §4, Cluster F](../../todos/STUDY-GUIDE.md). Both answers are
+spoken, and Raffaele's, at the demo. Q2's demonstration exists and ran on
+production ([REQ-F.3 evidence](../../evidence/REQ-F.3-audit-json.md)).
 
 **Notes:** Q2 is really an acceptance test for `REQ-F.3`, which is mandatory. So
 this question must be answerable even if the rest of Cluster F is skipped.

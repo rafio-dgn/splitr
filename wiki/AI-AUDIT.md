@@ -2392,3 +2392,53 @@ does, months later, without the original chat transcript.
   - The first check caught a bug: the camera button showed on desktop,
     because `hidden` lost to `inline-flex`. Fixed with a wrapper.
 - **Open questions:** none.
+
+## 2026-09-29T07:45Z — The rotation drill's results, written up (REQ-F.5)
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Raffaele: "done, I saw them and completed day 2". Before
+  that, "there is no logs tab": I had named a tab that doesn't exist. The logs
+  are under **Observability**. I corrected it.
+- **Inputs read:** `.data/rotation-drill-day1-…log` and `…day2-…log` (no
+  secrets in either); his dashboard screenshot.
+- **Actions:**
+  - counted the `splitr-ai` lines per step;
+  - wrote Parts 1–3 and "What happened";
+  - ticked all four criteria.
+- **Found in the logs, not predicted by the plan:** after each `wrangler
+  secret put`, the old version kept serving for a few seconds (23 calls on
+  `key=1/1` after the window opened; 34 on `key=2/2` after the retire). I
+  wrote this up as the reason the receiver goes first.
+- **Assumptions:** that the 02:30 lines said `key=2/2`. That's Raffaele's
+  reading of the dashboard; I didn't see a screenshot of them. It's backed
+  independently by the drill item being categorised overnight.
+- **Verification:** the log counts add up to the monitor's own totals
+  (16 refused embeds = 16 fallbacks).
+- **Also fixed:** `rotation-drill.mjs` day 2 and the evidence said
+  "splitr-ai → Logs". Both now say "Observability".
+- **Open questions:** none.
+
+## 2026-09-29T08:10Z — F.8: the material for the two Cluster F questions
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "let's go": the next step after F.6/F.7.
+- **Inputs read:**
+  - `REQ-F.6`;
+  - the REQ-F.3 and REQ-F.5 evidence, and ADR-0028 §§3–4;
+  - `scripts/verify/{audit-tail,lib,e2e}.mjs`;
+  - the study guide's §4.
+- **Actions:**
+  - the Cluster F material in the study guide: the facts, where to find
+    them, and Q2's limits;
+  - Cluster E's two stale entries updated.
+- **Found:** every test script creates its group with `insertGroup`, which
+  writes to D1 directly, so none of those groups has a `group.create` audit
+  line. The history `audit-tail` rebuilds starts at `expense.add`. This is
+  covered by ADR-0028 §4's "operator actions", but it would surprise anyone
+  demoing "every change to a record". I flagged it as a limit to state, and
+  suggested demoing with a group made through the app.
+- **Alternatives considered:** writing model answers. Rejected: they're
+  spoken and must be his (`REQ-M.4`, `CLAUDE.md` §3).
+- **Assumptions:** Workers Logs retention of 3 days on the free plan, from
+  Cloudflare's Workers Logs page (read on 2026-09-28).
+- **Verification:** none needed (docs only).
+- **Open questions:** whether he wants `audit-tail` changed to create its
+  group through the app, so the rebuilt history starts at `group.create`.

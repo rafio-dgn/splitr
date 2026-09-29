@@ -56,7 +56,7 @@ node scripts/verify/rotation-drill.mjs day2
 ```
 
 It asks you to check the 02:30 lines in the dashboard (Workers & Pages →
-`splitr-ai` → Logs; they should say `key=2/2`), then retires K1.
+`splitr-ai` → **Observability**; they should say `key=2/2`), then retires K1.
 
 **If something goes wrong:** `node scripts/verify/rotation-drill.mjs repair`
 puts one fresh key on all three Workers.
@@ -99,24 +99,112 @@ three `.dev.vars` files (checked with `cmp`), the rehearsal's Keychain item
 
 ---
 
-## Part 1 output
+## Part 1: the wrong way (production, 2026-09-28)
+
+From `.data/rotation-drill-day1-2026-09-28T20-21-59.log`. The `splitr-ai`
+lines are counted per step: the script logs each one, and they're grouped
+here.
 
 ```
-(paste here)
+20:22:16  watching. Before anything changes: 6 by meaning, 0 fell back
+━━ step 1: give splitr-ai K1 IN PLACE OF the old key (no window)
+20:22:41  ✔ splitr-ai: AI_SHARED_SECRETS updated, a new version is live
+20:22:46  ✘ search fell back to keyword: the AI Worker didn't answer
+          splitr-ai: 15 × embed status=ok key=1/1       (the old version, still serving for a few seconds)
+          splitr-ai: 16 × embed status=refused key=none/1
+          splitr-ai:  1 × index status=refused key=none/1
+          splitr-ai:  1 × categorise status=refused key=none/1
+          the drill's lunch expense: saved → 201, its item → uncategorised
+━━ step 2: recover, moving the app, then the cron, to K1
+20:23:16  ✔ splitr: AI_SHARED_SECRET updated
+20:23:18  ✔ splitr-cron: AI_SHARED_SECRET updated
+20:23:21  ✔ search by meaning works again
+          splitr-ai: embed status=ok key=1/1
+
+PART 1 (the wrong way): 27 searches by meaning, 16 fell back, 0 errors
+✘ fallback from 20:22:46 to 20:23:21 UTC (16 searches)
 ```
 
-## Part 2 output
+## Part 2: the right way, K1 → K2 with the window open (production, 2026-09-28)
 
 ```
-(paste here)
+━━ step 3: open the window, splitr-ai accepts K1 AND K2
+20:24:16  ✔ splitr-ai: AI_SHARED_SECRETS updated
+          splitr-ai: 23 × embed status=ok key=1/1       (the old version, K1 only, during the rollout)
+          splitr-ai: 91 × embed status=ok key=1/2       (the new version: K1 is key 1 of 2)
+━━ step 4: move the app to K2
+20:27:18  ✔ splitr: AI_SHARED_SECRET updated
+          splitr-ai: 18 × embed status=ok key=2/2
+━━ step 5: move the cron to K2
+20:27:45  ✔ splitr-cron: AI_SHARED_SECRET updated
+
+PART 2: 132 searches by meaning, 0 fell back, 0 errors
+✔ NO DOWNTIME: every search was answered by meaning
 ```
 
-## Part 3 output
+## Part 3: proof overnight, then retire K1 (production, 2026-09-29)
+
+From `.data/rotation-drill-day2-2026-09-29T07-28-10.log`.
 
 ```
-(paste here)
+the drill's lunch item, left uncategorised yesterday, is now: eating_out
+✔ the 02:30 cron categorised it, so its key was accepted
+Did every 02:30 line say key=2/2? → yes      (Raffaele, from splitr-ai → Observability)
+07:28:36  watching: 6 × embed key=2/2, 1 × index key=2/2
+━━ step 7: retire K1, splitr-ai accepts K2 only
+07:29:43  ✔ splitr-ai: AI_SHARED_SECRETS updated
+          splitr-ai: 34 × embed status=ok key=2/2       (the old version, K1 and K2, during the rollout)
+          splitr-ai: 15 × embed status=ok key=1/1       (the new version: K2 is key 1 of 1)
+
+PART 3: 55 searches by meaning, 0 fell back, 0 errors
+✔ NO DOWNTIME: every search was answered by meaning
 ```
 
-## What happened (written up after the runs)
+Every test user was cleaned up: the watchers each day, and the cron probe
+on day 2. Day 2 renames `.data/rotation-drill.json` only after cleanup
+succeeds, and it did.
 
-(to be written from the outputs above)
+## What happened
+
+**The wrong way (Part 1).** `splitr-ai` was given a new key *instead of*
+the old one.
+- Within 5 seconds of the new version going live, every AI call was refused
+  (`key=none/1`), because the app and the cron still sent the old key.
+- For **35 seconds** (20:22:46–20:23:21), search answered by keyword only.
+  Saves carried on (the drill's expense: 201), but its item couldn't be
+  categorised or indexed.
+- Moving the producers to the new key ended it.
+- **Nothing crashed, which is the fallbacks' doing (ADR-0025 §4), not the
+  rotation's.** Without them, the same mistake would have been error pages.
+- **The outage lasted exactly as long as it took to update the other side.**
+  That was quick here, because a script was ready to do it. In a real
+  incident it's however long it takes someone to notice, find the cause and
+  update two Workers.
+
+**The right way (Parts 2 and 3).**
+- The receiver accepted both keys *before* either producer changed. Each
+  producer then moved, and the old key was retired only once nothing sent it.
+- **No search fell back:** 0 of 132 on day 1, and 0 of 55 on day 2.
+
+**What the logs showed that the plan hadn't said:**
+1. **For a few seconds after each `wrangler secret put`, the old version
+   and the new one both serve calls.** Cloudflare rolls a new version out
+   gradually:
+   - after the window opened: 23 calls still on the old version (`key=1/1`),
+     then 91 on the new one (`key=1/2`);
+   - after K1 was retired: 34 calls still on the window version
+     (`key=2/2`), then the new one (`key=1/1`).
+
+   **That's why the order matters.** A producer moved while the old
+   receiver version was still serving would have been refused by it. The
+   receiver goes first, and it has to be fully live before the producers
+   move.
+2. **The easy producer to forget is the one that isn't running.** The cron
+   calls once a night. Its proof came from two places: its 02:30 calls said
+   `key=2/2` (Raffaele, in the dashboard), and the item the breakage left
+   behind was categorised overnight (`eating_out`). Retiring K1 on day 1
+   would have worked with nothing to show for it, until 02:30.
+3. **You need the old key's value to open a window.** K0 couldn't be read
+   back, so the wrong way's recovery produced K1, a key we held. Now the live
+   key, K2, is in Raffaele's Keychain, so the next rotation can go straight to
+   the right way.

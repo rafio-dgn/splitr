@@ -85,6 +85,7 @@ raised by ADR-0018); which Worker hosts `scheduled()` (E.8).
 | [REQ-D.4 semantic search](../evidence/REQ-D.4-semantic-search.md) | Search by meaning 11/11, keyword 1/11 (3/11 any-word) | "'The thing for the kitchen': keyword says Bangkok Street *Kitchen*, meaning says IKEA" |
 | [**Turnstile forged submit**](../evidence/REQ-F.2-turnstile-forged-submit.md) | REQ-F.2: a forged join, **skipping the widget as an attacker would**, is refused by the server in the page and by curl; and Turnstile refuses automated browsers outright | "The widget in the page protects nothing; the check in the Server Action does" |
 | [**Rate limit**](../evidence/REQ-F.1-settle-rate-limit.md) | REQ-F.1: 201×5, then **429** with Retry-After; D1 holds exactly 5; Bob is unaffected (per user). The form shows the message | "The 6th request never touches the ledger: the check comes first" |
+| [**Secret rotation**](../evidence/REQ-F.5-secret-rotation.md) | REQ-F.5, on production. **Wrong:** the receiver's key swapped alone, and search was keyword-only for 35 s (every call `key=none/1`). **Right:** a window, then the app, then the cron, then retire: **0 of 187** searches fell back. The logs showed old and new versions **serving side by side for seconds** after each deploy. The cron was proven on the new key by its 02:30 log *and* by the item it categorised | "The outage lasted exactly as long as it took to update the other side. The right order makes that time zero, and the cron is the side you forget, because it isn't running when you look" |
 | [**AI Gateway**](../evidence/REQ-F.4-ai-gateway.md) | REQ-F.4, **met on production** (your Logs tab: 1 miss, then 7 cached searches at $0; the red rate-limit rows): every model call has a gateway log id; repeats are `cached: true, cost: 0`; the rate limit refused 21 of 120; the receipt read left **no log**; with the cap at 0, saves still work and search falls back to keyword | "One file makes every model call, so 'every call through the gateway' was one wrapper. The cap is ours, because I couldn't prove the gateway's one covers Workers AI" |
 | [**Audit JSON**](../evidence/REQ-F.3-audit-json.md) | REQ-F.3: every `[AUDIT]` line parses with the five fields; a smoke run's whole history (expenses, the race's refused loser, the replay) is rebuilt from logs alone | "Could you trace every change from logs alone? Yes: here's the smoke group, line by line" |
 | [**Cron run twice**](../evidence/REQ-E.6-cron-run-twice.md) | REQ-E.6: **on production**, run 2 is byte-identical and does no AI work; the reminder banner disappears the moment a debt is settled. The first production run caught a `--remote` secret bug |  "The same inputs give the same keys and the same dates, so the second run has nothing to change" |
@@ -125,12 +126,56 @@ from; **the answers must be yours.**
 
 **Cluster E (`REQ-E.7`)**
 1. **In one sentence:** *"Splitr's Durable Object prevents the same debt being settled twice when two group members record the same payment at the same moment."*
-2. What happens if the AI or service Worker is slow or down? → the ledger down means the settle form says "we couldn't record that, nothing was saved" (a 503), and nothing is half-written. The AI Worker's answer comes at E.7
-3. Why is it safe to run the scheduled task twice? → ⏳ E.8/E.9
+2. What happens if the AI or service Worker is slow or down? → **the ledger down:** the settle form says "we couldn't record that, nothing was saved" (a 503), and nothing is half-written. **The AI Worker down or slow:** each call has a budget and no inline retry (ADR-0025 §4); the save still succeeds, items stay `uncategorised` and the nightly cron retries them; search falls back to keyword with a note (109 ms with it down, [E.4 evidence](../evidence/REQ-E.4-rag-categorisation-eval.md)). The F.5 rotation drill showed the same thing on production: 35 s of refusals, and every save still 201
+3. Why is it safe to run the scheduled task twice? → reminders are UPSERTed on (group, debtor, creditor) with **dates, not timestamps**, and finished AI work is recorded (`expense_indexed`, a category set), so run 2 finds nothing to do. On production, run 2 was byte-identical with zero AI calls ([E.6 evidence](../evidence/REQ-E.6-cron-run-twice.md), ADR-0026)
 
-**Cluster F (`REQ-F.6`):** listed in
-[`../requirements/clusters/`](../requirements/clusters/). Their material is built
-in those clusters.
+**Cluster F (`REQ-F.6`):** both answered without notes, and Q2 answered
+**yes, with a demonstration**.
+
+1. **What breaks if you rotate a secret in the wrong order?** → study the
+   [REQ-F.5 evidence](../evidence/REQ-F.5-secret-rotation.md), "What happened",
+   and ADR-0032. The facts to have in your head:
+   - **What was done wrong:** the receiver (`splitr-ai`) got the new key *instead
+     of* the old one, while the senders (the app, the cron) still sent the old
+     one.
+   - **What broke:** every AI call refused (`key=none/1`) within 5 s of the new
+     version going live; search keyword-only for **35 s**; the new item left
+     uncategorised. **What didn't:** saves (201), thanks to the fallbacks.
+   - **How long:** exactly as long as it took to update the other side.
+   - **The other wrong orders, and what they'd break:** updating a sender first
+     (the receiver doesn't know the new key yet); retiring the old key before
+     *every* sender has moved (here the cron, which only calls at 02:30: it would
+     fail at night with nobody watching).
+   - **Why "receiver first, then wait":** for a few seconds after each deploy,
+     the old and new versions serve side by side (23 calls still on the old
+     version after the window opened).
+   - **The right way, and its proof:** window → app → cron → retire, with **0 of
+     187** searches falling back; the cron proven on the new key by its 02:30
+     log and by the item it categorised.
+2. **Could you trace every change to a record from logs alone?** → **Yes, for
+   every change the app makes, within the logs' retention.** Study the
+   [REQ-F.3 evidence](../evidence/REQ-F.3-audit-json.md) and ADR-0028.
+   - **The demonstration:** `node scripts/verify/audit-tail.mjs
+     https://splitr.raffaele-digennaro.workers.dev` tails the live Workers, makes
+     real changes (smoke), checks that every `[AUDIT]` line parses (14/14), and
+     prints the smoke group's history rebuilt from the logs alone: both expenses,
+     the race's winner **and refused loser**, and the replay.
+   - **Why it's enough to rebuild a balance:** `detail` carries who paid and
+     each share, and each settlement's from, to and amount (ADR-0028 §3).
+   - **The limits, which you should state before you're asked:**
+     - **Retention:** Workers Logs keeps 3 days on the free plan, and `wrangler
+       tail` is live only. Beyond that you'd need Logpush (a paid plan) or
+       another store.
+     - **Changes made around the app aren't in its logs** (ADR-0028 §4): test
+       cleanup, migrations, secret changes, and **the test scripts' own
+       setup**. Smoke creates its group straight in D1, so the rebuilt history
+       starts at `expense.add`, not `group.create`. A group made through the
+       app has a `group.create` line.
+     - **Caches aren't records**, so they aren't audited: the KV autofill list,
+       and the ledger's idempotency cache.
+   - **For a live demo of a record's full history,** create a group through the
+     app, add an expense, settle, and find its lines by the group id in
+     `splitr` → Observability (or in a `wrangler tail`).
 
 ## 5. Deliverables that are documents, not code
 

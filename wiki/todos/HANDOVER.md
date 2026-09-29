@@ -89,14 +89,18 @@ receipts are never cached or logged. The gateway allows 100 calls a minute,
 and our own `NeuronBudget` DO caps the day at 8,000 neurons. It's verified
 locally through the real gateway, and **met on production**: Raffaele's
 Logs tab shows the calls, cache hits and the rate limit's refusals.
-**Found:** `/search` had no link anywhere in the app; it's in the top bar now, and the E2E clicks it (branch `b/search-link`). **F.6 is designed** (ADR-0032, branch
-`f6/rotation-drill`). After the merge, Raffaele runs
-`node scripts/verify/rotation-drill.mjs day1` (Part 1, the wrong way; Part 2,
-K1 → K2 with the window left open), then `day2` after the 02:30 UTC cron has
-been seen on `key=2/2` (Part 3, retire K1). The script pauses before each
-step. The logs go to `.data/`, and the results into the
-[REQ-F.5 evidence](../evidence/REQ-F.5-secret-rotation.md). **Next:** F.7 (the write-up), then
-F.8.
+**Found:** `/search` had no link anywhere in the app; it's in the top bar now, and the E2E clicks it (branch `b/search-link`). **F.6/F.7 are done** (ADR-0032): the secret-rotation drill was run on
+production with `scripts/verify/rotation-drill.mjs`. The wrong way broke
+search for 35 s. The right way, from K1 to K2 with the window left open
+overnight until the cron was seen on `key=2/2`, had 0 fallbacks in 187
+searches ([evidence](../evidence/REQ-F.5-secret-rotation.md)). **`REQ-F.5`
+is met.** The live `AI_SHARED_SECRET` is in Raffaele's macOS Keychain
+("splitr AI_SHARED_SECRET"), so the next rotation can open a window straight
+away. **F.8's material is ready** (STUDY-GUIDE §4, Cluster F); the answers are
+Raffaele's, spoken at the demo. **Cluster F's code and evidence are
+complete.** **Next:** the Finish steps (build-plan "Finish": X.1 final deploy,
+X.2 the architecture diagram as shipped, X.3 his notes, X.4 the EdgeLedger
+comparison once the seal lifts, X.5–X.7 rehearse, post, demo).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random

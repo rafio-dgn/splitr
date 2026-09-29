@@ -134,9 +134,9 @@ double-settle bug without the DO, then fix it with one. That contrast is the dem
 | F.3 | **Forge a submit; confirm the server rejects it.** Capture the command | ✅ 2026-09-28: forged submit refused on production (page and curl) |
 | F.4 | Audit lines as parseable JSON; prove `wrangler tail \| grep AUDIT` works | ✅ 2026-09-28: met on production, `wrangler tail | grep AUDIT` 14/14 (ADR-0028) |
 | F.5 | AI Gateway in front of **every** model call — vision, Llama, embeddings. Caching, logs, rate limits, spend cap | ✅ 2026-09-28: met on production (ADR-0031); the Logs tab shows the calls, cache hits and the rate limit's refusals |
-| F.6 | Secret-rotation drill: **wrong way first**, observe the breakage; then dual-key → deploy consumer → update producer → retire old key | 🟡 2026-09-28: designed (ADR-0032), rehearsed locally; Raffaele runs it on production |
-| F.7 | Write up both rotation outcomes | `REQ-F.5` |
-| F.8 | Answer the two cluster questions | `REQ-F.6` |
+| F.6 | Secret-rotation drill: **wrong way first**, observe the breakage; then dual-key → deploy consumer → update producer → retire old key | ✅ 2026-09-28/29: met on production (ADR-0032): the wrong way broke search for 35 s; the right way had 0 fallbacks in 187 searches |
+| F.7 | Write up both rotation outcomes | ✅ 2026-09-29: "What happened" in the REQ-F.5 evidence |
+| F.8 | Answer the two cluster questions | 🟡 2026-09-29: the material is ready in STUDY-GUIDE §4; the answers are Raffaele's, spoken at the demo (`REQ-F.6`) |
 
 **Exit:** ✅ **Part 3 complete.**
 **Watch:** F.5 says *every* model call — three model types by now. F.6's

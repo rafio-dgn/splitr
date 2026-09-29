@@ -219,7 +219,7 @@ try {
 		say(`   the drill's lunch item, left uncategorised yesterday, is now: ${category}`);
 		say(category === "uncategorised" ? "   ⚠ the cron hasn't categorised it: it may not have run, or its key was refused" : "   ✔ the 02:30 cron categorised it, so its key was accepted");
 		say("\n━━ PART 3, step 6 of 7: CHECK THE CRON'S KEY (in the dashboard; I can't see it from here)");
-		say("   Workers & Pages → splitr-ai → Logs. Look at the lines around 02:30 UTC (03:30 WEST).");
+		say("   Workers & Pages → splitr-ai → Observability. Look at the lines around 02:30 UTC (03:30 WEST).");
 		say("   They should say key=2/2, and none should say key=1/2.");
 		const ok = await ask("Did every 02:30 line say key=2/2? Type yes or no:");
 		if (ok !== "yes") {
