@@ -2442,3 +2442,30 @@ does, months later, without the original chat transcript.
 - **Verification:** none needed (docs only).
 - **Open questions:** whether he wants `audit-tail` changed to create its
   group through the app, so the rebuilt history starts at `group.create`.
+
+## 2026-09-29T08:40Z — X.2: the architecture diagram, as shipped
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "yes, go on", to X.2. The optional `audit-tail` change
+  was not taken as approved, and is still an open question.
+- **Inputs read:**
+  - the README;
+  - all four `wrangler.jsonc` files;
+  - `workers/cron/src/index.ts`, `src/lib/cron/sweep.ts`;
+  - `src/lib/categorise/{categorise,after-save}.ts`;
+  - `src/lib/settlements/record-settlement.ts`;
+  - `src/lib/expenses/recent-descriptions.ts`, `src/lib/receipts/read-receipt.ts`;
+  - `deploy.yml`, `e2e-nightly.yml`; ADR-0025 §4.
+- **Actions:** rewrote the Architecture section (11 diagrams in the README in
+  total), and updated the building blocks, Status, repo layout and stack.
+- **Corrected in my own first draft, by reading the code:**
+  - saving an expense *clears* the KV entry, it doesn't refresh it;
+  - R2 is the real bucket even in local dev;
+  - the receipt read checks the object, then reads it through the binding (a
+    data: URI), so that one step does pass bytes through the Worker.
+- **Alternatives considered:** a separate diagram per Worker. Rejected: one
+  overview plus the flows is what the course asks for, and easier to hold in
+  your head at a demo.
+- **Assumptions:** none beyond the code read.
+- **Verification:** every Mermaid block rendered with Mermaid 11 in headless
+  Chrome through puppeteer-core: 11/11.
+- **Open questions:** the `audit-tail` group-via-the-app change (from F.8).

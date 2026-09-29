@@ -1484,3 +1484,20 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-F.6`. Those answers are spoken and Raffaele's, so this gives
   the material, not scripted answers.
 - **Decision:** none
+
+## 2026-09-29 — The README's architecture, redrawn as shipped
+- **Type:** docs
+- **Scope:** `README.md` (Architecture, Cloudflare building blocks, Status, Repo layout, Stack), REQ-X.5's status, the build plan, the study guide, the handover
+- **What:**
+  - **The system overview:** nothing is dashed any more. It shows four
+    Workers (only `splitr` public), three Durable Objects, AI Gateway, the
+    Turnstile siteverify, the rate-limit binding and every binding's
+    direction, checked against the four `wrangler.jsonc` files.
+  - **The flows:** Flows 1–7 are updated to what's built. Flow 8 (every model
+    call: secret → cap → gateway → model → neurons) is new, and there's a new
+    Delivery diagram.
+  - **Local development:** updated for three local servers, and for what is
+    remote even in dev.
+  - **The Status table:** A–F.
+- **Why:** `REQ-X.5`: accurate as shipped.
+- **Decision:** none

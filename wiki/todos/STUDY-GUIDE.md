@@ -183,7 +183,7 @@ from; **the answers must be yours.**
 |---|---|---|
 | `REQ-0.5` brief in the README | [README](../../README.md) | ✅ |
 | `REQ-C.4` three modules that won't run on Workers | [docs/modules-that-wont-run-on-workers.md](../../docs/modules-that-wont-run-on-workers.md) | ✅ `bcrypt`, `puppeteer`, `socket.io` (your choice) |
-| `REQ-X.5` architecture diagram | [README → Architecture](../../README.md#architecture) | 🟡 drawn; built vs planned marked; must be "accurate as shipped" at the end |
+| `REQ-X.5` architecture diagram | [README → Architecture](../../README.md#architecture) | ✅ redrawn as shipped (2026-09-29). **Know the system overview by heart:** it's the first thing you'll show. Re-check it at the final deploy |
 | `REQ-X.2` notes: what surprised you, what you got wrong, what you'd do differently | ⏳ **yours to write**. Raw material in section 6 | Not started |
 | `REQ-X.6` EdgeLedger comparison | ⏳ after the seal lifts | Not started |
 | `REQ-X.7` the Slack post | ⏳ at the end | Not started |
