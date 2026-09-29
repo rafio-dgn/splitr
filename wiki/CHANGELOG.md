@@ -1457,3 +1457,16 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** Raffaele: on mobile, only a new photo could be taken, not a file
   from the device.
 - **Decision:** ADR-0033 addendum (2026-09-29).
+
+## 2026-09-29 — `REQ-F.5` met on production: both rotations written up
+- **Type:** docs
+- **Scope:** the REQ-F.5 evidence and status, `wiki/todos/{build-plan,backlog,HANDOVER,STUDY-GUIDE}.md`
+- **What:** Raffaele ran `rotation-drill.mjs` on both days.
+  - **Day 1:** the wrong way was keyword-only for 35 s, with every AI call
+    `key=none/1`. The right way had 0 fallbacks in 132 searches.
+  - **Day 2:** the cron was proven on K2 (its 02:30 log, and the drill item
+    it categorised), then K1 was retired with 0 fallbacks in 55 searches.
+  - The write-up covers both outcomes, plus what the logs showed: old and new
+    versions serve side by side for seconds after each deploy.
+- **Why:** `REQ-F.5`. It closes F.6 and F.7.
+- **Decision:** none ([ADR-0032](./decisions/0032-secret-rotation-drill.md) was followed as written)

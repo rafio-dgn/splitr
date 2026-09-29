@@ -2392,3 +2392,27 @@ does, months later, without the original chat transcript.
   - The first check caught a bug: the camera button showed on desktop,
     because `hidden` lost to `inline-flex`. Fixed with a wrapper.
 - **Open questions:** none.
+
+## 2026-09-29T07:45Z — The rotation drill's results, written up (REQ-F.5)
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** Raffaele: "done, I saw them and completed day 2". Before
+  that, "there is no logs tab": I had named a tab that doesn't exist. The logs
+  are under **Observability**. I corrected it.
+- **Inputs read:** `.data/rotation-drill-day1-…log` and `…day2-…log` (no
+  secrets in either); his dashboard screenshot.
+- **Actions:**
+  - counted the `splitr-ai` lines per step;
+  - wrote Parts 1–3 and "What happened";
+  - ticked all four criteria.
+- **Found in the logs, not predicted by the plan:** after each `wrangler
+  secret put`, the old version kept serving for a few seconds (23 calls on
+  `key=1/1` after the window opened; 34 on `key=2/2` after the retire). I
+  wrote this up as the reason the receiver goes first.
+- **Assumptions:** that the 02:30 lines said `key=2/2`. That's Raffaele's
+  reading of the dashboard; I didn't see a screenshot of them. It's backed
+  independently by the drill item being categorised overnight.
+- **Verification:** the log counts add up to the monitor's own totals
+  (16 refused embeds = 16 fallbacks).
+- **Also fixed:** `rotation-drill.mjs` day 2 and the evidence said
+  "splitr-ai → Logs". Both now say "Observability".
+- **Open questions:** none.

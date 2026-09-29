@@ -110,7 +110,8 @@ commands and their output — they are demo material (`REQ-X.8`):
 - [ ] `REQ-F.1` — sixth rapid request returns 429
 - [ ] `REQ-F.2` — forged submit rejected server-side
 - [ ] `REQ-F.3` — `wrangler tail | grep AUDIT` yielding parseable JSON
-- [ ] `REQ-F.5` — secret rotation done wrong, then right
+- [x] `REQ-F.5` — secret rotation done wrong, then right —
+      [`../evidence/REQ-F.5-secret-rotation.md`](../evidence/REQ-F.5-secret-rotation.md)
 
 ## Stretch
 
