@@ -96,8 +96,11 @@ overnight until the cron was seen on `key=2/2`, had 0 fallbacks in 187
 searches ([evidence](../evidence/REQ-F.5-secret-rotation.md)). **`REQ-F.5`
 is met.** The live `AI_SHARED_SECRET` is in Raffaele's macOS Keychain
 ("splitr AI_SHARED_SECRET"), so the next rotation can open a window straight
-away. **Next:** F.8, the two cluster questions (`REQ-F.6`, spoken and
-Raffaele's), then the Finish steps.
+away. **F.8's material is ready** (STUDY-GUIDE §4, Cluster F); the answers are
+Raffaele's, spoken at the demo. **Cluster F's code and evidence are
+complete.** **Next:** the Finish steps (build-plan "Finish": X.1 final deploy,
+X.2 the architecture diagram as shipped, X.3 his notes, X.4 the EdgeLedger
+comparison once the seal lifts, X.5–X.7 rehearse, post, demo).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,
 with a `.dev.vars` in `workers/ai/` and in the harness holding the same random

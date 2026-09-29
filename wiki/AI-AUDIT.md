@@ -2416,3 +2416,29 @@ does, months later, without the original chat transcript.
 - **Also fixed:** `rotation-drill.mjs` day 2 and the evidence said
   "splitr-ai → Logs". Both now say "Observability".
 - **Open questions:** none.
+
+## 2026-09-29T08:10Z — F.8: the material for the two Cluster F questions
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "let's go": the next step after F.6/F.7.
+- **Inputs read:**
+  - `REQ-F.6`;
+  - the REQ-F.3 and REQ-F.5 evidence, and ADR-0028 §§3–4;
+  - `scripts/verify/{audit-tail,lib,e2e}.mjs`;
+  - the study guide's §4.
+- **Actions:**
+  - the Cluster F material in the study guide: the facts, where to find
+    them, and Q2's limits;
+  - Cluster E's two stale entries updated.
+- **Found:** every test script creates its group with `insertGroup`, which
+  writes to D1 directly, so none of those groups has a `group.create` audit
+  line. The history `audit-tail` rebuilds starts at `expense.add`. This is
+  covered by ADR-0028 §4's "operator actions", but it would surprise anyone
+  demoing "every change to a record". I flagged it as a limit to state, and
+  suggested demoing with a group made through the app.
+- **Alternatives considered:** writing model answers. Rejected: they're
+  spoken and must be his (`REQ-M.4`, `CLAUDE.md` §3).
+- **Assumptions:** Workers Logs retention of 3 days on the free plan, from
+  Cloudflare's Workers Logs page (read on 2026-09-28).
+- **Verification:** none needed (docs only).
+- **Open questions:** whether he wants `audit-tail` changed to create its
+  group through the app, so the rebuilt history starts at `group.create`.

@@ -1470,3 +1470,17 @@ shape that triggers them. They are listed rather than ticked.
     versions serve side by side for seconds after each deploy.
 - **Why:** `REQ-F.5`. It closes F.6 and F.7.
 - **Decision:** none ([ADR-0032](./decisions/0032-secret-rotation-drill.md) was followed as written)
+
+## 2026-09-29 — F.8: the material for Cluster F's two questions
+- **Type:** docs
+- **Scope:** `wiki/todos/STUDY-GUIDE.md` §4 (Clusters E and F), REQ-F.6's status, the build plan, the handover
+- **What:**
+  - Where to study each Cluster F answer, and the facts to know. For Q2, that
+    includes the limits: 3-day retention, changes made around the app, and
+    test groups created straight in D1, so their history starts at
+    `expense.add`.
+  - Cluster E's entries brought up to date: the AI Worker down, and the cron
+    run twice.
+- **Why:** `REQ-F.6`. Those answers are spoken and Raffaele's, so this gives
+  the material, not scripted answers.
+- **Decision:** none

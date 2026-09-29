@@ -146,7 +146,10 @@ during the window.
 - [ ] Both answered without notes
 - [ ] Q2 answerable **yes**, with a demonstration
 
-**Source:** capture §9 · **Status:** Not started
+**Source:** capture §9 · **Status:** 🟡 **The material is ready (2026-09-29)**, in
+[STUDY-GUIDE §4, Cluster F](../../todos/STUDY-GUIDE.md). Both answers are
+spoken, and Raffaele's, at the demo. Q2's demonstration exists and ran on
+production ([REQ-F.3 evidence](../../evidence/REQ-F.3-audit-json.md)).
 
 **Notes:** Q2 is really an acceptance test for `REQ-F.3`, which is mandatory. So
 this question must be answerable even if the rest of Cluster F is skipped.
