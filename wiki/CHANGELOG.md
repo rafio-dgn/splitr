@@ -1501,3 +1501,17 @@ shape that triggers them. They are listed rather than ticked.
   - **The Status table:** A–F.
 - **Why:** `REQ-X.5`: accurate as shipped.
 - **Decision:** none
+
+## 2026-09-29 — audit-tail rebuilds a record's history from its creation
+- **Type:** changed
+- **Scope:** `scripts/verify/audit-tail.mjs`, the REQ-F.3 evidence, `wiki/todos/STUDY-GUIDE.md`
+- **What:**
+  - After smoke, the script creates a group through the app's "New group"
+    form in a browser, adds an expense with an item, and prints that group's
+    history from the logs. It fails unless the history starts at
+    `group.create`.
+  - `AUDIT_LOCAL_LOGS` lets it read local log files, in place of
+    `wrangler tail`, for a rehearsal.
+- **Why:** `REQ-F.6` Q2 ("every change to a record"). Smoke's group is made in
+  D1, so its history started at `expense.add`. Raffaele chose the change.
+- **Decision:** none
