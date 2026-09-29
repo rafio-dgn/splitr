@@ -2498,3 +2498,32 @@ does, months later, without the original chat transcript.
   - cleanup left 0 rows;
   - ESLint is clean.
 - **Open questions:** Raffaele's production run; when to read EdgeLedger.
+
+## 2026-09-29T09:15Z — What's left before delivery; the boxes reconciled
+- **Agent:** Claude Opus 5.5 (1M context), main session
+- **Prompt intent:** "the second [read EdgeLedger after the notes and the
+  final deploy] and pls tell me exactly what I have to do before delivering
+  the app"; then his production `audit-tail` output.
+- **Inputs read:**
+  - every requirement file (each unticked criterion, by `awk`);
+  - the open PRs (none) and the last 3 nightly E2E runs (all green);
+  - his `audit-tail` output: 21/21 parseable, and the trace starts at
+    `group.create`.
+- **Actions:**
+  - the ordered delivery checklist, in chat and in the study guide;
+  - ticked only criteria with evidence, and pointed each cross-cutting status
+    at its evidence;
+  - recorded the production run.
+- **Deliberately not ticked:**
+  - `REQ-M.3` (every file read by him);
+  - A.2's "you can explain why";
+  - every spoken answer;
+  - X.1's "built by you";
+  - X.2, X.3, X.6–X.8;
+  - `REQ-0.6` (it depends on M.3).
+- **Assumptions:** that `REQ-A.4`'s "every file read" refers to Cluster A's
+  scaffold, as its status line recorded on 2026-09-22. The repo-wide version
+  is `REQ-M.3`, which stays open.
+- **Verification:** the unticked count per file after the change matches the
+  list above.
+- **Open questions:** the demo date (in the backlog since 2026-09-22).

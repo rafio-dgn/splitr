@@ -1515,3 +1515,22 @@ shape that triggers them. They are listed rather than ticked.
 - **Why:** `REQ-F.6` Q2 ("every change to a record"). Smoke's group is made in
   D1, so its history started at `expense.add`. Raffaele chose the change.
 - **Decision:** none
+
+## 2026-09-29 — Requirement boxes reconciled with the evidence; the delivery checklist; Q2 met on production
+- **Type:** docs
+- **Scope:**
+  - `wiki/requirements/clusters/{00,01,A,F,99}-*.md` and `cross-cutting-rules.md`;
+  - the REQ-F.3 evidence;
+  - `wiki/todos/{STUDY-GUIDE,HANDOVER}.md`.
+- **What:**
+  - Ticked every criterion already met and backed by evidence: the
+    prerequisites, the project choice, Cluster A's build items, M.1–M.2,
+    M.4's rationale, M.5–M.8, X.1's "works" and "blocks", X.4's
+    "deployed", and F.6 Q2's demonstration.
+  - Left open what only Raffaele can close: the code review (M.3/A.4's
+    successor), the spoken answers, the notes, the walkthrough, the post and
+    the demo.
+  - Added Raffaele's production `audit-tail` run.
+  - Added a "Before delivery" checklist to the study guide.
+- **Why:** Raffaele asked for exactly what's left before delivery.
+- **Decision:** none

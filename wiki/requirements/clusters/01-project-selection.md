@@ -10,9 +10,9 @@ the schema, the Durable Object and the demo all follow from it.
 **Statement:** Pick a project idea and write down what it is and who would use it.
 
 **Acceptance criteria:**
-- [ ] The idea is chosen and written down
-- [ ] It states what it is and who it's for
-- [ ] It names the contested write at its heart (`REQ-0.5`)
+- [x] The idea is chosen and written down
+- [x] It states what it is and who it's for
+- [x] It names the contested write at its heart (`REQ-0.5`)
 
 **Source:** capture §1 Step 1, §3.3 · **Status:** ✅ **Done** — **Splitr**. See
 [`../../context/project-brief.md`](../../context/project-brief.md) and
@@ -30,10 +30,10 @@ blocks, so each one earns its place. If the idea only uses three or four, add a
 stretch feature to cover the rest.
 
 **Acceptance criteria:**
-- [ ] The chosen idea maps to ≈5 blocks *naturally* — not bolted on
-- [ ] Where a block does not fit naturally, a stretch feature is defined that
+- [x] The chosen idea maps to ≈5 blocks *naturally* — not bolted on
+- [x] Where a block does not fit naturally, a stretch feature is defined that
       makes it fit
-- [ ] Each block's presence can be justified in one sentence
+- [x] Each block's presence can be justified in one sentence
 
 **Source:** capture §2.1 · **Status:** ✅ **Done** — 8/8 blocks mapped; 7 natural,
 Vectorize via a declared stretch feature (semantic search over past expenses).
@@ -64,9 +64,9 @@ floor, not a target. What `REQ-P.2` really tests is whether they fit the domain
 its contested write) and §8 (the Durable Object exists to arbitrate one).
 
 **Acceptance criteria:**
-- [ ] Two users can attempt to change the same thing at the same time
-- [ ] Exactly one must win, and that matters to the domain
-- [ ] It can be stated in one sentence (`REQ-E.7`)
+- [x] Two users can attempt to change the same thing at the same time
+- [x] Exactly one must win, and that matters to the domain
+- [x] It can be stated in one sentence (`REQ-E.7`)
 
 **Source:** capture §2.4, §3.3, §8 · **Status:** ✅ **Done** — *two group members
 recording the same settlement at the same moment; the second must be refused,
