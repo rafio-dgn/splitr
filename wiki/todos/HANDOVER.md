@@ -98,8 +98,9 @@ is met.** The live `AI_SHARED_SECRET` is in Raffaele's macOS Keychain
 ("splitr AI_SHARED_SECRET"), so the next rotation can open a window straight
 away. **F.8's material is ready** (STUDY-GUIDE §4, Cluster F); the answers are
 Raffaele's, spoken at the demo. **Cluster F's code and evidence are
-complete.** **Next:** the Finish steps (build-plan "Finish": X.1 final deploy,
-X.2 the architecture diagram as shipped, X.3 his notes, X.4 the EdgeLedger
+complete.** **X.2 is done** (the README's architecture, redrawn as shipped, branch
+`x2/architecture-as-shipped`). **Next:** the rest of the Finish steps
+(build-plan "Finish": X.1 final deploy, X.3 his notes, X.4 the EdgeLedger
 comparison once the seal lifts, X.5–X.7 rehearse, post, demo).
 
 Running the eval locally: see the header of `scripts/categorise/run-eval.mjs`,

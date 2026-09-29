@@ -65,15 +65,19 @@ give from memory, diagram in hand.
 ### REQ-X.5 — Architecture diagram in the README
 
 **Acceptance criteria:**
-- [x] A diagram is in the project README: a system overview plus seven flow
-      diagrams, in Mermaid
-- [ ] It shows every Cloudflare service in use and how they connect. All
-      planned services are drawn, dashed until built
-- [ ] It is accurate as shipped. **Re-verify at `REQ-X.4`**, when nothing
-      should still be dashed
+- [x] A diagram is in the project README: a system overview, eight flow
+      diagrams, delivery and local development, in Mermaid
+- [x] It shows every Cloudflare service in use and how they connect: the four
+      Workers, the three Durable Objects, D1, KV, R2, Vectorize, Workers AI, AI
+      Gateway, Turnstile, the rate-limit binding and the cron trigger
+- [x] It is accurate as shipped (redrawn 2026-09-29, with nothing dashed).
+      **Re-verify at `REQ-X.4`** (the final deploy), in case anything changes
+      before then
 
-**Source:** capture §10 · **Status:** 🟡 **In progress**, drawn 2026-09-24. Every
-block was rendered with `@mermaid-js/mermaid-cli` to check the syntax.
+**Source:** capture §10 · **Status:** ✅ **Redrawn as shipped on 2026-09-29.**
+It was first drawn on 2026-09-24. Every block was rendered with Mermaid 11 in
+a headless browser (11/11 render), and each binding was checked against the
+four `wrangler.jsonc` files.
 
 **Notes:** EdgeLedger's README opens with an ASCII diagram — a reasonable format,
 and the one place looking at the reference is unambiguously fine, since it is
