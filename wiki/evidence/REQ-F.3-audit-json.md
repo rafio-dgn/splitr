@@ -139,7 +139,36 @@ audit-tail passed
 node scripts/verify/audit-tail.mjs https://splitr.raffaele-digennaro.workers.dev
 ```
 
+Raffaele's run, 2026-09-29:
+
 ```
-(paste here)
+  smoke │ smoke passed   (all 15 checks ✔)
+  trace │ a group created through the "New group" form (grp_f9c1053f…), then an expense with one item → 201
+cleanup: done, D1 re-checked (0 rows left)
+
+$ wrangler tail … | grep AUDIT   → 21 line(s)
+parseable, with all five fields: 21/21
+
+the smoke group's history, from the logs alone (8 entries):
+  08:12:55.283Z  expense.add            accepted                   target=exp_66d8…
+  08:12:56.509Z  settlement.record      accepted                   target=stl_57a2…
+  08:12:56.524Z  settlement.record      refused:payer-not-owing    target=grp_a838…  {"arbiter":"GroupLedger"}
+  08:12:56.911Z  expense.index          accepted                   target=exp_66d8…
+  08:12:57.605Z  expense.add            accepted                   target=exp_0f73…
+  08:12:57.909Z  settlement.record      accepted                   target=stl_1aab…
+  08:12:58.338Z  expense.index          accepted                   target=exp_0f73…
+  08:12:58.824Z  settlement.record      replayed                   target=grp_a838…
+
+a group created through the app, its history from the logs alone (4 entries):
+  08:13:10.200Z  group.create           accepted  target=grp_f9c1…  {"name":"Trace trace-mumefrmm-1c3f1f","currency":"GBP"}
+  08:13:11.145Z  expense.add            accepted  target=exp_3ac9…  {"group":"grp_f9c1…","amountMinorUnits":600,…}
+  08:13:12.063Z  expense.index          accepted  target=exp_3ac9…  {"group":"grp_f9c1…","vectors":1,…}
+  08:13:12.484Z  line_item.categorise   accepted  target=exp_3ac9…  {"group":"grp_f9c1…","model":"8b","ms":1165,"items":1,"categorised":1,…}
+  ✔ it starts at group.create: every change, from the record's creation
+
+audit-tail passed
 ```
+
+**`REQ-F.6` Q2's demonstration is met on production:** a record's whole
+history, from its creation, is rebuilt from the logs alone.
 

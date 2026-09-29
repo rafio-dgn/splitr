@@ -15,9 +15,9 @@ npx create-next-app@latest <yourapp> --typescript --app --tailwind --src-dir
 ```
 
 **Acceptance criteria:**
-- [ ] App created with exactly these flags: TypeScript, App Router, Tailwind, `src/`
-- [ ] It runs locally
-- [ ] It is inside the project repo from `REQ-0.3`
+- [x] App created with exactly these flags: TypeScript, App Router, Tailwind, `src/`
+- [x] It runs locally
+- [x] It is inside the project repo from `REQ-0.3`
 
 **Source:** capture §4 · **Status:** ✅ **Done** — Next.js 16.3.5, React 19.2.8,
 TypeScript 5, Tailwind 4, ESLint 9. Scaffolded into a temp dir and merged, because
@@ -35,10 +35,10 @@ consistent with `--src-dir`.
 `src/lib/fetch.ts`.
 
 **Acceptance criteria:**
-- [ ] Lives at exactly `src/lib/fetch.ts`
-- [ ] Signature is `fetchJson<T>(url): Promise<T>`
-- [ ] Generic — the caller supplies the response type
-- [ ] Non-OK responses are handled, not silently returned
+- [x] Lives at exactly `src/lib/fetch.ts`
+- [x] Signature is `fetchJson<T>(url): Promise<T>`
+- [x] Generic — the caller supplies the response type
+- [x] Non-OK responses are handled, not silently returned
 - [ ] You can explain why it is shaped this way (`REQ-A.5`)
 
 **Source:** capture §4 · **Status:** ✅ **Done** — `src/lib/fetch.ts`, generic over
@@ -58,8 +58,8 @@ assertion about the response body, not a validation of it.
 click.
 
 **Acceptance criteria:**
-- [ ] A landing page renders and is navigable
-- [ ] It describes the actual chosen project (`REQ-P.1`)
+- [x] A landing page renders and is navigable
+- [x] It describes the actual chosen project (`REQ-P.1`)
 
 **Source:** capture §4 · **Status:** ✅ **Done** — Splitr landing page at `/`.
 Verified serving HTTP 200 with the correct title.
@@ -71,8 +71,8 @@ Verified serving HTTP 200 with the correct title.
 **Statement:** Audit every file the agent writes — don't let any sneak in.
 
 **Acceptance criteria:**
-- [ ] Every file in the repo has been read and understood
-- [ ] No unexplained scaffolding survives from `create-next-app`
+- [x] Every file in the repo has been read and understood
+- [x] No unexplained scaffolding survives from `create-next-app`
 
 **Source:** capture §4 · **Status:** ✅ **Done** — every generated file read.
 Removed: 5 Next/Vercel demo SVGs, the default favicon, the demo `page.tsx`.

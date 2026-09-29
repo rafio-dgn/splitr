@@ -144,7 +144,7 @@ during the window.
 
 **Acceptance criteria:**
 - [ ] Both answered without notes
-- [ ] Q2 answerable **yes**, with a demonstration
+- [x] Q2 answerable **yes**, with a demonstration
 
 **Source:** capture §9 · **Status:** 🟡 **The material is ready (2026-09-29)**, in
 [STUDY-GUIDE §4, Cluster F](../../todos/STUDY-GUIDE.md). Both answers are

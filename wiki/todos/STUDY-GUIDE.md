@@ -180,6 +180,37 @@ from; **the answers must be yours.**
      app, add an expense, and find its lines by the group id in `splitr` →
      Observability.
 
+## Before delivery: what's left, and whose it is
+
+Everything that can be built is built and met on production. What's left is
+yours, in this order (agreed 2026-09-29):
+
+1. **Read the code (`REQ-M.3`, the biggest item).** Every file, line by line;
+   ask Claude about anything unclear. Suggested order:
+   1. `src/lib/settlements/` and `workers/group-ledger/`;
+   2. `workers/ai/` with `src/lib/categorise/` and `src/lib/ai/`;
+   3. `src/lib/{expenses,receipts,search}/` and `src/lib/audit.ts`;
+   4. `src/app/**`, `src/db/schema.ts` and the four `wrangler.jsonc`;
+   5. `scripts/verify/` and `.github/workflows/`.
+2. **The six sets of spoken answers** (A.5, B.6, C.5, D.6, E.7, F.6): §4
+   below. Your words, without notes.
+3. **Your notes (`REQ-X.2`):** what surprised you, what you got wrong, and
+   what you'd do differently. Specific, not generic. The raw material is in §6
+   and in `AI-AUDIT.md`.
+4. **The final deploy (`REQ-X.4`):** Claude re-checks the diagram against the
+   live Workers (`REQ-X.5`). Then the demo data: two real accounts, a group
+   with a few expenses and a receipt, and
+   `node scripts/verify/cleanup.mjs <prod> --dry-run` so no test users are
+   left.
+5. **EdgeLedger (`REQ-X.6`), only after 3 and 4.** Read-only; it's never
+   changed and never mixed with Splitr. The comparison is written in Splitr's
+   wiki.
+6. **Rehearse the walkthrough from memory (`REQ-X.3`),** from the README's
+   architecture, in 15 minutes.
+7. **Post in `#project-jedi` (`REQ-X.7`):** the name, the repo URL, the
+   deployed URL, a short description and the services. Claude can draft it.
+8. **The demo (`REQ-X.8`).**
+
 ## 5. Deliverables that are documents, not code
 
 | Deliverable | Where | State |

@@ -9,14 +9,14 @@ Source: capture §0, §3.
 **Statement:** Install and register everything before Cluster A.
 
 **Acceptance criteria:**
-- [ ] Node.js **≥ 20** with npm
-- [ ] A code editor
-- [ ] Git, and a GitHub account
-- [ ] A Cloudflare account — **free tier is sufficient for the whole path**
-- [ ] An agentic coding tool (Claude Code / Cursor / Copilot)
-- [ ] Wrangler CLI, installed via npm
+- [x] Node.js **≥ 20** with npm
+- [x] A code editor
+- [x] Git, and a GitHub account
+- [x] A Cloudflare account — **free tier is sufficient for the whole path**
+- [x] An agentic coding tool (Claude Code / Cursor / Copilot)
+- [x] Wrangler CLI, installed via npm
 
-**Source:** capture §0.2 · **Status:** ⚠️ **Mostly done** — verified 2026-09-22:
+**Source:** capture §0.2 · **Status:** ✅ **Done** (the `wrangler login` gap closed at Cluster C; production has been deployed since). Verified 2026-09-22:
 Node **v24.21.0** (via nvm 0.40.8), npm **11.19.0**, git **2.50.1**, Wrangler
 **4.136.2**, VS Code, Claude Code, GitHub account. **Outstanding:** `wrangler login`
 — interactive, Raffaele must run it. Not needed until Cluster C.
@@ -33,7 +33,7 @@ basic React (components, props); Git and terminal basics; HTTP requests,
 responses and JSON.
 
 **Acceptance criteria:**
-- [ ] No cluster is blocked on a gap in these
+- [x] No cluster is blocked on a gap in these
 
 **Source:** capture §0.1 · **Status:** n/a (self-assessed; refresher links per cluster)
 
@@ -45,8 +45,8 @@ responses and JSON.
 work lands there.
 
 **Acceptance criteria:**
-- [ ] A new, dedicated GitHub repo exists
-- [ ] It is not a fork or copy of the reference repo
+- [x] A new, dedicated GitHub repo exists
+- [x] It is not a fork or copy of the reference repo
 
 **Source:** capture §3.1 · **Status:** ✅ **Done** —
 [github.com/rafio-dgn/splitr](https://github.com/rafio-dgn/splitr), created by
@@ -60,9 +60,9 @@ Raffaele, public, cloned to `ts-training/splitr/`.
 next to the project repo.
 
 **Acceptance criteria:**
-- [ ] Cloned beside the project, not inside it
-- [ ] **Never built inside**
-- [ ] **Not copied from at this stage** — it is for comparison later
+- [x] Cloned beside the project, not inside it
+- [x] **Never built inside**
+- [x] **Not copied from at this stage** — it is for comparison later
 
 **Source:** capture §3.2 · **Status:** ✅ Done — at
 `../typescript-cloudflare-project/`, a sibling of the project repo, never inside
@@ -80,9 +80,9 @@ on how we work, not a formality. See
 who it's for, and the contested write at its heart.**
 
 **Acceptance criteria:**
-- [ ] README opens with the project name and one-line description
-- [ ] States who would use it
-- [ ] **Names the contested write explicitly** — the thing two users can change
+- [x] README opens with the project name and one-line description
+- [x] States who would use it
+- [x] **Names the contested write explicitly** — the thing two users can change
       at once where one must win
 
 **Source:** capture §3.3 · **Status:** ✅ **Done** — the README opens with what
@@ -101,4 +101,4 @@ Durable Object exists to arbitrate exactly this.
 **Acceptance criteria:**
 - [ ] Claude Code (or equivalent) is driving alongside, with `REQ-M.3` observed
 
-**Source:** capture §3.4 · **Status:** Not started
+**Source:** capture §3.4 · **Status:** 🟡 Claude Code has driven every cluster since A (see `wiki/AI-AUDIT.md`). The box stays open until `REQ-M.3` is: that's Raffaele's review of every file

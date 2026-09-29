@@ -99,7 +99,11 @@ is met.** The live `AI_SHARED_SECRET` is in Raffaele's macOS Keychain
 away. **F.8's material is ready** (STUDY-GUIDE §4, Cluster F); the answers are
 Raffaele's, spoken at the demo. **Cluster F's code and evidence are
 complete.** **X.2 is done** (the README's architecture, redrawn as shipped, branch
-`x2/architecture-as-shipped`). **Next:** the rest of the Finish steps
+`x2/architecture-as-shipped`). `REQ-F.6` Q2's demonstration is met on production (`audit-tail`, 2026-09-29).
+The requirement boxes were reconciled with the evidence on 2026-09-29. What's
+left is Raffaele's, in the order in STUDY-GUIDE "Before delivery". **EdgeLedger
+stays sealed until after his notes and the final deploy (his choice), and is
+read-only when opened.** **Next:** the rest of the Finish steps
 (build-plan "Finish": X.1 final deploy, X.3 his notes, X.4 the EdgeLedger
 comparison once the seal lifts, X.5–X.7 rehearse, post, demo).
 

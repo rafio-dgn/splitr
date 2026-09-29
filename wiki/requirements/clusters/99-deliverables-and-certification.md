@@ -12,9 +12,9 @@ Source: capture §10, §11.
 Cloudflare building blocks.
 
 **Acceptance criteria:**
-- [ ] It works
+- [x] It works
 - [ ] Built by you (with an agentic tool, per `REQ-M.3`)
-- [ ] Uses most of the eight building blocks (`REQ-P.2`)
+- [x] Uses most of the eight building blocks (`REQ-P.2`)
 
 **Source:** capture §10 · **Status:** Not started
 
@@ -56,7 +56,7 @@ give from memory, diagram in hand.
 ### REQ-X.4 — Deploy the app
 
 **Acceptance criteria:**
-- [ ] Deployed and reachable at a public URL
+- [x] Deployed and reachable at a public URL
 
 **Source:** capture §10 · **Status:** Not started
 
